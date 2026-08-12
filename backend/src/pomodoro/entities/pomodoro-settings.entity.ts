@@ -61,6 +61,15 @@ export class PomodoroSettings extends Model {
   @Column({ type: DataType.BOOLEAN, allowNull: false, field: 'auto_start' })
   auto_start: boolean;
 
+  @ApiProperty({
+    description:
+      'Записывать завершённые фокус-сессии в трекер времени (time-entry создаёт клиент)',
+    example: true,
+  })
+  @Default(true)
+  @Column({ type: DataType.BOOLEAN, allowNull: false, field: 'track_to_timer' })
+  track_to_timer: boolean;
+
   @ApiProperty()
   @UpdatedAt
   @Column({ field: 'updated_at' })

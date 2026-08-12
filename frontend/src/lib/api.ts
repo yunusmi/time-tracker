@@ -1,12 +1,19 @@
 import type {
   AuthResponse,
+  DaySummary,
   PomodoroPhase,
   PomodoroSettings,
   PomodoroStats,
+  Project,
+  ProjectWithStats,
   Task,
   TaskStatus,
   TaskWithStats,
   TimeEntry,
+  UserSettingsResponse,
+  WorkspaceInvite,
+  WorkspaceMemberView,
+  WorkspaceRole,
 } from './types';
 
 const API_URL =
@@ -79,6 +86,35 @@ export const api = {
     }),
   me: () => request<{ id: string; email: string; name: string }>('/auth/me'),
 
+  // --- User settings ---
+  getUserSettings: () => request<UserSettingsResponse>('/users/me/settings'),
+  updateUserSettings: (body: Partial<Omit<UserSettingsResponse, 'id' | 'updated_at' | 'user_id'>>) =>
+    request<UserSettingsResponse>('/users/me/settings', {
+      method: 'PATCH',
+      body: JSON.stringify(body),
+    }),
+
+  // --- Projects ---
+  listProjects: (includeArchived = false) =>
+    request<ProjectWithStats[]>(
+      `/projects${includeArchived ? '?include_archived=true' : ''}`,
+    ),
+  createProject: (body: { name: string; color?: string }) =>
+    request<Project>('/projects', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+  updateProject: (
+    id: string,
+    body: Partial<{ name: string; color: string; archived: boolean }>,
+  ) =>
+    request<Project>(`/projects/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(body),
+    }),
+  deleteProject: (id: string) =>
+    request<void>(`/projects/${id}`, { method: 'DELETE' }),
+
   // --- Tasks ---
   listTasks: () => request<TaskWithStats[]>('/tasks'),
   createTask: (body: {
@@ -86,6 +122,7 @@ export const api = {
     description?: string;
     estimated_minutes?: number;
     status?: TaskStatus;
+    project_id?: string | null;
   }) =>
     request<Task>('/tasks', { method: 'POST', body: JSON.stringify(body) }),
   updateTask: (
@@ -95,6 +132,7 @@ export const api = {
       description: string;
       estimated_minutes: number;
       status: TaskStatus;
+      project_id: string | null;
     }>,
   ) =>
     request<Task>(`/tasks/${id}`, {
@@ -111,8 +149,13 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(body),
     }),
-  stopTimer: () =>
-    request<TimeEntry>('/time-entries/stop', { method: 'POST' }),
+  stopTimer: (body?: { ended_at?: string }) =>
+    request<TimeEntry>('/time-entries/stop', {
+      method: 'POST',
+      body: JSON.stringify(body ?? {}),
+    }),
+  entriesSummary: (from: string, to: string) =>
+    request<DaySummary[]>(`/time-entries/summary?from=${from}&to=${to}`),
   listEntries: (date?: string) =>
     request<TimeEntry[]>(`/time-entries${date ? `?date=${date}` : ''}`),
   // Manual entry is defined by a start (from) and end (to) timestamp.
@@ -124,6 +167,19 @@ export const api = {
   }) =>
     request<TimeEntry>('/time-entries', {
       method: 'POST',
+      body: JSON.stringify(body),
+    }),
+  updateEntry: (
+    id: string,
+    body: Partial<{
+      description: string;
+      task_id: string | null;
+      started_at: string;
+      ended_at: string;
+    }>,
+  ) =>
+    request<TimeEntry>(`/time-entries/${id}`, {
+      method: 'PATCH',
       body: JSON.stringify(body),
     }),
   deleteEntry: (id: string) =>
@@ -151,6 +207,23 @@ export const api = {
     }),
   getPomodoroStats: (date?: string) =>
     request<PomodoroStats>(`/pomodoro/stats${date ? `?date=${date}` : ''}`),
+
+  // --- Workspaces / команда ---
+  getWorkspaceMembers: () =>
+    request<WorkspaceMemberView[]>('/workspaces/current/members'),
+  listWorkspaceInvites: () =>
+    request<WorkspaceInvite[]>('/workspaces/current/invites'),
+  sendWorkspaceInvite: (body: { email: string; role?: WorkspaceRole }) =>
+    request<WorkspaceInvite>('/workspaces/current/invites', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+  revokeWorkspaceInvite: (id: string) =>
+    request<void>(`/workspaces/current/invites/${id}`, { method: 'DELETE' }),
+  getInviteLink: () =>
+    request<{ token: string }>('/workspaces/current/invite-link'),
+  acceptInvite: (token: string) =>
+    request<unknown>(`/invites/${token}/accept`, { method: 'POST' }),
 
   // --- Export (binary) ---
   exportToday: async (date?: string): Promise<void> => {

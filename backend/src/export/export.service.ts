@@ -151,6 +151,26 @@ export class ExportService {
       ],
     ];
     rows.forEach(([metric, value]) => sheet.addRow({ metric, value }));
+
+    // Разбивка затреканного времени по проектам.
+    const byProject = new Map<string, number>();
+    for (const entry of entries) {
+      const name = entry.task?.project?.name ?? 'No project';
+      byProject.set(name, (byProject.get(name) ?? 0) + entry.duration_seconds);
+    }
+    if (byProject.size > 0) {
+      sheet.addRow({});
+      const header = sheet.addRow({ metric: 'By project', value: '' });
+      header.font = { bold: true };
+      [...byProject.entries()]
+        .sort((a, b) => b[1] - a[1])
+        .forEach(([name, seconds]) =>
+          sheet.addRow({
+            metric: name,
+            value: ExportService.formatDuration(seconds),
+          }),
+        );
+    }
   }
 
   private styleHeader(sheet: Worksheet): void {

@@ -1,7 +1,11 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { col, fn, Op } from 'sequelize';
 import { Task, TaskStatus } from './entities/task.entity';
+import { Project } from '../projects/entities/project.entity';
 import { TimeEntry } from '../time-entries/entities/time-entry.entity';
 import {
   PomodoroPhase,
@@ -20,22 +24,42 @@ export class TasksService {
     private readonly timeEntryModel: typeof TimeEntry,
     @InjectModel(PomodoroSession)
     private readonly pomodoroSessionModel: typeof PomodoroSession,
+    @InjectModel(Project)
+    private readonly projectModel: typeof Project,
   ) {}
 
+  /** Throws NotFoundException if the project does not belong to the user. */
+  private async assertProjectOwnership(
+    userId: string,
+    projectId?: string | null,
+  ): Promise<void> {
+    if (!projectId) return;
+    const project = await this.projectModel.findOne({
+      where: { id: projectId, user_id: userId },
+    });
+    if (!project) {
+      throw new NotFoundException('Project not found');
+    }
+  }
+
   async create(userId: string, dto: CreateTaskDto): Promise<Task> {
-    return this.taskModel.create({
+    await this.assertProjectOwnership(userId, dto.project_id);
+    const task = await this.taskModel.create({
       title: dto.title,
       description: dto.description ?? null,
       status: dto.status ?? TaskStatus.TODO,
       estimated_minutes: dto.estimated_minutes ?? null,
+      project_id: dto.project_id ?? null,
       user_id: userId,
       completed_at: dto.status === TaskStatus.DONE ? new Date() : null,
     });
+    return (await task.reload({ include: [Project] })) as Task;
   }
 
   async findAll(userId: string): Promise<TaskWithStatsDto[]> {
     const tasks = await this.taskModel.findAll({
       where: { user_id: userId },
+      include: [Project],
       order: [['created_at', 'DESC']],
     });
     return this.attachStats(userId, tasks);
@@ -52,6 +76,7 @@ export class TasksService {
         status: TaskStatus.DONE,
         completed_at: { [Op.between]: [range.start, range.end] },
       },
+      include: [Project],
       order: [['completed_at', 'ASC']],
     });
     return this.attachStats(userId, tasks);
@@ -60,6 +85,7 @@ export class TasksService {
   async findOne(userId: string, id: string): Promise<Task> {
     const task = await this.taskModel.findOne({
       where: { id, user_id: userId },
+      include: [Project],
     });
     if (!task) {
       throw new NotFoundException('Task not found');
@@ -79,8 +105,13 @@ export class TasksService {
     if (dto.estimated_minutes !== undefined) {
       task.estimated_minutes = dto.estimated_minutes;
     }
+    if (dto.project_id !== undefined) {
+      await this.assertProjectOwnership(userId, dto.project_id);
+      task.project_id = dto.project_id ?? null;
+    }
 
-    return task.save();
+    await task.save();
+    return (await task.reload({ include: [Project] })) as Task;
   }
 
   async remove(userId: string, id: string): Promise<void> {
