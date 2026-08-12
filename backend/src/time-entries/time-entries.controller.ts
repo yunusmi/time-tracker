@@ -23,8 +23,10 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { TimeEntriesService } from './time-entries.service';
 import { StartTimerDto } from './dto/start-timer.dto';
+import { StopTimerDto } from './dto/stop-timer.dto';
 import { CreateManualEntryDto } from './dto/create-manual-entry.dto';
 import { UpdateTimeEntryDto } from './dto/update-time-entry.dto';
+import { DaySummaryDto } from './dto/summary.dto';
 import { TimeEntry } from './entities/time-entry.entity';
 
 @ApiTags('time-entries')
@@ -48,10 +50,32 @@ export class TimeEntriesController {
 
   @Post('stop')
   @HttpCode(200)
-  @ApiOperation({ summary: 'Stop the currently running timer' })
+  @ApiOperation({
+    summary:
+      'Stop the currently running timer (optional ended_at to subtract idle time)',
+  })
   @ApiResponse({ status: 200, type: TimeEntry })
-  stop(@CurrentUser('id') userId: string): Promise<TimeEntry> {
-    return this.timeEntriesService.stop(userId);
+  stop(
+    @CurrentUser('id') userId: string,
+    @Body() dto: StopTimerDto,
+  ): Promise<TimeEntry> {
+    return this.timeEntriesService.stop(userId, dto.ended_at);
+  }
+
+  @Get('summary')
+  @ApiOperation({
+    summary:
+      'Per-day totals with project and task breakdown for a date range',
+  })
+  @ApiQuery({ name: 'from', required: true, example: '2026-08-06' })
+  @ApiQuery({ name: 'to', required: true, example: '2026-08-12' })
+  @ApiResponse({ status: 200, type: [DaySummaryDto] })
+  summary(
+    @CurrentUser('id') userId: string,
+    @Query('from') from: string,
+    @Query('to') to: string,
+  ) {
+    return this.timeEntriesService.summary(userId, from, to);
   }
 
   @Get('active')

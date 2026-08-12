@@ -1,7 +1,9 @@
-# ⏱ Time Tracker
+# ⏱ Хронос — Time Tracker
 
-Тайм-трекер в духе Clockify с встроенным **Pomodoro** и выгрузкой выполненных
-за день задач в **Excel**.
+Тайм-трекер в духе Clockify с встроенным **Pomodoro**, проектами, отчётами,
+командами и выгрузкой выполненных за день задач в **Excel**.
+Интерфейс — редизайн «Хронос»: тёмная/светлая тема, командная палитра ⌘K,
+горячие клавиши, фокус-режим.
 
 **Стек:** NestJS + TypeScript + PostgreSQL + Sequelize (backend), Next.js +
 TypeScript + CSS (frontend), Swagger (документация), Docker Compose.
@@ -17,9 +19,27 @@ TypeScript + CSS (frontend), Swagger (документация), Docker Compose.
 - ⏱ **Учёт времени** — таймер start/stop (как в Clockify) **и** ручной ввод
   через два поля времени — «от» (`started_at`) и «до» (`ended_at`); длительность
   считается из разницы. У каждой задачи считается суммарное затреканное время.
+- 🗂 **Проекты** — цвет, инлайн-переименование, архив (записи остаются в
+  отчётах), статистика за неделю; задачи привязываются к проекту.
+- 📈 **Отчёты** — бар-чарт за 7 дней с выбором дня, серия целей (streak),
+  heatmap за 14 дней, разбивка по проектам и топ задач за неделю
+  (один запрос `GET /time-entries/summary`).
+- 😴 **Контроль простоя** — если таймер идёт, а активности нет дольше порога,
+  предлагается «вычесть простой» (стоп с `ended_at` = момент последней
+  активности).
+- ⚙️ **Настройки пользователя** — цель дня, порог простоя, напоминания
+  (Notification API), тема; хранятся на сервере + localStorage.
 - 🍅 **Pomodoro** — настройки (длительность фокуса/перерывов, цикл до длинного
   перерыва, авто-старт) хранятся на сервере; завершённые сессии записываются и
-  привязываются к задачам; есть статистика за день.
+  привязываются к задачам; есть статистика за день; опционально фокус-сессии
+  записываются в трекер времени; мини-виджет в сайдбаре.
+- 👥 **Команда (workspaces)** — участники с ролями (владелец/админ/участник),
+  приглашения по email и по ссылке, live-статус «кто что трекает» и агрегаты
+  за сегодня/неделю.
+- ⌨️ **Палитра ⌘K и горячие клавиши** — запуск таймера по тексту, старт задачи,
+  создание задачи, навигация, тема; `S` стоп/продолжить, `N` новая задача,
+  `F` фокус-режим, `T` тема, `1–7` экраны, `?` справка (учтена русская
+  раскладка).
 - 📊 **Экспорт в Excel** — `.xlsx` с тремя листами: *Completed Tasks*,
   *Time Entries*, *Summary* за выбранный день (по умолчанию — сегодня).
 - 📚 **Swagger** — интерактивная документация API.
@@ -31,17 +51,22 @@ TypeScript + CSS (frontend), Swagger (документация), Docker Compose.
 ├── backend/            # NestJS API
 │   └── src/
 │       ├── auth/            # регистрация, логин, JWT
-│       ├── users/
-│       ├── tasks/          # CRUD задач + статистика
-│       ├── time-entries/   # таймер start/stop + ручной ввод
-│       ├── pomodoro/       # настройки + сессии + статистика
-│       └── export/         # генерация Excel (exceljs)
+│       ├── users/           # + user_settings (цель дня, простой, тема)
+│       ├── tasks/           # CRUD задач + статистика
+│       ├── projects/        # проекты: цвет, архив, статистика недели
+│       ├── time-entries/    # таймер start/stop + ручной ввод + summary
+│       ├── pomodoro/        # настройки + сессии + статистика
+│       ├── workspaces/      # команды: участники, роли, приглашения
+│       └── export/          # генерация Excel (exceljs)
 ├── frontend/           # Next.js (App Router)
 │   └── src/
-│       ├── app/            # страницы: login, register, dashboard, pomodoro
-│       ├── components/
-│       ├── context/        # AuthContext
-│       └── lib/            # API-клиент, типы, форматтеры
+│       ├── app/             # login, register, invite/[token],
+│       │                    # dashboard: трекер, задачи, проекты, отчёты,
+│       │                    #            pomodoro, команда, настройки
+│       ├── components/      # Sidebar, Header, палитра ⌘K, фокус-режим…
+│       ├── context/         # Auth, Theme, Toast, Settings, Timer, Pomodoro
+│       ├── hooks/           # напоминания
+│       └── lib/             # API-клиент, типы, форматтеры
 ├── db/init/            # SQL для расширения uuid-ossp
 └── docker-compose.yml
 ```
@@ -126,15 +151,28 @@ npm run dev                   # http://localhost:3000
 | POST  | `/api/tasks`               | создать задачу                        |
 | PATCH | `/api/tasks/:id`           | обновить (статус, estimate и т.д.)    |
 | DELETE| `/api/tasks/:id`           | удалить задачу                        |
+| GET   | `/api/projects`            | проекты + число задач и время за неделю |
+| POST  | `/api/projects`            | создать проект (name, color)          |
+| PATCH | `/api/projects/:id`        | переименовать / цвет / архив          |
+| DELETE| `/api/projects/:id`        | удалить (задачи остаются без проекта) |
 | POST  | `/api/time-entries/start`  | запустить таймер                      |
-| POST  | `/api/time-entries/stop`   | остановить таймер                     |
+| POST  | `/api/time-entries/stop`   | остановить (опц. `ended_at` — вычесть простой) |
 | GET   | `/api/time-entries/active` | активный таймер                       |
 | POST  | `/api/time-entries`        | ручной ввод (`started_at` + `ended_at`) |
 | GET   | `/api/time-entries?date=`  | записи за день                        |
-| GET   | `/api/pomodoro/settings`   | настройки Pomodoro                    |
+| PATCH | `/api/time-entries/:id`    | правка записи (время, описание, задача) |
+| GET   | `/api/time-entries/summary?from=&to=` | сводка по дням: total + разбивка по проектам/задачам |
+| GET   | `/api/users/me/settings`   | настройки пользователя                |
+| PATCH | `/api/users/me/settings`   | цель дня, порог простоя, напоминания, тема |
+| GET   | `/api/pomodoro/settings`   | настройки Pomodoro (+ `track_to_timer`) |
 | PATCH | `/api/pomodoro/settings`   | изменить настройки                    |
 | POST  | `/api/pomodoro/sessions`   | записать завершённую сессию           |
 | GET   | `/api/pomodoro/stats?date=`| статистика за день                    |
+| GET   | `/api/workspaces/current/members` | участники: роль, live-статус, сегодня/неделя |
+| POST  | `/api/workspaces/current/invites` | пригласить по email (admin+)   |
+| DELETE| `/api/workspaces/current/invites/:id` | отозвать приглашение       |
+| GET   | `/api/workspaces/current/invite-link` | токен ссылки-приглашения   |
+| POST  | `/api/invites/:token/accept` | принять приглашение                 |
 | GET   | `/api/export/today?date=`  | **выгрузка задач за день в Excel**    |
 
 Полная интерактивная документация — в Swagger: `/api/docs`.
@@ -147,7 +185,10 @@ npm run dev                   # http://localhost:3000
 - Pomodoro-таймер тикает на клиенте; на сервере хранятся настройки и
   завершённые сессии (как и было согласовано).
 - ORM — **Sequelize** (`sequelize-typescript` + `@nestjs/sequelize`),
-  запускается с `synchronize: true` — схема создаётся автоматически.
+  запускается с `synchronize: true` + `sync: { alter: true }` — схема
+  создаётся и дополняется автоматически.
   Для production рекомендуется перейти на миграции (`sequelize-cli`).
+- Дизайн-референс редизайна — в `design_handoff_chronos_redesign/`
+  (HTML-прототип, скриншоты, ТЗ).
 - Контракты API — в snake_case; внутренние модели и атрибуты тоже названы в
   snake_case, чтобы JSON отдавался без дополнительной трансформации.

@@ -1,0 +1,1017 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+html,body{margin:0;padding:0;height:100%;background:#0d0e12}
+body{font-family:'Instrument Sans',system-ui,sans-serif}
+*{box-sizing:border-box}
+a{color:#8183f4;text-decoration:none}a:hover{color:#a0a2ff}
+.tt{--bg:#0d0e12;--surface:#141519;--surface2:#1b1d24;--border:#24262f;--border2:#30333e;--text:#e8e9ed;--muted:#8b8f9a;--accent:#6366f1;--asoft:rgba(99,102,241,.15);--green:#34d399;--gsoft:rgba(52,211,153,.14);--amber:#fbbf24;--ysoft:rgba(251,191,36,.14);--red:#f87171;--rsoft:rgba(248,113,113,.12);--shadow:0 10px 28px rgba(0,0,0,.45)}
+.tt[data-theme="light"]{--bg:#f5f5f7;--surface:#ffffff;--surface2:#f0f0f3;--border:#e4e5ea;--border2:#d3d4dc;--text:#191a1f;--muted:#6b6e78;--asoft:rgba(99,102,241,.1);--green:#059669;--gsoft:rgba(5,150,105,.1);--amber:#b45309;--ysoft:rgba(180,83,9,.12);--red:#dc2626;--rsoft:rgba(220,38,38,.08);--shadow:0 10px 28px rgba(30,30,60,.12)}
+input::placeholder{color:var(--muted);opacity:.75}
+input,select,button{font-family:inherit}
+@keyframes ttpulse{0%,100%{opacity:1}50%{opacity:.4}}
+</style>
+</helmet>
+<div class="tt" data-theme="{{ theme }}" onClick="{{ rootClick }}" style="height:100vh;display:flex;background:var(--bg);color:var(--text);font-size:13.5px;line-height:1.45;overflow:hidden;{{ accentStyle }}">
+  <aside style="width:214px;flex-shrink:0;border-right:1px solid var(--border);display:flex;flex-direction:column;padding:14px 10px 12px;gap:2px">
+    <div style="display:flex;align-items:center;gap:9px;padding:2px 10px 14px">
+      <div style="width:22px;height:22px;border-radius:6px;background:var(--accent);display:flex;align-items:center;justify-content:center">
+        <div style="width:8px;height:8px;border-radius:50%;border:2px solid #fff"></div>
+      </div>
+      <span style="font-weight:700;font-size:14.5px;letter-spacing:.01em">Хронос</span>
+    </div>
+    <button onClick="{{ goScreen }}" data-s="tracker" style="display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:7px;border:none;cursor:pointer;font-size:13.5px;font-weight:500;text-align:left;background:{{ nav.tracker.bg }};color:{{ nav.tracker.c }}" style-hover="background:var(--surface2)">
+      <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6.2"></circle><path d="M8 5v3.2l2 1.4"></path></svg>Трекер
+    </button>
+    <button onClick="{{ goScreen }}" data-s="tasks" style="display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:7px;border:none;cursor:pointer;font-size:13.5px;font-weight:500;text-align:left;background:{{ nav.tasks.bg }};color:{{ nav.tasks.c }}" style-hover="background:var(--surface2)">
+      <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2.5" y="2.5" width="11" height="11" rx="3.5"></rect><path d="M5.4 8.1l1.8 1.8 3.4-3.7"></path></svg>Задачи
+    </button>
+    <button onClick="{{ goScreen }}" data-s="projects" style="display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:7px;border:none;cursor:pointer;font-size:13.5px;font-weight:500;text-align:left;background:{{ nav.projects.bg }};color:{{ nav.projects.c }}" style-hover="background:var(--surface2)">
+      <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4.5A1.5 1.5 0 013.5 3h2.6l1.4 1.8h5A1.5 1.5 0 0114 6.3v5.2a1.5 1.5 0 01-1.5 1.5h-9A1.5 1.5 0 012 11.5z"></path></svg>Проекты
+    </button>
+    <button onClick="{{ goScreen }}" data-s="reports" style="display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:7px;border:none;cursor:pointer;font-size:13.5px;font-weight:500;text-align:left;background:{{ nav.reports.bg }};color:{{ nav.reports.c }}" style-hover="background:var(--surface2)">
+      <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M3.5 13.5V9.5"></path><path d="M8 13.5V3.5"></path><path d="M12.5 13.5V7"></path></svg>Отчёты
+    </button>
+    <button onClick="{{ goScreen }}" data-s="pomo" style="display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:7px;border:none;cursor:pointer;font-size:13.5px;font-weight:500;text-align:left;background:{{ nav.pomo.bg }};color:{{ nav.pomo.c }}" style-hover="background:var(--surface2)">
+      <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="9" r="5.3"></circle><path d="M8 3.7V1.8"></path><path d="M5.8 2.6h4.4"></path></svg>Pomodoro
+    </button>
+    <sc-if value="{{ showTeam }}" hint-placeholder-val="{{ true }}">
+      <button onClick="{{ goScreen }}" data-s="team" style="display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:7px;border:none;cursor:pointer;font-size:13.5px;font-weight:500;text-align:left;background:{{ nav.team.bg }};color:{{ nav.team.c }}" style-hover="background:var(--surface2)">
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="5.6" cy="6" r="2.6"></circle><circle cx="11.2" cy="7.2" r="2"></circle><path d="M2 13.4c.6-2.3 2-3.4 3.6-3.4s3 1.1 3.6 3.4"></path></svg>Команда
+      </button>
+    </sc-if>
+    <button onClick="{{ goScreen }}" data-s="settings" style="display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:7px;border:none;cursor:pointer;font-size:13.5px;font-weight:500;text-align:left;background:{{ nav.settings.bg }};color:{{ nav.settings.c }}" style-hover="background:var(--surface2)">
+      <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="2.3"></circle><circle cx="8" cy="8" r="5.9"></circle></svg>Настройки
+    </button>
+    <div style="flex:1"></div>
+    <sc-if value="{{ miniPomo }}" hint-placeholder-val="{{ false }}">
+      <button onClick="{{ goScreen }}" data-s="pomo" style="display:flex;align-items:center;gap:10px;margin:0 2px 10px;padding:9px 11px;border-radius:9px;border:1px solid var(--border2);background:var(--surface2);cursor:pointer;color:var(--text);text-align:left">
+        <div style="width:7px;height:7px;border-radius:50%;background:var(--red);animation:ttpulse 1.6s infinite"></div>
+        <span style="font-family:'JetBrains Mono',monospace;font-weight:600;font-size:13px">{{ pomoClock }}</span>
+        <span style="color:var(--muted);font-size:12px">{{ pomoPhaseLabel }}</span>
+      </button>
+    </sc-if>
+    <button onClick="{{ toggleTheme }}" style="display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:7px;border:none;background:transparent;color:var(--muted);cursor:pointer;font-size:13px;text-align:left" style-hover="background:var(--surface2);color:var(--text)">
+      <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="3.4"></circle><path d="M8 1.5v1.8M8 12.7v1.8M1.5 8h1.8M12.7 8h1.8"></path></svg>{{ themeLabel }}
+    </button>
+    <div style="display:flex;align-items:center;gap:9px;padding:9px 10px 2px;border-top:1px solid var(--border);margin-top:8px">
+      <div style="width:26px;height:26px;border-radius:50%;background:var(--asoft);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700">ЮМ</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:12.5px;font-weight:600">Юнус М.</div>
+        <div style="font-size:11px;color:var(--muted)">Выйти</div>
+      </div>
+    </div>
+  </aside>
+  <div style="flex:1;display:flex;flex-direction:column;min-width:0">
+    <header style="height:52px;flex-shrink:0;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:14px;padding:0 24px">
+      <span style="font-weight:600;font-size:14.5px">{{ screenTitle }}</span>
+      <div style="flex:1"></div>
+      <button onClick="{{ openPaletteBtn }}" title="Командная палитра (Cmd+K)" style="display:flex;align-items:center;gap:7px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:5px 10px;font-size:12px;color:var(--muted);cursor:pointer" style-hover="color:var(--text);border-color:var(--border2)"><span style="font-family:'JetBrains Mono',monospace;font-size:11px">⌘K</span>Поиск и команды</button>
+      <sc-if value="{{ chipVisible }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;align-items:center;gap:10px;background:var(--asoft);border:1px solid var(--accent);border-radius:8px;padding:5px 6px 5px 12px">
+          <div style="width:7px;height:7px;border-radius:50%;background:var(--accent);animation:ttpulse 1.6s infinite"></div>
+          <span style="font-size:12.5px;font-weight:500;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ timerTitle }}</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-weight:600;font-size:13px">{{ elapsed }}</span>
+          <button onClick="{{ stopTimer }}" style="background:var(--accent);color:#fff;border:none;border-radius:6px;padding:4px 10px;font-size:12px;font-weight:600;cursor:pointer">Стоп</button>
+        </div>
+      </sc-if>
+    </header>
+    <main style="flex:1;overflow-y:auto;padding:20px 24px 40px">
+      <div style="max-width:980px;margin:0 auto">
+
+        <sc-if value="{{ isTracker }}" hint-placeholder-val="{{ true }}">
+        <div data-screen-label="Трекер">
+          <sc-if value="{{ idle }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;align-items:center;gap:12px;background:var(--ysoft);border:1px solid var(--amber);border-radius:10px;padding:10px 14px;margin-bottom:14px">
+              <span style="font-size:13px"><b>Похоже, вы отошли.</b> Таймер идёт, но активности нет уже {{ idleMin }} мин.</span>
+              <div style="flex:1"></div>
+              <button onClick="{{ idleKeep }}" style="background:transparent;border:1px solid var(--border2);border-radius:7px;padding:5px 12px;font-size:12.5px;font-weight:500;color:var(--text);cursor:pointer">Я работаю</button>
+              <button onClick="{{ idleStop }}" style="background:var(--amber);border:none;border-radius:7px;padding:5px 12px;font-size:12.5px;font-weight:600;color:#1a1206;cursor:pointer">Стоп и вычесть простой</button>
+            </div>
+          </sc-if>
+          <sc-if value="{{ hasTimer }}" hint-placeholder-val="{{ false }}">
+            <div style="background:var(--surface);border:1px solid var(--accent);border-radius:12px;padding:18px 20px;margin-bottom:16px;display:flex;align-items:center;gap:16px">
+              <div style="width:10px;height:10px;border-radius:50%;background:var(--accent);animation:ttpulse 1.6s infinite"></div>
+              <div style="flex:1;min-width:0">
+                <div style="font-weight:600;font-size:15px">{{ timerTitle }}</div>
+                <div style="color:var(--muted);font-size:12.5px;display:flex;align-items:center;gap:6px;margin-top:1px">
+                  <span style="width:7px;height:7px;border-radius:2px;background:{{ timerProjColor }};display:inline-block"></span>{{ timerProjName }}
+                </div>
+              </div>
+              <span style="font-family:'JetBrains Mono',monospace;font-size:30px;font-weight:600;letter-spacing:.01em;font-variant-numeric:tabular-nums">{{ elapsed }}</span>
+              <button onClick="{{ enterFocus }}" title="Фокус-режим (F)" style="background:transparent;border:1px solid var(--border2);border-radius:8px;padding:9px 12px;font-size:14px;color:var(--muted);cursor:pointer" style-hover="color:var(--text)">⛶</button>
+              <button onClick="{{ stopTimer }}" style="background:var(--red);color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13.5px;font-weight:600;cursor:pointer">■ Стоп</button>
+            </div>
+          </sc-if>
+          <sc-if value="{{ noTimer }}" hint-placeholder-val="{{ false }}">
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:16px;display:flex;gap:10px;align-items:center">
+              <input placeholder="Над чем работаете?" value="{{ timerDesc }}" onChange="{{ onField }}" data-f="timerDesc" onKeyDown="{{ timerKey }}" style="flex:2;min-width:180px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;font-size:13.5px;color:var(--text);outline:none" style-focus="border-color:var(--accent)"></input>
+              <div style="position:relative;flex:1;min-width:150px">
+                <button onClick="{{ toggleMenu }}" data-m="timerTask" style="width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;font-size:13px;color:{{ timerTaskColor }};cursor:pointer">{{ timerTaskLabel }}<span style="color:var(--muted);font-size:10px">▾</span></button>
+                <sc-if value="{{ menu.timerTask }}" hint-placeholder-val="{{ false }}">
+                  <div style="position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--surface);border:1px solid var(--border2);border-radius:9px;box-shadow:var(--shadow);padding:4px;z-index:40;max-height:220px;overflow-y:auto">
+                    <div onClick="{{ pickTimerTask }}" data-id="" style="padding:7px 10px;border-radius:6px;cursor:pointer;color:var(--muted);font-size:13px" style-hover="background:var(--surface2)">Без задачи</div>
+                    <sc-for list="{{ openTasks }}" as="o" hint-placeholder-count="3">
+                      <div onClick="{{ pickTimerTask }}" data-id="{{ o.id }}" style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;cursor:pointer;font-size:13px" style-hover="background:var(--surface2)">
+                        <span style="width:7px;height:7px;border-radius:2px;background:{{ o.projColor }};flex-shrink:0"></span>{{ o.title }}
+                      </div>
+                    </sc-for>
+                  </div>
+                </sc-if>
+              </div>
+              <button onClick="{{ startTimer }}" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:9px 22px;font-size:13.5px;font-weight:600;cursor:pointer" style-hover="filter:brightness(1.1)">▶ Старт</button>
+            </div>
+            <sc-if value="{{ hasRecent }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:-6px 0 16px;font-size:12px">
+                <span style="color:var(--muted)">Продолжить:</span>
+                <sc-for list="{{ recent }}" as="r" hint-placeholder-count="2">
+                  <button onClick="{{ resumeRecent }}" data-i="{{ r.i }}" style="display:flex;align-items:center;gap:7px;background:var(--surface);border:1px solid var(--border);border-radius:99px;padding:5px 12px;font-size:12px;color:var(--text);cursor:pointer" style-hover="border-color:var(--accent);color:var(--accent)"><span style="width:6px;height:6px;border-radius:2px;background:{{ r.color }}"></span>▶ {{ r.title }}</button>
+                </sc-for>
+              </div>
+            </sc-if>
+          </sc-if>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px">
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:13px 16px">
+              <div style="font-size:11.5px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em">Сегодня</div>
+              <div style="font-family:'JetBrains Mono',monospace;font-size:21px;font-weight:600;margin:3px 0 8px">{{ todayTotal }}</div>
+              <div style="height:5px;border-radius:99px;background:var(--surface2);overflow:hidden">
+                <div style="height:100%;border-radius:99px;background:var(--accent);width:{{ goalPct }}%"></div>
+              </div>
+              <div style="font-size:11.5px;color:var(--muted);margin-top:5px">{{ goalLabel }}</div>
+            </div>
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:13px 16px">
+              <div style="font-size:11.5px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em">Эта неделя</div>
+              <div style="font-family:'JetBrains Mono',monospace;font-size:21px;font-weight:600;margin:3px 0">{{ weekTotal }}</div>
+              <div style="font-size:11.5px;color:var(--muted)">в среднем {{ weekAvg }} в день</div>
+            </div>
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:13px 16px">
+              <div style="font-size:11.5px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em">Pomodoro сегодня</div>
+              <div style="font-family:'JetBrains Mono',monospace;font-size:21px;font-weight:600;margin:3px 0">{{ pomoDone }}</div>
+              <div style="font-size:11.5px;color:var(--muted)">фокус {{ pomoFocus }}</div>
+            </div>
+          </div>
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:16px">
+            <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px"><span>Таймлайн дня</span><span style="font-family:'JetBrains Mono',monospace;font-weight:400;letter-spacing:0">08:00 — 20:00</span></div>
+            <div style="position:relative;height:28px;background:var(--surface2);border-radius:7px;overflow:hidden">
+              <sc-for list="{{ tlSegs }}" as="g" hint-placeholder-count="3">
+                <div title="{{ g.tip }}" style="position:absolute;top:3px;bottom:3px;border-radius:4px;background:{{ g.color }};left:{{ g.left }}%;width:{{ g.width }}%;animation:{{ g.anim }}"></div>
+              </sc-for>
+            </div>
+          </div>
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:visible">
+            <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--border)">
+              <span style="font-weight:600;font-size:14px">Записи за сегодня</span>
+              <div style="flex:1"></div>
+              <button onClick="{{ toggleManual }}" style="background:transparent;border:1px solid var(--border2);border-radius:7px;padding:5px 12px;font-size:12.5px;font-weight:500;color:var(--text);cursor:pointer" style-hover="background:var(--surface2)">+ Вручную</button>
+              <button onClick="{{ exportXlsx }}" style="background:transparent;border:1px solid var(--border2);border-radius:7px;padding:5px 12px;font-size:12.5px;font-weight:500;color:var(--text);cursor:pointer" style-hover="background:var(--surface2)">↓ Экспорт .xlsx</button>
+            </div>
+            <sc-if value="{{ manualOpen }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;gap:10px;align-items:flex-end;padding:12px 16px;border-bottom:1px solid var(--border);background:var(--surface2)">
+                <div style="flex:2;min-width:140px">
+                  <div style="font-size:11.5px;color:var(--muted);margin-bottom:4px">Описание</div>
+                  <input value="{{ manualDesc }}" onChange="{{ onField }}" data-f="manualDesc" placeholder="Что делали" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:7px 10px;font-size:13px;color:var(--text);outline:none"></input>
+                </div>
+                <div style="position:relative;flex:1.4;min-width:130px">
+                  <div style="font-size:11.5px;color:var(--muted);margin-bottom:4px">Задача</div>
+                  <button onClick="{{ toggleMenu }}" data-m="manualTask" style="width:100%;display:flex;align-items:center;justify-content:space-between;background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:7px 10px;font-size:13px;color:var(--text);cursor:pointer">{{ manualTaskLabel }}<span style="color:var(--muted);font-size:10px">▾</span></button>
+                  <sc-if value="{{ menu.manualTask }}" hint-placeholder-val="{{ false }}">
+                    <div style="position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--surface);border:1px solid var(--border2);border-radius:9px;box-shadow:var(--shadow);padding:4px;z-index:40">
+                      <div onClick="{{ pickManualTask }}" data-id="" style="padding:7px 10px;border-radius:6px;cursor:pointer;color:var(--muted);font-size:13px" style-hover="background:var(--surface2)">Без задачи</div>
+                      <sc-for list="{{ openTasks }}" as="o" hint-placeholder-count="3">
+                        <div onClick="{{ pickManualTask }}" data-id="{{ o.id }}" style="padding:7px 10px;border-radius:6px;cursor:pointer;font-size:13px" style-hover="background:var(--surface2)">{{ o.title }}</div>
+                      </sc-for>
+                    </div>
+                  </sc-if>
+                </div>
+                <div>
+                  <div style="font-size:11.5px;color:var(--muted);margin-bottom:4px">С</div>
+                  <input type="time" value="{{ manualFrom }}" onChange="{{ onField }}" data-f="manualFrom" style="background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:6px 8px;font-size:13px;color:var(--text);outline:none;font-family:'JetBrains Mono',monospace"></input>
+                </div>
+                <div>
+                  <div style="font-size:11.5px;color:var(--muted);margin-bottom:4px">До</div>
+                  <input type="time" value="{{ manualTo }}" onChange="{{ onField }}" data-f="manualTo" style="background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:6px 8px;font-size:13px;color:var(--text);outline:none;font-family:'JetBrains Mono',monospace"></input>
+                </div>
+                <span style="font-family:'JetBrains Mono',monospace;font-size:12.5px;color:var(--muted);padding-bottom:8px">{{ manualPreview }}</span>
+                <button onClick="{{ addManual }}" style="background:var(--accent);color:#fff;border:none;border-radius:7px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer">Добавить</button>
+              </div>
+            </sc-if>
+            <sc-if value="{{ noEntries }}" hint-placeholder-val="{{ false }}">
+              <div style="padding:36px 16px;text-align:center;color:var(--muted)">
+                <div style="font-size:14px;font-weight:600;margin-bottom:4px">Пока пусто</div>
+                <div style="font-size:12.5px">Запустите таймер или добавьте время вручную — записи появятся здесь.</div>
+              </div>
+            </sc-if>
+            <sc-for list="{{ todayEntries }}" as="e" hint-placeholder-count="4">
+              <div style="display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid var(--border)" style-hover="background:var(--surface2)">
+                <sc-if value="{{ e.editing }}" hint-placeholder-val="{{ false }}">
+                  <span style="display:flex;gap:4px;align-items:center;flex-shrink:0">
+                    <input type="time" value="{{ eeFrom }}" onChange="{{ onField }}" data-f="eeFrom" style="background:var(--surface2);border:1px solid var(--accent);border-radius:5px;padding:2px 4px;font-size:11.5px;color:var(--text);outline:none;font-family:'JetBrains Mono',monospace"></input>
+                    <input type="time" value="{{ eeTo }}" onChange="{{ onField }}" data-f="eeTo" style="background:var(--surface2);border:1px solid var(--accent);border-radius:5px;padding:2px 4px;font-size:11.5px;color:var(--text);outline:none;font-family:'JetBrains Mono',monospace"></input>
+                    <button onClick="{{ saveEntryEdit }}" data-id="{{ e.id }}" style="background:var(--accent);color:#fff;border:none;border-radius:5px;padding:3px 8px;font-size:11px;font-weight:600;cursor:pointer">✓</button>
+                  </span>
+                </sc-if>
+                <sc-if value="{{ e.notEditing }}" hint-placeholder-val="{{ true }}">
+                  <button onClick="{{ editEntry }}" data-id="{{ e.id }}" title="Изменить время" style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);width:88px;flex-shrink:0;background:transparent;border:none;text-align:left;padding:0;cursor:pointer" style-hover="color:var(--accent)">{{ e.range }}</button>
+                </sc-if>
+                <span style="width:7px;height:7px;border-radius:2px;background:{{ e.projColor }};flex-shrink:0"></span>
+                <span style="flex:1;font-weight:500;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ e.title }}</span>
+                <sc-if value="{{ e.manual }}" hint-placeholder-val="{{ false }}"><span style="font-size:10.5px;color:var(--muted);border:1px solid var(--border2);border-radius:5px;padding:1px 6px">вручную</span></sc-if>
+                <sc-if value="{{ e.live }}" hint-placeholder-val="{{ false }}"><span style="font-size:10.5px;color:var(--accent);border:1px solid var(--accent);border-radius:5px;padding:1px 6px;animation:ttpulse 1.6s infinite">идёт</span></sc-if>
+                <span style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;width:70px;text-align:right">{{ e.dur }}</span>
+                <button onClick="{{ delEntry }}" data-id="{{ e.id }}" title="Удалить запись" style="background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:2px 4px;border-radius:5px" style-hover="color:var(--red);background:var(--rsoft)">✕</button>
+              </div>
+            </sc-for>
+            <div style="display:flex;justify-content:flex-end;gap:8px;padding:10px 16px;font-size:12.5px;color:var(--muted)">Итого за день:<span style="font-family:'JetBrains Mono',monospace;font-weight:600;color:var(--text)">{{ todayTotal }}</span></div>
+          </div>
+        </div>
+        </sc-if>
+
+        <sc-if value="{{ isTasks }}" hint-placeholder-val="{{ false }}">
+        <div data-screen-label="Задачи">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+            <div style="display:flex;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:2px">
+              <button onClick="{{ setFilter }}" data-fl="all" style="border:none;border-radius:6px;padding:5px 14px;font-size:12.5px;font-weight:500;cursor:pointer;background:{{ filt.all.bg }};color:{{ filt.all.c }}">Все</button>
+              <button onClick="{{ setFilter }}" data-fl="active" style="border:none;border-radius:6px;padding:5px 14px;font-size:12.5px;font-weight:500;cursor:pointer;background:{{ filt.active.bg }};color:{{ filt.active.c }}">Активные</button>
+              <button onClick="{{ setFilter }}" data-fl="done" style="border:none;border-radius:6px;padding:5px 14px;font-size:12.5px;font-weight:500;cursor:pointer;background:{{ filt.done.bg }};color:{{ filt.done.c }}">Готово</button>
+            </div>
+            <div style="flex:1"></div>
+            <button onClick="{{ toggleNewTask }}" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer">+ Новая задача</button>
+          </div>
+          <sc-if value="{{ newTaskOpen }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;gap:10px;align-items:center;background:var(--surface);border:1px solid var(--accent);border-radius:10px;padding:12px 14px;margin-bottom:12px">
+              <input value="{{ newTitle }}" onChange="{{ onField }}" data-f="newTitle" onKeyDown="{{ newTaskKey }}" placeholder="Название задачи" style="flex:2;background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:8px 11px;font-size:13px;color:var(--text);outline:none"></input>
+              <div style="position:relative;flex:1;min-width:130px">
+                <button onClick="{{ toggleMenu }}" data-m="newProj" style="width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:8px 11px;font-size:13px;color:var(--text);cursor:pointer">
+                  <span style="display:flex;align-items:center;gap:7px"><span style="width:7px;height:7px;border-radius:2px;background:{{ newProjColor }}"></span>{{ newProjLabel }}</span><span style="color:var(--muted);font-size:10px">▾</span>
+                </button>
+                <sc-if value="{{ menu.newProj }}" hint-placeholder-val="{{ false }}">
+                  <div style="position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--surface);border:1px solid var(--border2);border-radius:9px;box-shadow:var(--shadow);padding:4px;z-index:40">
+                    <sc-for list="{{ projList }}" as="p" hint-placeholder-count="3">
+                      <div onClick="{{ pickNewProj }}" data-id="{{ p.id }}" style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;cursor:pointer;font-size:13px" style-hover="background:var(--surface2)">
+                        <span style="width:7px;height:7px;border-radius:2px;background:{{ p.color }}"></span>{{ p.name }}
+                      </div>
+                    </sc-for>
+                  </div>
+                </sc-if>
+              </div>
+              <input value="{{ newEstimate }}" onChange="{{ onField }}" data-f="newEstimate" placeholder="Оценка, мин" style="width:110px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:8px 11px;font-size:13px;color:var(--text);outline:none"></input>
+              <button onClick="{{ addTask }}" style="background:var(--accent);color:#fff;border:none;border-radius:7px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer">Создать</button>
+            </div>
+          </sc-if>
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px">
+            <sc-for list="{{ taskRows }}" as="t" hint-placeholder-count="5">
+              <div style="display:flex;align-items:center;gap:12px;padding:11px 16px;border-bottom:1px solid var(--border)" style-hover="background:var(--surface2)">
+                <div style="position:relative;flex-shrink:0">
+                  <button onClick="{{ toggleMenu }}" data-m="{{ t.statusMenu }}" style="display:flex;align-items:center;gap:6px;background:{{ t.stBg }};color:{{ t.stColor }};border:none;border-radius:6px;padding:3px 10px;font-size:11.5px;font-weight:600;cursor:pointer;white-space:nowrap">{{ t.stLabel }} ▾</button>
+                  <sc-if value="{{ t.statusOpen }}" hint-placeholder-val="{{ false }}">
+                    <div style="position:absolute;top:calc(100% + 4px);left:0;min-width:130px;background:var(--surface);border:1px solid var(--border2);border-radius:9px;box-shadow:var(--shadow);padding:4px;z-index:40">
+                      <div onClick="{{ setStatus }}" data-id="{{ t.id }}" data-st="todo" style="padding:6px 10px;border-radius:6px;cursor:pointer;font-size:12.5px" style-hover="background:var(--surface2)">К работе</div>
+                      <div onClick="{{ setStatus }}" data-id="{{ t.id }}" data-st="in_progress" style="padding:6px 10px;border-radius:6px;cursor:pointer;font-size:12.5px" style-hover="background:var(--surface2)">В работе</div>
+                      <div onClick="{{ setStatus }}" data-id="{{ t.id }}" data-st="done" style="padding:6px 10px;border-radius:6px;cursor:pointer;font-size:12.5px" style-hover="background:var(--surface2)">Готово</div>
+                    </div>
+                  </sc-if>
+                </div>
+                <div style="flex:1;min-width:0">
+                  <sc-if value="{{ t.editing }}" hint-placeholder-val="{{ false }}">
+                    <input value="{{ editTitle }}" onChange="{{ onField }}" data-f="editTitle" onKeyDown="{{ editKey }}" data-id="{{ t.id }}" style="width:100%;background:var(--surface2);border:1px solid var(--accent);border-radius:6px;padding:4px 8px;font-size:13.5px;color:var(--text);outline:none"></input>
+                  </sc-if>
+                  <sc-if value="{{ t.notEditing }}" hint-placeholder-val="{{ true }}">
+                    <div onClick="{{ startEdit }}" data-id="{{ t.id }}" title="Нажмите, чтобы переименовать" style="font-weight:600;cursor:text;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-decoration-line:{{ t.strike }}">{{ t.title }}</div>
+                  </sc-if>
+                  <div style="display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--muted);margin-top:2px">
+                    <span style="display:flex;align-items:center;gap:5px"><span style="width:6px;height:6px;border-radius:2px;background:{{ t.projColor }}"></span>{{ t.projName }}</span>
+                    <sc-if value="{{ t.hasPomos }}" hint-placeholder-val="{{ false }}"><span>· {{ t.pomos }} pomodoro</span></sc-if>
+                  </div>
+                </div>
+                <div style="width:150px;flex-shrink:0">
+                  <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:3px">
+                    <span style="font-family:'JetBrains Mono',monospace">{{ t.trackedTxt }}</span><span>{{ t.estTxt }}</span>
+                  </div>
+                  <div style="height:4px;border-radius:99px;background:var(--surface2);overflow:hidden">
+                    <div style="height:100%;border-radius:99px;background:{{ t.barColor }};width:{{ t.pct }}%"></div>
+                  </div>
+                </div>
+                <button onClick="{{ startTaskTimer }}" data-id="{{ t.id }}" title="Запустить таймер" style="background:var(--gsoft);color:var(--green);border:none;border-radius:7px;padding:6px 12px;font-size:12.5px;font-weight:600;cursor:pointer;flex-shrink:0">▶</button>
+                <button onClick="{{ delTask }}" data-id="{{ t.id }}" title="Удалить задачу" style="background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:2px 4px;border-radius:5px;flex-shrink:0" style-hover="color:var(--red);background:var(--rsoft)">✕</button>
+              </div>
+            </sc-for>
+            <sc-if value="{{ noTasks }}" hint-placeholder-val="{{ false }}">
+              <div style="padding:36px 16px;text-align:center;color:var(--muted)">
+                <div style="font-size:14px;font-weight:600;margin-bottom:4px">Задач нет</div>
+                <div style="font-size:12.5px">Создайте первую — и запускайте таймер прямо из списка.</div>
+              </div>
+            </sc-if>
+          </div>
+        </div>
+        </sc-if>
+
+        <sc-if value="{{ isReports }}" hint-placeholder-val="{{ false }}">
+        <div data-screen-label="Отчёты" style="display:grid;grid-template-columns:1.6fr 1fr;gap:14px;align-items:start">
+          <div style="display:flex;flex-direction:column;gap:14px">
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px">
+              <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:14px">
+                <span style="font-weight:600;font-size:14px">Последние 7 дней</span>
+                <span style="font-size:12px;color:var(--muted)">итого {{ weekTotal }} · цель выполнена {{ goalDays }} из 7 дней</span>
+              </div>
+              <div style="display:flex;align-items:flex-end;gap:10px;height:150px">
+                <sc-for list="{{ weekBars }}" as="d" hint-placeholder-count="7">
+                  <button onClick="{{ pickDay }}" data-off="{{ d.off }}" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;background:transparent;border:none;cursor:pointer;padding:0;height:100%;justify-content:flex-end">
+                    <span style="font-size:10.5px;color:var(--muted);font-family:'JetBrains Mono',monospace">{{ d.hLabel }}</span>
+                    <div style="width:100%;border-radius:6px 6px 3px 3px;background:{{ d.bg }};height:{{ d.hpx }}px;min-height:3px"></div>
+                    <span style="font-size:11px;color:{{ d.labColor }};font-weight:{{ d.labW }}">{{ d.label }}</span>
+                  </button>
+                </sc-for>
+              </div>
+            </div>
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px">
+              <div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px">
+                <span style="font-weight:600;font-size:14px">{{ selDayLabel }}</span>
+                <div style="flex:1"></div>
+                <span style="font-size:12.5px;color:var(--muted)">итого</span>
+                <span style="font-family:'JetBrains Mono',monospace;font-weight:600">{{ selDayTotal }}</span>
+              </div>
+              <sc-for list="{{ selDayEntries }}" as="e" hint-placeholder-count="3">
+                <div style="display:flex;align-items:center;gap:12px;padding:9px 16px;border-bottom:1px solid var(--border)">
+                  <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);width:88px;flex-shrink:0">{{ e.range }}</span>
+                  <span style="width:7px;height:7px;border-radius:2px;background:{{ e.projColor }};flex-shrink:0"></span>
+                  <span style="flex:1;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ e.title }}</span>
+                  <span style="font-family:'JetBrains Mono',monospace;font-size:12.5px;font-weight:600">{{ e.dur }}</span>
+                </div>
+              </sc-for>
+              <sc-if value="{{ selDayEmpty }}" hint-placeholder-val="{{ false }}">
+                <div style="padding:24px 16px;text-align:center;color:var(--muted);font-size:12.5px">В этот день время не трекалось.</div>
+              </sc-if>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:14px">
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px">
+              <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:10px">
+                <span style="font-weight:600;font-size:14px">Серия целей</span>
+                <span style="font-family:'JetBrains Mono',monospace;font-size:19px;font-weight:600;color:var(--accent)">{{ streak }} дн.</span>
+              </div>
+              <div style="display:flex;gap:4px">
+                <sc-for list="{{ heat }}" as="h" hint-placeholder-count="14">
+                  <div title="{{ h.tip }}" style="flex:1;height:22px;border-radius:4px;background:{{ h.bg }}"></div>
+                </sc-for>
+              </div>
+              <div style="font-size:11.5px;color:var(--muted);margin-top:6px">Последние 14 дней · цель {{ goalHours }}ч в день</div>
+            </div>
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px">
+              <div style="font-weight:600;font-size:14px;margin-bottom:12px">По проектам · неделя</div>
+              <div style="display:flex;flex-direction:column;gap:11px">
+                <sc-for list="{{ projBreak }}" as="p" hint-placeholder-count="3">
+                  <div>
+                    <div style="display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:4px">
+                      <span style="display:flex;align-items:center;gap:7px"><span style="width:7px;height:7px;border-radius:2px;background:{{ p.color }}"></span>{{ p.name }}</span>
+                      <span style="font-family:'JetBrains Mono',monospace;color:var(--muted)">{{ p.label }}</span>
+                    </div>
+                    <div style="height:5px;border-radius:99px;background:var(--surface2);overflow:hidden">
+                      <div style="height:100%;border-radius:99px;background:{{ p.color }};width:{{ p.pct }}%"></div>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px">
+              <div style="font-weight:600;font-size:14px;margin-bottom:12px">Топ задач · неделя</div>
+              <div style="display:flex;flex-direction:column;gap:10px">
+                <sc-for list="{{ taskBreak }}" as="t" hint-placeholder-count="4">
+                  <div style="display:flex;align-items:center;gap:10px;font-size:12.5px">
+                    <span style="width:7px;height:7px;border-radius:2px;background:{{ t.projColor }};flex-shrink:0"></span>
+                    <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ t.title }}</span>
+                    <span style="font-family:'JetBrains Mono',monospace;color:var(--muted)">{{ t.label }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px">
+              <div style="font-weight:600;font-size:14px;margin-bottom:8px">Экспорт</div>
+              <div style="font-size:12.5px;color:var(--muted);margin-bottom:10px">Excel-отчёт за выбранный день: задачи, записи, сводка.</div>
+              <button onClick="{{ exportXlsx }}" style="width:100%;background:transparent;border:1px solid var(--border2);border-radius:8px;padding:8px;font-size:13px;font-weight:600;color:var(--text);cursor:pointer" style-hover="background:var(--surface2)">↓ Скачать .xlsx</button>
+            </div>
+          </div>
+        </div>
+        </sc-if>
+
+        <sc-if value="{{ isPomo }}" hint-placeholder-val="{{ false }}">
+        <div data-screen-label="Pomodoro" style="display:grid;grid-template-columns:1.3fr 1fr;gap:14px;align-items:start">
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px;display:flex;flex-direction:column;align-items:center">
+            <div style="display:flex;background:var(--surface2);border-radius:8px;padding:2px;margin-bottom:22px">
+              <button onClick="{{ pomoPhaseSet }}" data-ph="work" style="border:none;border-radius:6px;padding:5px 14px;font-size:12.5px;font-weight:500;cursor:pointer;background:{{ ptab.work.bg }};color:{{ ptab.work.c }}">Фокус</button>
+              <button onClick="{{ pomoPhaseSet }}" data-ph="short" style="border:none;border-radius:6px;padding:5px 14px;font-size:12.5px;font-weight:500;cursor:pointer;background:{{ ptab.short.bg }};color:{{ ptab.short.c }}">Перерыв</button>
+              <button onClick="{{ pomoPhaseSet }}" data-ph="long" style="border:none;border-radius:6px;padding:5px 14px;font-size:12.5px;font-weight:500;cursor:pointer;background:{{ ptab.long.bg }};color:{{ ptab.long.c }}">Длинный</button>
+            </div>
+            <div style="width:216px;height:216px;border-radius:50%;background:conic-gradient({{ pomoRingColor }} {{ pomoPct }}%, var(--surface2) 0);display:flex;align-items:center;justify-content:center;margin-bottom:20px">
+              <div style="width:196px;height:196px;border-radius:50%;background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px">
+                <span style="font-family:'JetBrains Mono',monospace;font-size:44px;font-weight:600;font-variant-numeric:tabular-nums">{{ pomoClock }}</span>
+                <span style="font-size:12.5px;color:var(--muted)">{{ pomoPhaseLabel }} · {{ pomoCycle }}</span>
+              </div>
+            </div>
+            <div style="display:flex;gap:10px;margin-bottom:18px">
+              <sc-if value="{{ pomoIdle }}" hint-placeholder-val="{{ true }}">
+                <button onClick="{{ pomoStart }}" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:9px 26px;font-size:13.5px;font-weight:600;cursor:pointer">▶ Старт</button>
+              </sc-if>
+              <sc-if value="{{ pomoRunning }}" hint-placeholder-val="{{ false }}">
+                <button onClick="{{ pomoPause }}" style="background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;padding:9px 26px;font-size:13.5px;font-weight:600;cursor:pointer">❚❚ Пауза</button>
+              </sc-if>
+              <button onClick="{{ pomoReset }}" style="background:transparent;color:var(--muted);border:1px solid var(--border2);border-radius:8px;padding:9px 16px;font-size:13.5px;font-weight:500;cursor:pointer">↺ Сброс</button>
+            </div>
+            <div style="position:relative;width:280px">
+              <div style="font-size:11.5px;color:var(--muted);margin-bottom:4px">Задача для фокус-сессий</div>
+              <button onClick="{{ toggleMenu }}" data-m="pomoTask" style="width:100%;display:flex;align-items:center;justify-content:space-between;background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:8px 11px;font-size:13px;color:var(--text);cursor:pointer">{{ pomoTaskLabel }}<span style="color:var(--muted);font-size:10px">▾</span></button>
+              <sc-if value="{{ menu.pomoTask }}" hint-placeholder-val="{{ false }}">
+                <div style="position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--surface);border:1px solid var(--border2);border-radius:9px;box-shadow:var(--shadow);padding:4px;z-index:40">
+                  <div onClick="{{ pickPomoTask }}" data-id="" style="padding:7px 10px;border-radius:6px;cursor:pointer;color:var(--muted);font-size:13px" style-hover="background:var(--surface2)">Без задачи</div>
+                  <sc-for list="{{ openTasks }}" as="o" hint-placeholder-count="3">
+                    <div onClick="{{ pickPomoTask }}" data-id="{{ o.id }}" style="padding:7px 10px;border-radius:6px;cursor:pointer;font-size:13px" style-hover="background:var(--surface2)">{{ o.title }}</div>
+                  </sc-for>
+                </div>
+              </sc-if>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:14px">
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px">
+              <div style="font-weight:600;font-size:14px;margin-bottom:12px">Сегодня</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;text-align:center">
+                <div style="background:var(--surface2);border-radius:9px;padding:10px 6px">
+                  <div style="font-family:'JetBrains Mono',monospace;font-size:19px;font-weight:600">{{ pomoDone }}</div>
+                  <div style="font-size:11px;color:var(--muted)">сессий</div>
+                </div>
+                <div style="background:var(--surface2);border-radius:9px;padding:10px 6px">
+                  <div style="font-family:'JetBrains Mono',monospace;font-size:19px;font-weight:600">{{ pomoFocus }}</div>
+                  <div style="font-size:11px;color:var(--muted)">фокус</div>
+                </div>
+                <div style="background:var(--surface2);border-radius:9px;padding:10px 6px">
+                  <div style="font-family:'JetBrains Mono',monospace;font-size:19px;font-weight:600">{{ pomoBreak }}</div>
+                  <div style="font-size:11px;color:var(--muted)">перерывы</div>
+                </div>
+              </div>
+            </div>
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px">
+              <div style="font-weight:600;font-size:14px;margin-bottom:12px">Настройки</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                <div><div style="font-size:11.5px;color:var(--muted);margin-bottom:4px">Фокус, мин</div>
+                  <input type="number" min="1" max="180" value="{{ psWork }}" onChange="{{ onPomoNum }}" data-k="work" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:7px 10px;font-size:13px;color:var(--text);outline:none"></input></div>
+                <div><div style="font-size:11.5px;color:var(--muted);margin-bottom:4px">Перерыв, мин</div>
+                  <input type="number" min="1" max="60" value="{{ psShort }}" onChange="{{ onPomoNum }}" data-k="short" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:7px 10px;font-size:13px;color:var(--text);outline:none"></input></div>
+                <div><div style="font-size:11.5px;color:var(--muted);margin-bottom:4px">Длинный, мин</div>
+                  <input type="number" min="1" max="120" value="{{ psLong }}" onChange="{{ onPomoNum }}" data-k="long" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:7px 10px;font-size:13px;color:var(--text);outline:none"></input></div>
+                <div><div style="font-size:11.5px;color:var(--muted);margin-bottom:4px">Длинный каждые</div>
+                  <input type="number" min="1" max="12" value="{{ psEvery }}" onChange="{{ onPomoNum }}" data-k="every" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:7px 10px;font-size:13px;color:var(--text);outline:none"></input></div>
+              </div>
+              <label style="display:flex;align-items:center;gap:8px;margin-top:12px;font-size:13px;cursor:pointer">
+                <input type="checkbox" checked="{{ psAuto }}" onChange="{{ togglePomoAuto }}" style="accent-color:var(--accent)"></input>Автостарт следующего интервала
+              </label>
+              <label style="display:flex;align-items:center;gap:8px;margin-top:10px;font-size:13px;cursor:pointer">
+                <input type="checkbox" checked="{{ psTrack }}" onChange="{{ togglePomoTrack }}" style="accent-color:var(--accent)"></input>Записывать фокус-сессии в трекер
+              </label>
+            </div>
+          </div>
+        </div>
+        </sc-if>
+
+        <sc-if value="{{ isProjects }}" hint-placeholder-val="{{ false }}">
+        <div data-screen-label="Проекты">
+          <div style="display:flex;gap:10px;align-items:center;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:14px">
+            <input value="{{ npName }}" onChange="{{ onField }}" data-f="npName" onKeyDown="{{ npKey }}" placeholder="Название нового проекта" style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:8px 11px;font-size:13px;color:var(--text);outline:none" style-focus="border-color:var(--accent)"></input>
+            <div style="display:flex;gap:8px">
+              <sc-for list="{{ npColors }}" as="c" hint-placeholder-count="6">
+                <button onClick="{{ pickNpColor }}" data-c="{{ c.c }}" style="width:18px;height:18px;border-radius:6px;background:{{ c.c }};border:none;outline:{{ c.ring }};outline-offset:2px;cursor:pointer"></button>
+              </sc-for>
+            </div>
+            <button onClick="{{ addProj }}" style="background:var(--accent);color:#fff;border:none;border-radius:7px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer">+ Создать</button>
+          </div>
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px">
+            <sc-for list="{{ projRows }}" as="p" hint-placeholder-count="3">
+              <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--border)" style-hover="background:var(--surface2)">
+                <span style="width:10px;height:10px;border-radius:3px;background:{{ p.color }};flex-shrink:0"></span>
+                <div style="flex:1;min-width:0">
+                  <sc-if value="{{ p.editing }}" hint-placeholder-val="{{ false }}">
+                    <input value="{{ editProjName }}" onChange="{{ onField }}" data-f="editProjName" onKeyDown="{{ projEditKey }}" data-id="{{ p.id }}" style="width:60%;background:var(--surface2);border:1px solid var(--accent);border-radius:6px;padding:4px 8px;font-size:13.5px;color:var(--text);outline:none"></input>
+                  </sc-if>
+                  <sc-if value="{{ p.notEditing }}" hint-placeholder-val="{{ true }}">
+                    <div onClick="{{ startProjEdit }}" data-id="{{ p.id }}" title="Нажмите, чтобы переименовать" style="font-weight:600;cursor:text">{{ p.name }}</div>
+                  </sc-if>
+                  <div style="font-size:11.5px;color:var(--muted);margin-top:2px">{{ p.tasksN }}</div>
+                </div>
+                <div style="width:180px;flex-shrink:0">
+                  <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:3px"><span>за неделю</span><span style="font-family:'JetBrains Mono',monospace">{{ p.weekTxt }}</span></div>
+                  <div style="height:4px;border-radius:99px;background:var(--surface2);overflow:hidden"><div style="height:100%;border-radius:99px;background:{{ p.color }};width:{{ p.pct }}%"></div></div>
+                </div>
+                <button onClick="{{ archiveProj }}" data-id="{{ p.id }}" title="Архивировать проект" style="background:transparent;border:1px solid var(--border2);border-radius:7px;padding:5px 12px;font-size:12px;color:var(--muted);cursor:pointer;flex-shrink:0" style-hover="color:var(--text)">В архив</button>
+              </div>
+            </sc-for>
+            <div style="padding:12px 16px;font-size:12px;color:var(--muted)">Архив скрывает проект из списков, записи времени остаются в отчётах.</div>
+          </div>
+        </div>
+        </sc-if>
+
+        <sc-if value="{{ isTeam }}" hint-placeholder-val="{{ false }}">
+        <div data-screen-label="Команда">
+          <div style="display:flex;align-items:center;margin-bottom:14px">
+            <span style="font-size:12.5px;color:var(--muted)">4 участника</span>
+            <div style="flex:1"></div>
+            <button onClick="{{ toggleInvite }}" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer">+ Пригласить</button>
+          </div>
+          <sc-if value="{{ inviteOpen }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;gap:10px;align-items:center;background:var(--surface);border:1px solid var(--accent);border-radius:10px;padding:12px 14px;margin-bottom:14px">
+              <input value="{{ inviteEmail }}" onChange="{{ onField }}" data-f="inviteEmail" placeholder="email коллеги" style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:8px 11px;font-size:13px;color:var(--text);outline:none"></input>
+              <div style="display:flex;background:var(--surface2);border-radius:8px;padding:2px">
+                <button onClick="{{ setInvRole }}" data-r="Участник" style="border:none;border-radius:6px;padding:6px 14px;font-size:12.5px;font-weight:500;cursor:pointer;background:{{ invSeg.u.bg }};color:{{ invSeg.u.c }}">Участник</button>
+                <button onClick="{{ setInvRole }}" data-r="Админ" style="border:none;border-radius:6px;padding:6px 14px;font-size:12.5px;font-weight:500;cursor:pointer;background:{{ invSeg.a.bg }};color:{{ invSeg.a.c }}">Админ</button>
+              </div>
+              <button onClick="{{ sendInvite }}" style="background:var(--accent);color:#fff;border:none;border-radius:7px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer">Отправить</button>
+              <button onClick="{{ copyInviteLink }}" style="background:transparent;border:1px solid var(--border2);border-radius:7px;padding:8px 14px;font-size:13px;color:var(--text);cursor:pointer">Копировать ссылку</button>
+            </div>
+          </sc-if>
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px">
+          <div style="display:flex;align-items:center;padding:12px 16px;border-bottom:1px solid var(--border);font-size:11.5px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em">
+            <span style="flex:1.6">Участник</span><span style="width:80px">Роль</span><span style="flex:2">Сейчас</span><span style="width:90px;text-align:right">Сегодня</span><span style="width:90px;text-align:right">Неделя</span>
+          </div>
+          <sc-for list="{{ members }}" as="m" hint-placeholder-count="4">
+            <div style="display:flex;align-items:center;padding:12px 16px;border-bottom:1px solid var(--border)" style-hover="background:var(--surface2)">
+              <div style="flex:1.6;display:flex;align-items:center;gap:10px">
+                <div style="width:28px;height:28px;border-radius:50%;background:var(--asoft);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700">{{ m.ini }}</div>
+                <span style="font-weight:600">{{ m.n }}</span>
+                <sc-if value="{{ m.me }}" hint-placeholder-val="{{ false }}"><span style="font-size:10.5px;color:var(--muted);border:1px solid var(--border2);border-radius:5px;padding:1px 6px">вы</span></sc-if>
+              </div>
+              <span style="width:80px;font-size:11.5px;color:var(--muted)">{{ m.role }}</span>
+              <div style="flex:2;display:flex;align-items:center;gap:8px;font-size:12.5px;color:{{ m.stC }}">
+                <span style="width:7px;height:7px;border-radius:50%;background:{{ m.dot }}"></span>{{ m.st }}
+              </div>
+              <span style="width:90px;text-align:right;font-family:'JetBrains Mono',monospace;font-size:12.5px">{{ m.today }}</span>
+              <span style="width:90px;text-align:right;font-family:'JetBrains Mono',monospace;font-size:12.5px;color:var(--muted)">{{ m.week }}</span>
+            </div>
+          </sc-for>
+          <sc-for list="{{ inviteRows }}" as="iv" hint-placeholder-count="1">
+            <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);font-size:12.5px">
+              <span style="color:var(--muted)">✉</span>
+              <span style="font-weight:500">{{ iv.email }}</span>
+              <span style="font-size:10.5px;color:var(--muted);border:1px solid var(--border2);border-radius:5px;padding:1px 6px">{{ iv.role }}</span>
+              <span style="color:var(--muted)">приглашение отправлено</span>
+              <div style="flex:1"></div>
+              <button onClick="{{ revokeInvite }}" data-i="{{ iv.i }}" style="background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:12.5px;border-radius:5px;padding:2px 6px" style-hover="color:var(--red);background:var(--rsoft)">Отозвать</button>
+            </div>
+          </sc-for>
+          <div style="padding:12px 16px;font-size:12px;color:var(--muted)">Демо: workspaces, роли и приглашения потребуют доработки бэкенда.</div>
+          </div>
+        </div>
+        </sc-if>
+
+        <sc-if value="{{ isSettings }}" hint-placeholder-val="{{ false }}">
+        <div data-screen-label="Настройки" style="max-width:560px;display:flex;flex-direction:column;gap:14px">
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px">
+            <div style="font-weight:600;font-size:14px;margin-bottom:4px">Цель дня</div>
+            <div style="font-size:12.5px;color:var(--muted);margin-bottom:12px">Сколько часов в день хотите трекать. Прогресс виден на главном экране.</div>
+            <div style="display:flex;align-items:center;gap:12px">
+              <input type="range" min="1" max="12" value="{{ goalHours }}" onChange="{{ onGoal }}" style="flex:1;accent-color:var(--accent)"></input>
+              <span style="font-family:'JetBrains Mono',monospace;font-weight:600;width:36px">{{ goalHours }}ч</span>
+            </div>
+          </div>
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px">
+            <div style="font-weight:600;font-size:14px;margin-bottom:4px">Контроль простоя</div>
+            <div style="font-size:12.5px;color:var(--muted);margin-bottom:12px">Если таймер идёт, а активности нет — предложим вычесть простой.</div>
+            <div style="display:flex;align-items:center;gap:12px">
+              <input type="range" min="1" max="30" value="{{ idleThresholdMin }}" onChange="{{ onIdleThr }}" style="flex:1;accent-color:var(--accent)"></input>
+              <span style="font-family:'JetBrains Mono',monospace;font-weight:600;width:52px">{{ idleThresholdMin }} мин</span>
+            </div>
+          </div>
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px">
+            <div style="font-weight:600;font-size:14px;margin-bottom:4px">Напоминания</div>
+            <div style="font-size:12.5px;color:var(--muted);margin-bottom:12px">Браузерные уведомления (в прототипе — демо).</div>
+            <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;margin-bottom:8px">
+              <input type="checkbox" checked="{{ notifStart }}" onChange="{{ toggleNotifStart }}" style="accent-color:var(--accent)"></input>Напомнить начать трекинг в начале дня
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer">
+              <input type="checkbox" checked="{{ notifGoal }}" onChange="{{ toggleNotifGoal }}" style="accent-color:var(--accent)"></input>Сообщить, когда цель дня достигнута
+            </label>
+          </div>
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px">
+            <div style="font-weight:600;font-size:14px;margin-bottom:12px">Тема</div>
+            <div style="display:inline-flex;background:var(--surface2);border-radius:8px;padding:2px">
+              <button onClick="{{ setDark }}" style="border:none;border-radius:6px;padding:6px 18px;font-size:12.5px;font-weight:500;cursor:pointer;background:{{ thseg.dark.bg }};color:{{ thseg.dark.c }}">Тёмная</button>
+              <button onClick="{{ setLight }}" style="border:none;border-radius:6px;padding:6px 18px;font-size:12.5px;font-weight:500;cursor:pointer;background:{{ thseg.light.bg }};color:{{ thseg.light.c }}">Светлая</button>
+            </div>
+          </div>
+        </div>
+        </sc-if>
+
+      </div>
+    </main>
+  </div>
+  <sc-if value="{{ paletteOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeOverlays }}" style="position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:70;display:flex;justify-content:center">
+      <div onClick="{{ stopProp }}" style="width:520px;max-height:380px;margin-top:12vh;background:var(--surface);border:1px solid var(--border2);border-radius:12px;box-shadow:var(--shadow);align-self:flex-start;overflow:hidden">
+        <input id="tt-palette-input" value="{{ palQ }}" onChange="{{ onField }}" data-f="palQ" onKeyDown="{{ palKey }}" placeholder="Команда, задача или описание таймера…" style="width:100%;background:transparent;border:none;border-bottom:1px solid var(--border);padding:13px 16px;font-size:14px;color:var(--text);outline:none"></input>
+        <div style="max-height:300px;overflow-y:auto;padding:6px">
+          <sc-for list="{{ palItems }}" as="it" hint-placeholder-count="5">
+            <div onClick="{{ palPick }}" data-i="{{ it.i }}" style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:7px;cursor:pointer;font-size:13px;background:{{ it.bg }}" style-hover="background:var(--surface2)">
+              <span style="width:18px;text-align:center;color:var(--muted)">{{ it.icon }}</span>
+              <span style="flex:1">{{ it.label }}</span>
+              <span style="font-size:11px;color:var(--muted)">{{ it.hint }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+  <sc-if value="{{ helpOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeOverlays }}" style="position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:70;display:flex;align-items:center;justify-content:center">
+      <div onClick="{{ stopProp }}" style="width:360px;background:var(--surface);border:1px solid var(--border2);border-radius:12px;box-shadow:var(--shadow);padding:18px 20px">
+        <div style="font-weight:700;font-size:14.5px;margin-bottom:12px">Горячие клавиши</div>
+        <sc-for list="{{ hotkeys }}" as="hk" hint-placeholder-count="8">
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;font-size:13px">
+            <span style="color:var(--muted)">{{ hk.d }}</span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:11.5px;background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:2px 8px">{{ hk.k }}</span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </sc-if>
+  <sc-if value="{{ focusMode }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;inset:0;background:var(--bg);z-index:65;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px">
+      <div style="display:flex;align-items:center;gap:8px;color:var(--muted);font-size:14px"><span style="width:8px;height:8px;border-radius:2px;background:{{ timerProjColor }}"></span>{{ timerProjName }}</div>
+      <div style="font-size:24px;font-weight:600;max-width:600px;text-align:center">{{ timerTitle }}</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:96px;font-weight:600;font-variant-numeric:tabular-nums">{{ elapsed }}</div>
+      <div style="display:flex;gap:12px;margin-top:14px">
+        <button onClick="{{ stopTimerFocus }}" style="background:var(--red);color:#fff;border:none;border-radius:9px;padding:11px 28px;font-size:14px;font-weight:600;cursor:pointer">■ Стоп</button>
+        <button onClick="{{ exitFocus }}" style="background:transparent;color:var(--muted);border:1px solid var(--border2);border-radius:9px;padding:11px 20px;font-size:14px;cursor:pointer">Выйти (Esc)</button>
+      </div>
+    </div>
+  </sc-if>
+  <sc-if value="{{ hasToast }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;bottom:20px;right:20px;background:var(--surface);border:1px solid var(--border2);border-radius:10px;box-shadow:var(--shadow);padding:11px 16px;font-size:13px;z-index:60;max-width:320px">{{ toast }}</div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;accent&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#6366f1&quot;,&quot;options&quot;:[&quot;#6366f1&quot;,&quot;#0d9488&quot;,&quot;#e11d48&quot;,&quot;#d97706&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Вид&quot;},&quot;showTeam&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Разделы&quot;},&quot;goalHours&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:6,&quot;min&quot;:1,&quot;max&quot;:12,&quot;unit&quot;:&quot;ч&quot;,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Поведение&quot;}}">
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    let eid = 1;
+    const D = (off, h, m) => { const d = new Date(); d.setHours(h, m, 0, 0); return d.getTime() - off * 864e5; };
+    const E = (off, h1, m1, h2, m2, taskId, desc) => ({ id: 'e' + (eid++), taskId, desc: desc || '', start: D(off, h1, m1), end: D(off, h2, m2), manual: false });
+    this.state = {
+      screen: 'tracker', theme: 'dark', now: Date.now(),
+      projects: [
+        { id: 'p1', name: 'Разработка', color: '#60a5fa' },
+        { id: 'p2', name: 'Дизайн', color: '#f472b6' },
+        { id: 'p3', name: 'Маркетинг', color: '#fbbf24' },
+      ],
+      tasks: [
+        { id: 't1', title: 'API интеграции платежей', proj: 'p1', status: 'in_progress', est: 480, pomos: 6 },
+        { id: 't2', title: 'Редизайн онбординга', proj: 'p2', status: 'in_progress', est: 360, pomos: 4 },
+        { id: 't3', title: 'Фикс бага с таймзонами', proj: 'p1', status: 'todo', est: 120, pomos: 0 },
+        { id: 't4', title: 'Лендинг Q3-кампании', proj: 'p3', status: 'todo', est: 240, pomos: 2 },
+        { id: 't5', title: 'Ревью пул-реквестов', proj: 'p1', status: 'done', est: 60, pomos: 1 },
+        { id: 't6', title: 'Аудит доступности', proj: 'p2', status: 'done', est: 180, pomos: 3 },
+      ],
+      entries: [
+        E(0, 9, 15, 10, 5, 't1'), E(0, 10, 20, 11, 0, 't5'), E(0, 11, 10, 11, 45, 't2'),
+        E(1, 9, 0, 11, 30, 't1'), E(1, 12, 30, 14, 0, 't2'), E(1, 14, 15, 15, 0, 't3'), E(1, 16, 0, 17, 30, 't1'),
+        E(2, 9, 30, 11, 0, 't2'), E(2, 11, 15, 12, 0, 't5'), E(2, 13, 0, 16, 0, 't1'), E(2, 16, 15, 17, 0, 't4'),
+        E(3, 10, 0, 12, 0, 't4'), E(3, 13, 0, 14, 30, 't2'), E(3, 15, 0, 16, 45, 't1'),
+        E(4, 9, 0, 10, 0, 't5'), E(4, 10, 15, 13, 0, 't1'), E(4, 14, 0, 16, 30, 't2'), E(4, 16, 45, 17, 15, 't3'),
+        E(5, 11, 0, 12, 15, 't6'),
+        E(6, 10, 0, 10, 45, 't6'),
+      ],
+      activeTimer: null, timerDesc: '', timerTaskId: '',
+      manualOpen: false, manualDesc: '', manualTaskId: '', manualFrom: '14:00', manualTo: '15:00',
+      newTaskOpen: false, newTitle: '', newEstimate: '', newProj: 'p1',
+      editingId: null, editTitle: '',
+      taskFilter: 'all', openMenu: null, selDay: 0,
+      pomo: { phase: 'work', left: 25 * 60, running: false, done: 3, cycle: 3, taskId: '' },
+      ps: { work: 25, short: 5, long: 15, every: 4, auto: true, track: true },
+      goalHours: null, idleThresholdMin: 10, idle: false, toast: null,
+      paletteOpen: false, palQ: '', palSel: 0, helpOpen: false, focusMode: false,
+      editEntryId: null, eeFrom: '', eeTo: '',
+      notifStart: true, notifGoal: true,
+      npName: '', npColor: '#a78bfa', editProjId: null, editProjName: '',
+      inviteOpen: false, inviteEmail: '', inviteRole: 'Участник', invites: [],
+    };
+    this.lastAct = Date.now();
+    this.pomoDeadline = 0;
+    this.tid = 7;
+    this.pid = 4;
+  }
+  componentDidMount() {
+    this._onKey = e => {
+      this.lastAct = Date.now();
+      const s = this.state;
+      const typing = /INPUT|TEXTAREA|SELECT/.test(e.target.tagName);
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); this.openPalette(); return; }
+      if (e.key === 'Escape') { this.setState({ paletteOpen: false, helpOpen: false, focusMode: false, openMenu: null, editEntryId: null, editProjId: null }); return; }
+      if (typing || s.paletteOpen) return;
+      const k = e.key.toLowerCase();
+      if (e.key === '?') { this.setState({ helpOpen: !s.helpOpen }); return; }
+      if (k === 't' || k === 'е') this.setState({ theme: s.theme === 'dark' ? 'light' : 'dark' });
+      else if (k === 'f' || k === 'а') { if (s.activeTimer) this.setState({ focusMode: true }); }
+      else if (k === 'n' || k === 'т') this.setState({ screen: 'tasks', newTaskOpen: true });
+      else if (k === 's' || k === 'ы') { if (s.activeTimer) { this.stopActive(); this.toastMsg('Таймер остановлен (S)'); } else this.resumeLast(); }
+      else { const scr = ['tracker', 'tasks', 'projects', 'reports', 'pomo', 'team', 'settings'][Number(e.key) - 1]; if (scr) this.setState({ screen: scr, openMenu: null }); }
+    };
+    window.addEventListener('keydown', this._onKey);
+    this._iv = setInterval(() => {
+      const st = { now: Date.now() };
+      const s = this.state;
+      if (s.pomo.running) {
+        const left = Math.round((this.pomoDeadline - Date.now()) / 1000);
+        if (left <= 0) { this.pomoComplete(); return; }
+        st.pomo = { ...s.pomo, left };
+      }
+      if (s.activeTimer && !s.idle && Date.now() - this.lastAct > s.idleThresholdMin * 60000) st.idle = true;
+      this.setState(st);
+    }, 1000);
+  }
+  componentWillUnmount() { clearInterval(this._iv); window.removeEventListener('keydown', this._onKey); }
+  goal() { return (this.state.goalHours ?? this.props.goalHours ?? 6); }
+  fmtHM(sec) { const h = Math.floor(sec / 3600), m = Math.round((sec % 3600) / 60); return h ? h + 'ч ' + (m < 10 ? '0' : '') + m + 'м' : m + 'м'; }
+  fmtDur(sec) { sec = Math.max(0, Math.floor(sec)); const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s = sec % 60, p = n => String(n).padStart(2, '0'); return h ? h + ':' + p(m) + ':' + p(s) : p(m) + ':' + p(s); }
+  fmtT(ms) { const d = new Date(ms), p = n => String(n).padStart(2, '0'); return p(d.getHours()) + ':' + p(d.getMinutes()); }
+  isDay(ms, off) { const d = new Date(); d.setHours(0, 0, 0, 0); const a = d.getTime() - off * 864e5; return ms >= a && ms < a + 864e5; }
+  dayEntries(off) { return this.state.entries.filter(e => this.isDay(e.start, off)).sort((a, b) => a.start - b.start); }
+  dayTotal(off) { return this.dayEntries(off).reduce((s, e) => s + (e.end - e.start) / 1000, 0) + (off === 0 && this.state.activeTimer ? (Date.now() - this.state.activeTimer.startedAt) / 1000 : 0); }
+  taskById(id) { return this.state.tasks.find(t => t.id === id); }
+  projOf(task) { return this.state.projects.find(p => p.id === (task && task.proj)) || { name: 'Без проекта', color: 'var(--muted)' }; }
+  entryView(e) {
+    const t = e.taskId ? this.taskById(e.taskId) : null;
+    const pr = t ? this.projOf(t) : { color: 'var(--border2)' };
+    return { id: e.id, title: (t && t.title) || e.desc || 'Без названия', projColor: pr.color, range: this.fmtT(e.start) + '–' + this.fmtT(e.end), dur: this.fmtDur((e.end - e.start) / 1000), manual: !!e.manual, live: false, editing: this.state.editEntryId === e.id, notEditing: this.state.editEntryId !== e.id };
+  }
+  toastMsg(m) { clearTimeout(this._tt); this.setState({ toast: m }); this._tt = setTimeout(() => this.setState({ toast: null }), 2600); }
+  stopActive(endTs) {
+    const a = this.state.activeTimer; if (!a) return;
+    const end = endTs || Date.now();
+    const entry = { id: 'e' + Math.random().toString(36).slice(2, 8), taskId: a.taskId || null, desc: a.desc, start: a.startedAt, end: Math.max(end, a.startedAt + 60000), manual: false };
+    this.setState({ activeTimer: null, idle: false, entries: [...this.state.entries, entry] });
+    this.lastAct = Date.now();
+  }
+  pomoSec(ph) { const s = this.state.ps; return (ph === 'work' ? s.work : ph === 'short' ? s.short : s.long) * 60; }
+  pomoComplete() {
+    const s = this.state, ph = s.pomo.phase;
+    let done = s.pomo.done, cycle = s.pomo.cycle, next;
+    if (ph === 'work') {
+      done++; cycle++; next = cycle % s.ps.every === 0 ? 'long' : 'short';
+      const st = {};
+      if (s.pomo.taskId) st.tasks = s.tasks.map(t => t.id === s.pomo.taskId ? { ...t, pomos: t.pomos + 1 } : t);
+      if (s.ps.track) st.entries = [...s.entries, { id: 'e' + Math.random().toString(36).slice(2, 8), taskId: s.pomo.taskId || null, desc: s.pomo.taskId ? '' : 'Фокус-сессия Pomodoro', start: Date.now() - s.ps.work * 60000, end: Date.now(), manual: false }];
+      if (st.tasks || st.entries) this.setState(st);
+    }
+    else next = 'work';
+    const left = this.pomoSec(next), run = s.ps.auto;
+    if (run) this.pomoDeadline = Date.now() + left * 1000;
+    this.setState({ pomo: { ...s.pomo, phase: next, left, running: run, done, cycle } });
+    this.toastMsg(ph === 'work' ? 'Фокус-сессия завершена — перерыв!' : 'Перерыв окончен — за работу.');
+  }
+  openPalette() { this.setState({ paletteOpen: true, palQ: '', palSel: 0 }); setTimeout(() => { const el = document.getElementById('tt-palette-input'); if (el) el.focus(); }, 60); }
+  recentList() {
+    const seen = {}, out = [];
+    [...this.state.entries].sort((a, b) => b.end - a.end).forEach(e => {
+      const key = e.taskId || 'd:' + e.desc; if (seen[key] || (!e.taskId && !e.desc)) return; seen[key] = 1;
+      const t = e.taskId ? this.taskById(e.taskId) : null;
+      if (e.taskId && (!t || t.status === 'done')) return;
+      if (out.length < 3) out.push({ taskId: e.taskId, desc: e.desc, title: (t && t.title) || e.desc, color: t ? this.projOf(t).color : 'var(--border2)' });
+    });
+    return out;
+  }
+  resumeLast() { const r = this.recentList()[0]; if (!r) return; this.lastAct = Date.now(); this.setState({ activeTimer: { taskId: r.taskId || null, desc: r.desc || '', startedAt: Date.now() }, screen: 'tracker' }); this.toastMsg('Продолжаем: ' + r.title); }
+  palBuild() {
+    const s = this.state, q = s.palQ.trim().toLowerCase(), items = [];
+    if (q) items.push({ icon: '▶', label: 'Запустить таймер: «' + s.palQ.trim() + '»', hint: 'Enter', act: () => { this.lastAct = Date.now(); this.setState({ activeTimer: { taskId: null, desc: s.palQ.trim(), startedAt: Date.now() }, screen: 'tracker', paletteOpen: false }); } });
+    s.tasks.filter(t => t.status !== 'done' && (!q || t.title.toLowerCase().includes(q))).slice(0, 4).forEach(t => items.push({ icon: '●', label: 'Таймер: ' + t.title, hint: this.projOf(t).name, act: () => { this.lastAct = Date.now(); this.setState({ activeTimer: { taskId: t.id, desc: '', startedAt: Date.now() }, screen: 'tracker', paletteOpen: false }); } }));
+    if (q) items.push({ icon: '＋', label: 'Создать задачу: «' + s.palQ.trim() + '»', hint: '', act: () => { this.setState({ tasks: [{ id: 't' + (this.tid++), title: s.palQ.trim(), proj: 'p1', status: 'todo', est: 0, pomos: 0 }, ...s.tasks], screen: 'tasks', paletteOpen: false }); this.toastMsg('Задача создана'); } });
+    [['Трекер', 'tracker'], ['Задачи', 'tasks'], ['Проекты', 'projects'], ['Отчёты', 'reports'], ['Pomodoro', 'pomo'], ['Команда', 'team'], ['Настройки', 'settings']].forEach((p, i) => { if (!q || p[0].toLowerCase().includes(q)) items.push({ icon: '→', label: 'Перейти: ' + p[0], hint: String(i + 1), act: () => this.setState({ screen: p[1], paletteOpen: false }) }); });
+    if (!q || 'тема'.includes(q)) items.push({ icon: '◐', label: 'Переключить тему', hint: 'T', act: () => this.setState({ theme: s.theme === 'dark' ? 'light' : 'dark', paletteOpen: false }) });
+    return items;
+  }
+  renderVals() {
+    const s = this.state, now = s.now;
+    const goal = this.goal();
+    const active = s.activeTimer;
+    const seg = on => on ? { bg: 'var(--asoft)', c: 'var(--accent)' } : { bg: 'transparent', c: 'var(--muted)' };
+    const navS = id => s.screen === id ? { bg: 'var(--asoft)', c: 'var(--accent)' } : { bg: 'transparent', c: 'var(--muted)' };
+    const titles = { tracker: 'Трекер', tasks: 'Задачи', projects: 'Проекты', reports: 'Отчёты', pomo: 'Pomodoro', team: 'Команда', settings: 'Настройки' };
+    const openTasks = s.tasks.filter(t => t.status !== 'done').map(t => ({ id: t.id, title: t.title, projColor: this.projOf(t).color }));
+    const todayEntries = this.dayEntries(0).map(e => this.entryView(e)).reverse();
+    if (active) {
+      const t = active.taskId ? this.taskById(active.taskId) : null;
+      const pr = t ? this.projOf(t) : { color: 'var(--border2)' };
+      todayEntries.unshift({ id: '__live', title: (t && t.title) || active.desc || 'Без названия', projColor: pr.color, range: this.fmtT(active.startedAt) + '–…', dur: this.fmtDur((now - active.startedAt) / 1000), manual: false, live: true, notEditing: true });
+    }
+    const todaySec = this.dayTotal(0);
+    let weekSec = 0; for (let i = 0; i < 7; i++) weekSec += this.dayTotal(i);
+    const dayNames = ['вс', 'пн', 'вт', 'ср', 'чт', 'пт', 'сб'];
+    const maxDay = Math.max(...[0, 1, 2, 3, 4, 5, 6].map(i => this.dayTotal(i)), 1);
+    let goalDays = 0;
+    const weekBars = [6, 5, 4, 3, 2, 1, 0].map(off => {
+      const tot = this.dayTotal(off);
+      if (tot >= goal * 3600) goalDays++;
+      const d = new Date(Date.now() - off * 864e5);
+      const sel = s.selDay === off;
+      return { off, label: off === 0 ? 'сегодня' : dayNames[d.getDay()], hLabel: tot ? (tot / 3600).toFixed(1).replace('.', ',') + 'ч' : '', hpx: Math.round(tot / maxDay * 108), bg: sel ? 'var(--accent)' : 'var(--asoft)', labColor: sel ? 'var(--accent)' : 'var(--muted)', labW: sel ? '700' : '400' };
+    });
+    const weekEntries = s.entries.filter(e => this.isDay(e.start, 0) || [1, 2, 3, 4, 5, 6].some(i => this.isDay(e.start, i)));
+    const byProj = {}, byTask = {};
+    weekEntries.forEach(e => { const sec = (e.end - e.start) / 1000; const t = e.taskId && this.taskById(e.taskId); const p = t ? t.proj : '_'; byProj[p] = (byProj[p] || 0) + sec; if (t) byTask[t.id] = (byTask[t.id] || 0) + sec; });
+    const maxProj = Math.max(...Object.values(byProj), 1);
+    const projBreak = s.projects.map(p => ({ name: p.name, color: p.color, label: this.fmtHM(byProj[p.id] || 0), pct: Math.round((byProj[p.id] || 0) / maxProj * 100) })).sort((a, b) => b.pct - a.pct);
+    const taskBreak = Object.entries(byTask).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([id, sec]) => { const t = this.taskById(id); return { title: t.title, projColor: this.projOf(t).color, label: this.fmtHM(sec) }; });
+    const selE = this.dayEntries(s.selDay);
+    const selD = new Date(Date.now() - s.selDay * 864e5);
+    const flt = s.taskFilter;
+    const taskRows = s.tasks.filter(t => flt === 'all' || (flt === 'done' ? t.status === 'done' : t.status !== 'done')).map(t => {
+      const tracked = s.entries.filter(e => e.taskId === t.id).reduce((a, e) => a + (e.end - e.start) / 1000, 0);
+      const estSec = t.est * 60, pct = estSec ? Math.min(100, Math.round(tracked / estSec * 100)) : 0;
+      const stMap = { todo: ['К работе', 'var(--surface2)', 'var(--muted)'], in_progress: ['В работе', 'var(--ysoft)', 'var(--amber)'], done: ['Готово', 'var(--gsoft)', 'var(--green)'] };
+      const [stLabel, stBg, stColor] = stMap[t.status];
+      return { id: t.id, title: t.title, stLabel, stBg, stColor, statusMenu: 'st-' + t.id, statusOpen: s.openMenu === 'st-' + t.id, projName: this.projOf(t).name, projColor: this.projOf(t).color, trackedTxt: this.fmtHM(tracked), estTxt: t.est ? 'из ' + this.fmtHM(estSec) : 'без оценки', pct, barColor: pct >= 100 ? 'var(--amber)' : 'var(--accent)', pomos: t.pomos, hasPomos: t.pomos > 0, editing: s.editingId === t.id, notEditing: s.editingId !== t.id, strike: t.status === 'done' ? 'line-through' : 'none' };
+    });
+    const activeTask = active && active.taskId ? this.taskById(active.taskId) : null;
+    const mf = s.manualFrom.split(':'), mt = s.manualTo.split(':');
+    const mSec = (Number(mt[0]) * 60 + Number(mt[1]) - Number(mf[0]) * 60 - Number(mf[1])) * 60;
+    const ph = s.pomo.phase, phLabels = { work: 'Фокус', short: 'Перерыв', long: 'Длинный перерыв' };
+    const pomoTotal = this.pomoSec(ph);
+    const timerTask = s.timerTaskId ? this.taskById(s.timerTaskId) : null;
+    const members = [
+      { n: 'Аня Соколова', ini: 'АС', role: 'Админ', st: 'Трекает «Редизайн онбординга»', on: true, today: '4ч 12м', week: '21ч 30м', me: false },
+      { n: 'Марк Ефимов', ini: 'МЕ', role: 'Участник', st: 'Трекает «API интеграции платежей»', on: true, today: '3ч 05м', week: '18ч 45м', me: false },
+      { n: 'Юнус М.', ini: 'ЮМ', role: 'Владелец', st: active ? 'Трекает сейчас' : 'Не трекает', on: !!active, today: this.fmtHM(todaySec), week: this.fmtHM(weekSec), me: true },
+      { n: 'Света Ким', ini: 'СК', role: 'Участник', st: 'Не в сети', on: false, today: '—', week: '12ч 20м', me: false },
+    ].map(m => ({ ...m, dot: m.on ? 'var(--green)' : 'var(--border2)', stC: m.on ? 'var(--text)' : 'var(--muted)' }));
+    const newProjObj = s.projects.find(p => p.id === s.newProj);
+    const stopField = e => e.stopPropagation();
+    const recentArr = this.recentList().map((r, i) => ({ ...r, i }));
+    this._recent = recentArr;
+    const palItems = s.paletteOpen ? this.palBuild() : [];
+    this._palItems = palItems;
+    const palSel = Math.min(s.palSel, Math.max(0, palItems.length - 1));
+    const tlStart = 8 * 60, tlSpan = 12 * 60;
+    const tlSegs = [];
+    this.dayEntries(0).forEach(e => { const t = e.taskId && this.taskById(e.taskId); const d = new Date(e.start); const m1 = d.getHours() * 60 + d.getMinutes(); const m2 = m1 + (e.end - e.start) / 60000; const L = Math.max(0, (m1 - tlStart) / tlSpan * 100), R = Math.min(100, (m2 - tlStart) / tlSpan * 100); if (R > L) tlSegs.push({ left: L.toFixed(2), width: Math.max(0.6, R - L).toFixed(2), color: t ? this.projOf(t).color : 'var(--border2)', tip: ((t && t.title) || e.desc || '') + ' · ' + this.fmtT(e.start) + '–' + this.fmtT(e.end), anim: 'none' }); });
+    if (active) { const d = new Date(active.startedAt); const m1 = d.getHours() * 60 + d.getMinutes(); const m2 = m1 + (now - active.startedAt) / 60000; const L = Math.max(0, (m1 - tlStart) / tlSpan * 100), R = Math.min(100, (m2 - tlStart) / tlSpan * 100); const at = active.taskId ? this.taskById(active.taskId) : null; tlSegs.push({ left: L.toFixed(2), width: Math.max(0.6, R - L).toFixed(2), color: 'var(--accent)', tip: (at && at.title) || active.desc || '', anim: 'ttpulse 1.6s infinite' }); }
+    let streak = 0; { let off = this.dayTotal(0) >= goal * 3600 ? 0 : 1; while (off < 60 && this.dayTotal(off) >= goal * 3600) { streak++; off++; } }
+    const heat = []; for (let off = 13; off >= 0; off--) { const tot = this.dayTotal(off); const r = Math.min(1, tot / (goal * 3600)); heat.push({ bg: tot === 0 ? 'var(--surface2)' : r >= 1 ? 'var(--accent)' : 'color-mix(in srgb, var(--accent) ' + Math.max(18, Math.round(r * 70)) + '%, var(--surface2))', tip: new Date(Date.now() - off * 864e5).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' }) + ' · ' + this.fmtHM(tot) }); }
+    return {
+      theme: s.theme, accentStyle: this.props.accent ? '--accent:' + this.props.accent + ';--asoft:color-mix(in srgb,' + this.props.accent + ' 14%,transparent);' : '',
+      showTeam: this.props.showTeam ?? true,
+      screenTitle: titles[s.screen],
+      isTracker: s.screen === 'tracker', isTasks: s.screen === 'tasks', isProjects: s.screen === 'projects', isReports: s.screen === 'reports', isPomo: s.screen === 'pomo', isTeam: s.screen === 'team', isSettings: s.screen === 'settings',
+      nav: { tracker: navS('tracker'), tasks: navS('tasks'), projects: navS('projects'), reports: navS('reports'), pomo: navS('pomo'), team: navS('team'), settings: navS('settings') },
+      themeLabel: s.theme === 'dark' ? 'Светлая тема' : 'Тёмная тема',
+      goScreen: e => this.setState({ screen: e.currentTarget.dataset.s, openMenu: null }),
+      toggleTheme: () => this.setState({ theme: s.theme === 'dark' ? 'light' : 'dark' }),
+      rootClick: () => { this.lastAct = Date.now(); if (s.openMenu) this.setState({ openMenu: null }); },
+      toggleMenu: e => { e.stopPropagation(); const m = e.currentTarget.dataset.m; this.setState({ openMenu: s.openMenu === m ? null : m }); },
+      menu: { timerTask: s.openMenu === 'timerTask', manualTask: s.openMenu === 'manualTask', newProj: s.openMenu === 'newProj', pomoTask: s.openMenu === 'pomoTask' },
+      onField: e => this.setState({ [e.currentTarget.dataset.f]: e.currentTarget.value }),
+      hasTimer: !!active, noTimer: !active,
+      timerTitle: active ? ((activeTask && activeTask.title) || active.desc || 'Без названия') : '',
+      timerProjName: activeTask ? this.projOf(activeTask).name : 'Без проекта',
+      timerProjColor: activeTask ? this.projOf(activeTask).color : 'var(--border2)',
+      elapsed: active ? this.fmtDur((now - active.startedAt) / 1000) : '',
+      chipVisible: !!active && s.screen !== 'tracker',
+      timerDesc: s.timerDesc,
+      timerTaskLabel: timerTask ? timerTask.title : 'Задача (необязательно)',
+      timerTaskColor: timerTask ? 'var(--text)' : 'var(--muted)',
+      pickTimerTask: e => { e.stopPropagation(); this.setState({ timerTaskId: e.currentTarget.dataset.id, openMenu: null }); },
+      openTasks,
+      startTimer: () => { if (!s.timerDesc.trim() && !s.timerTaskId) { this.toastMsg('Опишите работу или выберите задачу'); return; } this.lastAct = Date.now(); this.setState({ activeTimer: { taskId: s.timerTaskId || null, desc: s.timerDesc.trim(), startedAt: Date.now() }, timerDesc: '', timerTaskId: '' }); },
+      timerKey: e => { if (e.key === 'Enter' && (s.timerDesc.trim() || s.timerTaskId)) { this.lastAct = Date.now(); this.setState({ activeTimer: { taskId: s.timerTaskId || null, desc: s.timerDesc.trim(), startedAt: Date.now() }, timerDesc: '', timerTaskId: '' }); } },
+      stopTimer: () => { this.stopActive(); this.toastMsg('Таймер остановлен, запись сохранена'); },
+      startTaskTimer: e => { const id = e.currentTarget.dataset.id; if (active) this.stopActive(); this.lastAct = Date.now(); setTimeout(() => this.setState({ activeTimer: { taskId: id, desc: '', startedAt: Date.now() }, screen: 'tracker' }), 0); },
+      idle: s.idle, idleMin: Math.max(1, Math.round((now - this.lastAct) / 60000)),
+      idleKeep: () => { this.lastAct = Date.now(); this.setState({ idle: false }); },
+      idleStop: () => { this.stopActive(this.lastAct); this.toastMsg('Таймер остановлен, простой вычтен'); },
+      todayTotal: this.fmtHM(todaySec),
+      goalPct: Math.min(100, Math.round(todaySec / (goal * 3600) * 100)),
+      goalLabel: 'цель ' + goal + 'ч · ' + Math.min(100, Math.round(todaySec / (goal * 3600) * 100)) + '%',
+      weekTotal: this.fmtHM(weekSec), weekAvg: this.fmtHM(weekSec / 7),
+      todayEntries, noEntries: todayEntries.length === 0,
+      delEntry: e => { const id = e.currentTarget.dataset.id; if (id === '__live') return; this.setState({ entries: s.entries.filter(x => x.id !== id) }); },
+      manualOpen: s.manualOpen, toggleManual: () => this.setState({ manualOpen: !s.manualOpen }),
+      manualDesc: s.manualDesc, manualFrom: s.manualFrom, manualTo: s.manualTo,
+      manualTaskLabel: s.manualTaskId ? this.taskById(s.manualTaskId).title : 'Без задачи',
+      pickManualTask: e => { e.stopPropagation(); this.setState({ manualTaskId: e.currentTarget.dataset.id, openMenu: null }); },
+      manualPreview: mSec > 0 ? '= ' + this.fmtHM(mSec) : '—',
+      addManual: () => {
+        if (mSec <= 0) { this.toastMsg('«До» должно быть позже «С»'); return; }
+        const d = new Date(); d.setHours(Number(mf[0]), Number(mf[1]), 0, 0);
+        this.setState({ entries: [...s.entries, { id: 'e' + Math.random().toString(36).slice(2, 8), taskId: s.manualTaskId || null, desc: s.manualDesc.trim(), start: d.getTime(), end: d.getTime() + mSec * 1000, manual: true }], manualDesc: '', manualOpen: false });
+        this.toastMsg('Запись добавлена');
+      },
+      exportXlsx: () => this.toastMsg('Отчёт .xlsx сформирован и скачан (демо)'),
+      filt: { all: seg(flt === 'all'), active: seg(flt === 'active'), done: seg(flt === 'done') },
+      setFilter: e => this.setState({ taskFilter: e.currentTarget.dataset.fl }),
+      taskRows, noTasks: taskRows.length === 0,
+      newTaskOpen: s.newTaskOpen, toggleNewTask: () => this.setState({ newTaskOpen: !s.newTaskOpen }),
+      newTitle: s.newTitle, newEstimate: s.newEstimate,
+      newProjLabel: newProjObj.name, newProjColor: newProjObj.color, projList: s.projects.filter(p => !p.archived),
+      pickNewProj: e => { e.stopPropagation(); this.setState({ newProj: e.currentTarget.dataset.id, openMenu: null }); },
+      addTask: () => { if (!s.newTitle.trim()) return; this.setState({ tasks: [{ id: 't' + (this.tid++), title: s.newTitle.trim(), proj: s.newProj, status: 'todo', est: Number(s.newEstimate) || 0, pomos: 0 }, ...s.tasks], newTitle: '', newEstimate: '', newTaskOpen: false }); this.toastMsg('Задача создана'); },
+      newTaskKey: e => { if (e.key === 'Enter' && s.newTitle.trim()) { this.setState({ tasks: [{ id: 't' + (this.tid++), title: s.newTitle.trim(), proj: s.newProj, status: 'todo', est: Number(s.newEstimate) || 0, pomos: 0 }, ...s.tasks], newTitle: '', newEstimate: '', newTaskOpen: false }); } },
+      setStatus: e => { e.stopPropagation(); const { id, st } = e.currentTarget.dataset; this.setState({ tasks: s.tasks.map(t => t.id === id ? { ...t, status: st } : t), openMenu: null }); },
+      startEdit: e => { const t = this.taskById(e.currentTarget.dataset.id); this.setState({ editingId: t.id, editTitle: t.title }); },
+      editTitle: s.editTitle,
+      editKey: e => { if (e.key === 'Enter') { const id = e.currentTarget.dataset.id; this.setState({ tasks: s.tasks.map(t => t.id === id ? { ...t, title: s.editTitle.trim() || t.title } : t), editingId: null }); } if (e.key === 'Escape') this.setState({ editingId: null }); },
+      delTask: e => { const id = e.currentTarget.dataset.id; this.setState({ tasks: s.tasks.filter(t => t.id !== id), editingId: null }); this.toastMsg('Задача удалена, записи времени сохранены'); },
+      weekBars, goalDays,
+      pickDay: e => this.setState({ selDay: Number(e.currentTarget.dataset.off) }),
+      selDayLabel: s.selDay === 0 ? 'Сегодня' : selD.toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long' }),
+      selDayTotal: this.fmtHM(this.dayTotal(s.selDay)),
+      selDayEntries: selE.map(e => this.entryView(e)), selDayEmpty: selE.length === 0,
+      projBreak, taskBreak,
+      pomoClock: this.fmtDur(s.pomo.left).length > 5 ? this.fmtDur(s.pomo.left) : this.fmtDur(s.pomo.left),
+      pomoPhaseLabel: phLabels[ph],
+      pomoCycle: 'цикл ' + (s.pomo.cycle % s.ps.every === 0 && s.pomo.cycle > 0 ? s.ps.every : s.pomo.cycle % s.ps.every) + ' из ' + s.ps.every,
+      pomoPct: Math.round((1 - s.pomo.left / pomoTotal) * 100),
+      pomoRingColor: ph === 'work' ? 'var(--accent)' : ph === 'short' ? 'var(--green)' : 'var(--amber)',
+      pomoRunning: s.pomo.running, pomoIdle: !s.pomo.running,
+      miniPomo: s.pomo.running && s.screen !== 'pomo',
+      ptab: { work: seg(ph === 'work'), short: seg(ph === 'short'), long: seg(ph === 'long') },
+      pomoPhaseSet: e => { const p = e.currentTarget.dataset.ph; this.setState({ pomo: { ...s.pomo, phase: p, left: this.pomoSec(p), running: false } }); },
+      pomoStart: () => { this.pomoDeadline = Date.now() + s.pomo.left * 1000; this.setState({ pomo: { ...s.pomo, running: true } }); },
+      pomoPause: () => this.setState({ pomo: { ...s.pomo, running: false } }),
+      pomoReset: () => this.setState({ pomo: { ...s.pomo, left: this.pomoSec(ph), running: false } }),
+      pomoTaskLabel: s.pomo.taskId ? this.taskById(s.pomo.taskId).title : 'Без задачи',
+      pickPomoTask: e => { e.stopPropagation(); this.setState({ pomo: { ...s.pomo, taskId: e.currentTarget.dataset.id }, openMenu: null }); },
+      pomoDone: s.pomo.done,
+      pomoFocus: this.fmtHM(s.pomo.done * s.ps.work * 60),
+      pomoBreak: this.fmtHM(Math.max(0, s.pomo.done - 1) * s.ps.short * 60),
+      psWork: s.ps.work, psShort: s.ps.short, psLong: s.ps.long, psEvery: s.ps.every, psAuto: s.ps.auto,
+      onPomoNum: e => { const k = e.currentTarget.dataset.k, v = Math.max(1, Number(e.currentTarget.value) || 1); const ps = { ...s.ps, [k]: v }; const pomo = s.pomo.running ? s.pomo : { ...s.pomo, left: (ph === 'work' ? ps.work : ph === 'short' ? ps.short : ps.long) * 60 }; this.setState({ ps, pomo }); },
+      togglePomoAuto: () => this.setState({ ps: { ...s.ps, auto: !s.ps.auto } }),
+      members,
+      goalHours: goal, onGoal: e => this.setState({ goalHours: Number(e.currentTarget.value) }),
+      idleThresholdMin: s.idleThresholdMin, onIdleThr: e => this.setState({ idleThresholdMin: Number(e.currentTarget.value) }),
+      thseg: { dark: seg(s.theme === 'dark'), light: seg(s.theme === 'light') },
+      setDark: () => this.setState({ theme: 'dark' }), setLight: () => this.setState({ theme: 'light' }),
+      toast: s.toast, hasToast: !!s.toast,
+      openPaletteBtn: () => this.openPalette(),
+      paletteOpen: s.paletteOpen, palQ: s.palQ, stopProp: e => e.stopPropagation(),
+      closeOverlays: () => this.setState({ paletteOpen: false, helpOpen: false }),
+      palItems: palItems.map((it, i) => ({ ...it, i, bg: i === palSel ? 'var(--asoft)' : 'transparent' })),
+      palPick: e => { const it = this._palItems[Number(e.currentTarget.dataset.i)]; if (it) it.act(); },
+      palKey: e => {
+        if (e.key === 'ArrowDown') { e.preventDefault(); this.setState({ palSel: Math.min(palItems.length - 1, palSel + 1) }); }
+        else if (e.key === 'ArrowUp') { e.preventDefault(); this.setState({ palSel: Math.max(0, palSel - 1) }); }
+        else if (e.key === 'Enter') { const it = this._palItems[palSel]; if (it) it.act(); }
+        else if (this.state.palSel !== 0 && e.key.length === 1) this.setState({ palSel: 0 });
+      },
+      helpOpen: s.helpOpen,
+      hotkeys: [{ k: '⌘K', d: 'Палитра команд' }, { k: 'S', d: 'Стоп / продолжить последнюю' }, { k: 'N', d: 'Новая задача' }, { k: 'F', d: 'Фокус-режим' }, { k: 'T', d: 'Сменить тему' }, { k: '1–7', d: 'Экраны' }, { k: '?', d: 'Эта справка' }, { k: 'Esc', d: 'Закрыть окна' }],
+      focusMode: s.focusMode && !!active,
+      enterFocus: () => this.setState({ focusMode: true }),
+      exitFocus: () => this.setState({ focusMode: false }),
+      stopTimerFocus: () => { this.stopActive(); this.setState({ focusMode: false }); this.toastMsg('Таймер остановлен, запись сохранена'); },
+      hasRecent: recentArr.length > 0 && !active,
+      recent: recentArr,
+      resumeRecent: e => { const r = this._recent[Number(e.currentTarget.dataset.i)]; if (!r) return; this.lastAct = Date.now(); this.setState({ activeTimer: { taskId: r.taskId || null, desc: r.desc || '', startedAt: Date.now() } }); },
+      tlSegs, streak, heat,
+      eeFrom: s.eeFrom, eeTo: s.eeTo,
+      editEntry: e => { const en = s.entries.find(x => x.id === e.currentTarget.dataset.id); if (!en) return; this.setState({ editEntryId: en.id, eeFrom: this.fmtT(en.start), eeTo: this.fmtT(en.end) }); },
+      saveEntryEdit: e => {
+        const id = e.currentTarget.dataset.id; const en = s.entries.find(x => x.id === id); if (!en) return;
+        const f = s.eeFrom.split(':').map(Number), t2 = s.eeTo.split(':').map(Number);
+        const d1 = new Date(en.start); d1.setHours(f[0], f[1], 0, 0); const d2 = new Date(en.start); d2.setHours(t2[0], t2[1], 0, 0);
+        if (d2 <= d1) { this.toastMsg('«До» должно быть позже «С»'); return; }
+        this.setState({ entries: s.entries.map(x => x.id === id ? { ...x, start: d1.getTime(), end: d2.getTime() } : x), editEntryId: null });
+        this.toastMsg('Время записи обновлено');
+      },
+      psTrack: s.ps.track, togglePomoTrack: () => this.setState({ ps: { ...s.ps, track: !s.ps.track } }),
+      notifStart: s.notifStart, toggleNotifStart: () => this.setState({ notifStart: !s.notifStart }),
+      notifGoal: s.notifGoal, toggleNotifGoal: () => this.setState({ notifGoal: !s.notifGoal }),
+      npName: s.npName,
+      npColors: ['#60a5fa', '#f472b6', '#fbbf24', '#34d399', '#a78bfa', '#f87171'].map(c => ({ c, ring: c === s.npColor ? '2px solid var(--accent)' : '2px solid transparent' })),
+      pickNpColor: e => this.setState({ npColor: e.currentTarget.dataset.c }),
+      addProj: () => { if (!s.npName.trim()) return; this.setState({ projects: [...s.projects, { id: 'p' + (this.pid++), name: s.npName.trim(), color: s.npColor }], npName: '' }); this.toastMsg('Проект создан'); },
+      npKey: e => { if (e.key === 'Enter' && s.npName.trim()) { this.setState({ projects: [...s.projects, { id: 'p' + (this.pid++), name: s.npName.trim(), color: s.npColor }], npName: '' }); this.toastMsg('Проект создан'); } },
+      projRows: s.projects.filter(p => !p.archived).map(p => ({ id: p.id, name: p.name, color: p.color, tasksN: s.tasks.filter(t => t.proj === p.id).length + ' задач(и)', weekTxt: this.fmtHM(byProj[p.id] || 0), pct: Math.round((byProj[p.id] || 0) / maxProj * 100), editing: s.editProjId === p.id, notEditing: s.editProjId !== p.id })),
+      editProjName: s.editProjName,
+      startProjEdit: e => { const p = s.projects.find(x => x.id === e.currentTarget.dataset.id); this.setState({ editProjId: p.id, editProjName: p.name }); },
+      projEditKey: e => { if (e.key === 'Enter') { const id = e.currentTarget.dataset.id; this.setState({ projects: s.projects.map(p => p.id === id ? { ...p, name: s.editProjName.trim() || p.name } : p), editProjId: null }); } if (e.key === 'Escape') this.setState({ editProjId: null }); },
+      archiveProj: e => { const id = e.currentTarget.dataset.id; this.setState({ projects: s.projects.map(p => p.id === id ? { ...p, archived: true } : p) }); this.toastMsg('Проект в архиве, записи времени сохранены'); },
+      inviteOpen: s.inviteOpen, toggleInvite: () => this.setState({ inviteOpen: !s.inviteOpen }),
+      inviteEmail: s.inviteEmail,
+      invSeg: { u: seg(s.inviteRole === 'Участник'), a: seg(s.inviteRole === 'Админ') },
+      setInvRole: e => this.setState({ inviteRole: e.currentTarget.dataset.r }),
+      sendInvite: () => { const em = s.inviteEmail.trim(); if (!em.includes('@')) { this.toastMsg('Укажите корректный email'); return; } this.setState({ invites: [...s.invites, { email: em, role: s.inviteRole }], inviteEmail: '' }); this.toastMsg('Приглашение отправлено (демо)'); },
+      copyInviteLink: () => this.toastMsg('Ссылка-приглашение скопирована (демо)'),
+      inviteRows: s.invites.map((iv, i) => ({ ...iv, i })),
+      revokeInvite: e => this.setState({ invites: s.invites.filter((x, i) => i !== Number(e.currentTarget.dataset.i)) }),
+    };
+  }
+}
+</script>
+</body>
+</html>

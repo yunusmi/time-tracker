@@ -7,6 +7,7 @@ import { InjectModel } from '@nestjs/sequelize';
 import { Op } from 'sequelize';
 import { TimeEntry } from './entities/time-entry.entity';
 import { Task } from '../tasks/entities/task.entity';
+import { Project } from '../projects/entities/project.entity';
 import { StartTimerDto } from './dto/start-timer.dto';
 import { CreateManualEntryDto } from './dto/create-manual-entry.dto';
 import { UpdateTimeEntryDto } from './dto/update-time-entry.dto';
@@ -33,7 +34,7 @@ export class TimeEntriesService {
   getActive(userId: string): Promise<TimeEntry | null> {
     return this.timeEntryModel.findOne({
       where: { user_id: userId, ended_at: { [Op.is]: null } },
-      include: [Task],
+      include: [{ model: Task, include: [Project] }],
     });
   }
 
@@ -57,22 +58,131 @@ export class TimeEntriesService {
     });
   }
 
-  async stop(userId: string): Promise<TimeEntry> {
+  /**
+   * Останавливает текущий таймер. Опциональный endedAt позволяет «вычесть
+   * простой»: запись закрывается моментом последней активности.
+   */
+  async stop(userId: string, endedAt?: string): Promise<TimeEntry> {
     const running = await this.getActive(userId);
     if (!running) {
       throw new BadRequestException('No timer is currently running');
     }
-    return this.finishEntry(running);
+    let end: Date | undefined;
+    if (endedAt) {
+      end = new Date(endedAt);
+      if (Number.isNaN(end.getTime())) {
+        throw new BadRequestException('Invalid ended_at');
+      }
+      if (end.getTime() <= running.started_at.getTime()) {
+        throw new BadRequestException('ended_at must be after started_at');
+      }
+      if (end.getTime() > Date.now()) {
+        throw new BadRequestException('ended_at must not be in the future');
+      }
+    }
+    return this.finishEntry(running, end);
   }
 
-  private finishEntry(entry: TimeEntry): Promise<TimeEntry> {
-    const endedAt = new Date();
-    entry.ended_at = endedAt;
+  private finishEntry(entry: TimeEntry, endedAt?: Date): Promise<TimeEntry> {
+    const end = endedAt ?? new Date();
+    entry.ended_at = end;
     entry.duration_seconds = Math.max(
       0,
-      Math.round((endedAt.getTime() - entry.started_at.getTime()) / 1000),
+      Math.round((end.getTime() - entry.started_at.getTime()) / 1000),
     );
     return entry.save();
+  }
+
+  /**
+   * Сводка по дням за период [from..to] (UTC-дни): на каждый день —
+   * total_seconds и разбивка по проектам и задачам. Один запрос для
+   * недельного графика, streak и heatmap.
+   */
+  async summary(
+    userId: string,
+    from: string,
+    to: string,
+  ): Promise<
+    Array<{
+      date: string;
+      total_seconds: number;
+      by_project: Array<{ project_id: string | null; seconds: number }>;
+      by_task: Array<{
+        task_id: string;
+        task_title: string;
+        project_id: string | null;
+        seconds: number;
+      }>;
+    }>
+  > {
+    const { start } = TimeEntriesService.dayRange(from);
+    const { end } = TimeEntriesService.dayRange(to);
+    if (start.getTime() > end.getTime()) {
+      throw new BadRequestException('from must not be after to');
+    }
+
+    const entries = await this.timeEntryModel.findAll({
+      where: {
+        user_id: userId,
+        started_at: { [Op.between]: [start, end] },
+      },
+      include: [{ model: Task, include: [Project] }],
+      order: [['started_at', 'ASC']],
+    });
+
+    type DayAgg = {
+      total: number;
+      byProject: Map<string | null, number>;
+      byTask: Map<
+        string,
+        { title: string; project_id: string | null; seconds: number }
+      >;
+    };
+    const days = new Map<string, DayAgg>();
+
+    for (const e of entries) {
+      const date = e.started_at.toISOString().slice(0, 10);
+      let agg = days.get(date);
+      if (!agg) {
+        agg = { total: 0, byProject: new Map(), byTask: new Map() };
+        days.set(date, agg);
+      }
+      const seconds = e.duration_seconds;
+      agg.total += seconds;
+
+      const projectId = e.task?.project_id ?? null;
+      agg.byProject.set(projectId, (agg.byProject.get(projectId) ?? 0) + seconds);
+
+      if (e.task) {
+        const t = agg.byTask.get(e.task.id);
+        if (t) {
+          t.seconds += seconds;
+        } else {
+          agg.byTask.set(e.task.id, {
+            title: e.task.title,
+            project_id: projectId,
+            seconds,
+          });
+        }
+      }
+    }
+
+    return [...days.entries()]
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([date, agg]) => ({
+        date,
+        total_seconds: agg.total,
+        by_project: [...agg.byProject.entries()].map(([project_id, seconds]) => ({
+          project_id,
+          seconds,
+        })),
+        by_task: [...agg.byTask.entries()].map(([task_id, t]) => ({
+          task_id,
+          task_title: t.title,
+          project_id: t.project_id,
+          seconds: t.seconds,
+        })),
+      }));
   }
 
   async createManual(
@@ -115,7 +225,7 @@ export class TimeEntriesService {
     }
     return this.timeEntryModel.findAll({
       where,
-      include: [Task],
+      include: [{ model: Task, include: [Project] }],
       order: [['started_at', 'DESC']],
     });
   }
@@ -125,7 +235,7 @@ export class TimeEntriesService {
     const { start, end } = TimeEntriesService.dayRange(date);
     return this.timeEntryModel.findAll({
       where: { user_id: userId, started_at: { [Op.between]: [start, end] } },
-      include: [Task],
+      include: [{ model: Task, include: [Project] }],
       order: [['started_at', 'ASC']],
     });
   }
@@ -133,7 +243,7 @@ export class TimeEntriesService {
   async findOne(userId: string, id: string): Promise<TimeEntry> {
     const entry = await this.timeEntryModel.findOne({
       where: { id, user_id: userId },
-      include: [Task],
+      include: [{ model: Task, include: [Project] }],
     });
     if (!entry) {
       throw new NotFoundException('Time entry not found');

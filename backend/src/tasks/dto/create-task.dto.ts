@@ -4,6 +4,7 @@ import {
   IsInt,
   IsOptional,
   IsString,
+  IsUUID,
   MaxLength,
   Min,
   MinLength,
@@ -40,4 +41,14 @@ export class CreateTaskDto {
   @IsInt()
   @Min(0)
   estimated_minutes?: number;
+
+  @ApiProperty({
+    required: false,
+    nullable: true,
+    format: 'uuid',
+    description: 'Проект задачи',
+  })
+  @IsOptional()
+  @IsUUID()
+  project_id?: string | null;
 }

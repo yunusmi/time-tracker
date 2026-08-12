@@ -34,4 +34,9 @@ export class UpdatePomodoroSettingsDto {
   @IsOptional()
   @IsBoolean()
   auto_start?: boolean;
+
+  @ApiProperty({ required: false, example: true })
+  @IsOptional()
+  @IsBoolean()
+  track_to_timer?: boolean;
 }

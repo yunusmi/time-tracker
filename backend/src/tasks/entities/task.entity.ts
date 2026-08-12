@@ -15,6 +15,7 @@ import {
 import { User } from '../../users/entities/user.entity';
 import { TimeEntry } from '../../time-entries/entities/time-entry.entity';
 import { PomodoroSession } from '../../pomodoro/entities/pomodoro-session.entity';
+import { Project } from '../../projects/entities/project.entity';
 
 export enum TaskStatus {
   TODO = 'todo',
@@ -76,6 +77,14 @@ export class Task extends Model {
 
   @BelongsTo(() => User)
   user: User;
+
+  @ApiProperty({ required: false, nullable: true, format: 'uuid' })
+  @ForeignKey(() => Project)
+  @Column({ type: DataType.UUID, allowNull: true, field: 'project_id' })
+  project_id: string | null;
+
+  @BelongsTo(() => Project)
+  project: Project | null;
 
   @HasMany(() => TimeEntry)
   time_entries: TimeEntry[];
