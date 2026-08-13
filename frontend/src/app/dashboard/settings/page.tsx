@@ -44,6 +44,25 @@ export default function SettingsPage() {
     toast(next[k] ? 'Интеграция подключена (демо)' : 'Интеграция отключена');
   }
 
+  // Шаблон стендап-отчёта: локальный ввод, сохранение по blur.
+  const [suGreet, setSuGreet] = useState('');
+  const [suMisc, setSuMisc] = useState('');
+  const [suSign, setSuSign] = useState('');
+  useEffect(() => {
+    setSuGreet(settings.standup_greeting);
+    setSuMisc(settings.standup_misc_line);
+    setSuSign(settings.standup_signature);
+  }, [settings.standup_greeting, settings.standup_misc_line, settings.standup_signature]);
+
+  function saveStandupField(
+    key: 'standup_greeting' | 'standup_misc_line' | 'standup_signature',
+    value: string,
+  ) {
+    if (settings[key] === value) return;
+    updateSettings({ [key]: value });
+    toast('Шаблон стендапа сохранён');
+  }
+
   function toggleNotify(
     key: 'notify_day_start' | 'notify_goal_reached',
     on: boolean,
@@ -197,6 +216,77 @@ export default function SettingsPage() {
             style={{ accentColor: 'var(--accent)' }}
           />
           Сообщить, когда цель дня достигнута
+        </label>
+      </div>
+
+      <div className="card card-pad">
+        <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 4 }}>Стендап-отчёт</div>
+        <div style={{ fontSize: '12.5px', color: 'var(--muted)', marginBottom: 12 }}>
+          Свой шаблон текста; авто-отправка использует подключённые интеграции.
+        </div>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: 10,
+            marginBottom: 10,
+          }}
+        >
+          <div>
+            <div style={{ fontSize: '11.5px', color: 'var(--muted)', marginBottom: 4 }}>
+              Приветствие
+            </div>
+            <input
+              className="input input-sm"
+              style={{ width: '100%' }}
+              value={suGreet}
+              onChange={(e) => setSuGreet(e.target.value)}
+              onBlur={() => saveStandupField('standup_greeting', suGreet)}
+            />
+          </div>
+          <div>
+            <div style={{ fontSize: '11.5px', color: 'var(--muted)', marginBottom: 4 }}>
+              Строка активностей
+            </div>
+            <input
+              className="input input-sm"
+              style={{ width: '100%' }}
+              value={suMisc}
+              onChange={(e) => setSuMisc(e.target.value)}
+              onBlur={() => saveStandupField('standup_misc_line', suMisc)}
+            />
+          </div>
+        </div>
+        <div style={{ marginBottom: 12 }}>
+          <div style={{ fontSize: '11.5px', color: 'var(--muted)', marginBottom: 4 }}>
+            Подпись (необязательно)
+          </div>
+          <input
+            className="input input-sm"
+            style={{ width: '100%' }}
+            placeholder="например: Хорошего дня!"
+            value={suSign}
+            onChange={(e) => setSuSign(e.target.value)}
+            onBlur={() => saveStandupField('standup_signature', suSign)}
+          />
+        </div>
+        <label
+          style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer' }}
+        >
+          <input
+            type="checkbox"
+            checked={settings.standup_auto_send}
+            onChange={(e) => {
+              updateSettings({ standup_auto_send: e.target.checked });
+              toast(
+                e.target.checked
+                  ? 'Авто-отправка стендапа включена (будни, 10:00)'
+                  : 'Авто-отправка стендапа выключена',
+              );
+            }}
+            style={{ accentColor: 'var(--accent)' }}
+          />
+          Отправлять автоматически в 10:00 (Slack/Telegram)
         </label>
       </div>
 

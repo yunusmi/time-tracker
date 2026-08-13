@@ -157,6 +157,22 @@ input::placeholder {
   color: var(--text);
 }
 
+/* Прозрачная кнопка генератора отчётов (→ Slack / → Telegram / Закрыть). */
+.btn-ghost {
+  background: transparent;
+  border: 1px solid var(--border2);
+  border-radius: 7px;
+  padding: 8px 14px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text);
+  cursor: pointer;
+}
+.btn-ghost:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
 .btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;

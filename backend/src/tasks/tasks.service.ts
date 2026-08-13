@@ -118,6 +118,7 @@ export class TasksService {
       assignee_id: assigneeId,
       priority: dto.priority ?? 'med',
       due_date: dto.due_date ?? null,
+      external_url: dto.external_url ?? null,
       user_id: userId,
       completed_at: dto.status === TaskStatus.DONE ? new Date() : null,
     });
@@ -232,6 +233,9 @@ export class TasksService {
     }
     if (dto.priority !== undefined) task.priority = dto.priority;
     if (dto.due_date !== undefined) task.due_date = dto.due_date ?? null;
+    if (dto.external_url !== undefined) {
+      task.external_url = dto.external_url ?? null;
+    }
     if (dto.project_id !== undefined) {
       await this.assertProjectOwnership(ctx, userId, dto.project_id);
       task.project_id = dto.project_id ?? null;

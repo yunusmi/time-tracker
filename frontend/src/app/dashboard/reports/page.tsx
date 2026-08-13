@@ -6,6 +6,7 @@ import { formatHM, formatTime, isoDaysAgo, todayIso } from '@/lib/format';
 import { formatMoney } from '@/lib/money';
 import { entryProjectColor, NO_PROJECT_COLOR } from '@/lib/project';
 import { entryTitle } from '@/components/Header';
+import { openGenerator } from '@/components/ReportGenerator';
 import type {
   DaySummary,
   InvoicePreview,
@@ -879,6 +880,15 @@ export default function ReportsPage() {
                   }}
                 >
                   Сформировать счёт
+                </button>
+                <button
+                  className="btn-outline"
+                  style={{ width: '100%', marginTop: 8, padding: 8, fontSize: 13, fontWeight: 600 }}
+                  onClick={() =>
+                    openGenerator({ mode: 'client', project_id: expProjectId || null })
+                  }
+                >
+                  Отчёт для клиента (текст)
                 </button>
                 <button
                   className="btn-outline"

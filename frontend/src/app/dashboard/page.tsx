@@ -20,6 +20,7 @@ import { useReminders } from '@/hooks/useReminders';
 import { dueInfo, PRIO_META } from '@/lib/task';
 import { enqueueEntry } from '@/lib/offline';
 import { entryTitle } from '@/components/Header';
+import { openGenerator } from '@/components/ReportGenerator';
 import { TaskDropdown } from '@/components/TaskDropdown';
 import {
   entryProjectColor,
@@ -916,6 +917,21 @@ export default function TrackerPage() {
             </span>
           )}
           <div style={{ flex: 1 }} />
+          <button
+            onClick={() => openGenerator({ mode: 'standup' })}
+            style={{
+              background: 'var(--asoft)',
+              border: '1px solid var(--accent)',
+              borderRadius: 7,
+              padding: '5px 12px',
+              fontSize: '12.5px',
+              fontWeight: 600,
+              color: 'var(--accent)',
+              cursor: 'pointer',
+            }}
+          >
+            ⚡ Стендап-отчёт
+          </button>
           <button className="btn-outline" onClick={() => setManualOpen((o) => !o)}>
             + Вручную
           </button>

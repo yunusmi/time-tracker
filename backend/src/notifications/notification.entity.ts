@@ -11,7 +11,7 @@ import {
 } from 'sequelize-typescript';
 import { User } from '../users/entities/user.entity';
 
-export type NotificationDot = 'accent' | 'green' | 'red';
+export type NotificationDot = 'accent' | 'green' | 'red' | 'amber';
 
 @Table({ tableName: 'notifications', timestamps: true, updatedAt: false })
 export class AppNotification extends Model {

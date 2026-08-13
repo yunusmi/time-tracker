@@ -5,7 +5,9 @@ import {
   IsInt,
   IsISO8601,
   IsOptional,
+  IsString,
   Max,
+  MaxLength,
   Min,
   ValidateIf,
 } from 'class-validator';
@@ -55,4 +57,34 @@ export class UpdateUserSettingsDto {
   @IsOptional()
   @IsBoolean()
   auto_stop_evening?: boolean;
+
+  @ApiProperty({ required: false, example: 'Всем привет!' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  standup_greeting?: string;
+
+  @ApiProperty({ required: false, example: 'код-ревью и созвоны' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  standup_misc_line?: string;
+
+  @ApiProperty({ required: false, example: 'С уважением, Юнус' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  standup_signature?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsBoolean()
+  standup_auto_send?: boolean;
+
+  @ApiProperty({ required: false, minimum: 1, maximum: 400, example: 80 })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(400)
+  monthly_hours_limit?: number;
 }

@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ScheduleModule } from '@nestjs/schedule';
 import { SequelizeModule } from '@nestjs/sequelize';
 import configuration from './config/configuration';
 import { MailModule } from './mail/mail.module';
@@ -38,6 +39,7 @@ import { TaskTemplate } from './tasks/entities/task-template.entity';
       isGlobal: true,
       load: [configuration],
     }),
+    ScheduleModule.forRoot(),
     SequelizeModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({

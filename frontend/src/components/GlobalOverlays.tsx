@@ -11,6 +11,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { projectName } from '@/lib/project';
 import type { TaskWithStats, TimeEntry } from '@/lib/types';
+import { openGenerator } from '@/components/ReportGenerator';
 import { useTheme } from '@/context/ThemeContext';
 import { useTimer } from '@/context/TimerContext';
 import { useToast } from '@/context/ToastContext';
@@ -243,6 +244,17 @@ export function GlobalOverlays() {
         });
       }
     });
+    if (!q || 'отчёт стендап статус'.includes(q)) {
+      out.push({
+        icon: '⚡',
+        label: 'Стендап-отчёт для руководства',
+        hint: '',
+        act: () => {
+          close();
+          openGenerator({ mode: 'standup' });
+        },
+      });
+    }
     if (!q || 'тема'.includes(q)) {
       out.push({
         icon: '◐',

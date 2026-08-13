@@ -12,6 +12,7 @@ import { User } from '../users/entities/user.entity';
 import { WorkspacesService } from '../workspaces/workspaces.service';
 import { AuditService } from '../audit/audit.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { StandupService } from '../reports/standup.service';
 
 export interface TimesheetView {
   id: string | null;
@@ -20,6 +21,7 @@ export interface TimesheetView {
   week_start: string;
   status: TimesheetStatus;
   comment: string | null;
+  summary: string | null;
   total_seconds: number;
 }
 
@@ -35,6 +37,7 @@ export class TimesheetsService {
     private readonly workspacesService: WorkspacesService,
     private readonly auditService: AuditService,
     private readonly notificationsService: NotificationsService,
+    private readonly standupService: StandupService,
   ) {}
 
   /** Понедельник недели (UTC) для даты; по умолчанию — текущей. */
@@ -115,6 +118,7 @@ export class TimesheetsService {
         week_start: weekStart,
         status: sheet?.status ?? TimesheetStatus.DRAFT,
         comment: sheet?.comment ?? null,
+        summary: sheet?.summary ?? null,
         total_seconds: totals.get(uid) ?? 0,
       };
     };
@@ -149,6 +153,15 @@ export class TimesheetsService {
     }
     sheet.status = TimesheetStatus.PENDING;
     sheet.comment = null;
+    // Авто-сводка недели прикладывается при отправке (ТЗ, п. 46).
+    try {
+      sheet.summary = await this.standupService.buildWeekSummary(
+        userId,
+        weekStart,
+      );
+    } catch {
+      sheet.summary = null;
+    }
     await sheet.save();
     return sheet;
   }

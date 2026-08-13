@@ -37,6 +37,7 @@ export default function TimesheetsPage() {
 
   const [data, setData] = useState<TimesheetsResponse | null>(null);
   const [summary, setSummary] = useState<DaySummary[]>([]);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
   const [error, setError] = useState('');
 
   const load = useCallback(async () => {
@@ -65,7 +66,7 @@ export default function TimesheetsPage() {
   async function submit() {
     try {
       await api.submitTimesheet();
-      toast('Таймшит отправлен на проверку');
+      toast('Таймшит отправлен на проверку — сводка приложена');
       await load();
     } catch (err) {
       toast(err instanceof ApiError ? err.message : 'Не удалось отправить');
@@ -147,6 +148,25 @@ export default function TimesheetsPage() {
             </button>
           )}
         </div>
+        {mine.summary && mine.status !== 'draft' && (
+          <div
+            style={{
+              marginTop: 12,
+              background: 'var(--surface2)',
+              border: '1px solid var(--border)',
+              borderRadius: 8,
+              padding: '10px 12px',
+              fontSize: 12,
+              lineHeight: 1.7,
+              whiteSpace: 'pre-wrap',
+            }}
+          >
+            <div style={{ fontWeight: 600, marginBottom: 4, color: 'var(--muted)' }}>
+              Авто-сводка недели (приложена к таймшиту)
+            </div>
+            {mine.summary}
+          </div>
+        )}
         {mine.status === 'returned' && mine.comment && (
           <div
             style={{
@@ -189,7 +209,8 @@ export default function TimesheetsPage() {
           {data.team.map((ts) => {
             const meta = STATUS_META[ts.status];
             return (
-              <div className="list-row" key={ts.user_id} style={{ padding: '11px 16px' }}>
+              <div key={ts.user_id}>
+              <div className="list-row" style={{ padding: '11px 16px' }}>
                 <div
                   style={{
                     width: 28,
@@ -225,6 +246,18 @@ export default function TimesheetsPage() {
                 >
                   {meta.label}
                 </span>
+                {ts.summary && (
+                  <button
+                    className="btn-outline"
+                    style={{ padding: '6px 12px' }}
+                    title="Показать авто-сводку недели"
+                    onClick={() =>
+                      setExpandedId(expandedId === ts.user_id ? null : ts.user_id)
+                    }
+                  >
+                    Сводка
+                  </button>
+                )}
                 {ts.status === 'pending' && (
                   <>
                     <button
@@ -243,6 +276,23 @@ export default function TimesheetsPage() {
                     </button>
                   </>
                 )}
+              </div>
+              {expandedId === ts.user_id && ts.summary && (
+                <div
+                  style={{
+                    margin: '0 16px 11px',
+                    background: 'var(--surface2)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 8,
+                    padding: '10px 12px',
+                    fontSize: 12,
+                    lineHeight: 1.7,
+                    whiteSpace: 'pre-wrap',
+                  }}
+                >
+                  {ts.summary}
+                </div>
+              )}
               </div>
             );
           })}

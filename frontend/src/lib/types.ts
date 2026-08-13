@@ -50,6 +50,7 @@ export interface Task {
   assignee?: { id: string; name: string; email: string } | null;
   priority: TaskPriority;
   due_date: string | null;
+  external_url: string | null;
 }
 
 export interface TaskWithStats extends Task {
@@ -132,7 +133,7 @@ export interface WorkspaceInvite {
 export interface AppNotification {
   id: string;
   text: string;
-  dot: 'accent' | 'green' | 'red';
+  dot: 'accent' | 'green' | 'red' | 'amber';
   read: boolean;
   created_at: string;
 }
@@ -190,6 +191,7 @@ export interface TimesheetView {
   week_start: string;
   status: TimesheetStatus;
   comment: string | null;
+  summary: string | null;
   total_seconds: number;
 }
 
@@ -208,8 +210,24 @@ export interface UserSettingsResponse {
   theme: 'dark' | 'light';
   dnd_until: string | null;
   auto_stop_evening: boolean;
+  standup_greeting: string;
+  standup_misc_line: string;
+  standup_signature: string;
+  standup_auto_send: boolean;
+  monthly_hours_limit: number;
   updated_at: string;
   user_id: string;
+}
+
+export type GeneratorMode = 'standup' | 'client' | 'team' | 'notes';
+
+export interface GenerateReportBody {
+  mode: GeneratorMode;
+  direction?: 'ys' | 'st';
+  include_misc?: boolean;
+  ai_summary?: boolean;
+  hours_limit?: number;
+  project_id?: string | null;
 }
 
 export interface PomodoroStats {

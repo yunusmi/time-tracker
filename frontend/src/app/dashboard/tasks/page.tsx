@@ -17,6 +17,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useTimer } from '@/context/TimerContext';
 import { useToast } from '@/context/ToastContext';
 import { useWorkspace } from '@/context/WorkspaceContext';
+import { openGenerator } from '@/components/ReportGenerator';
 
 type Filter = 'all' | 'active' | 'done';
 type Who = 'all' | 'mine';
@@ -71,6 +72,7 @@ export default function TasksPage() {
   const [newAssigneeId, setNewAssigneeId] = useState('');
   const [newPrio, setNewPrio] = useState<TaskPriority>('med');
   const [newDue, setNewDue] = useState('');
+  const [newLink, setNewLink] = useState('');
 
   const [openMenu, setOpenMenu] = useState<null | 'proj' | 'assignee' | 'prio'>(null);
   const menuRef = useOutsideClose(openMenu !== null, () => setOpenMenu(null));
@@ -136,10 +138,12 @@ export default function TasksPage() {
         assignee_id: newAssigneeId || undefined,
         priority: newPrio,
         due_date: newDue || undefined,
+        external_url: newLink.trim() || undefined,
       });
       setNewTitle('');
       setNewEstimate('');
       setNewDue('');
+      setNewLink('');
       setNewOpen(false);
       toast('Задача создана');
       await load();
@@ -187,6 +191,7 @@ export default function TasksPage() {
                 status: removed.status,
                 project_id: removed.project_id ?? undefined,
                 assignee_id: removed.assignee_id ?? undefined,
+                external_url: removed.external_url ?? undefined,
                 priority: removed.priority,
                 due_date: removed.due_date ?? undefined,
               });
@@ -288,6 +293,15 @@ export default function TasksPage() {
           </div>
         )}
         <div style={{ flex: 1 }} />
+        {isAdmin && (
+          <button
+            className="btn-ghost"
+            style={{ padding: '8px 14px', fontSize: 13 }}
+            onClick={() => openGenerator({ mode: 'notes' })}
+          >
+            Release notes
+          </button>
+        )}
         <button
           className="btn btn-accent"
           style={{ padding: '8px 16px', fontSize: 13 }}
@@ -495,6 +509,17 @@ export default function TasksPage() {
             }}
             style={{ width: 90 }}
           />
+          <input
+            className="input input-sm"
+            placeholder="Ссылка (Notion/Jira)"
+            title="Ссылка на задачу во внешней системе — попадёт в стендап-отчёт"
+            value={newLink}
+            onChange={(e) => setNewLink(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') void addTask();
+            }}
+            style={{ flex: 1, minWidth: 140 }}
+          />
           <button
             className="btn btn-accent"
             style={{ borderRadius: 7, padding: '8px 16px', fontSize: 13 }}
@@ -692,6 +717,18 @@ export default function TasksPage() {
                     <span style={{ color: due.color, whiteSpace: 'nowrap' }}>
                       · {due.label}
                     </span>
+                  )}
+                  {t.external_url && (
+                    <a
+                      href={t.external_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      title={t.external_url}
+                      onClick={(e) => e.stopPropagation()}
+                      style={{ color: 'var(--accent)', whiteSpace: 'nowrap', textDecoration: 'none' }}
+                    >
+                      · 🔗 ссылка
+                    </a>
                   )}
                   {t.pomodoro_count > 0 && (
                     <span style={{ whiteSpace: 'nowrap' }}>· {t.pomodoro_count} pomodoro</span>

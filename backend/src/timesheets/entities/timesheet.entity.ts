@@ -69,6 +69,14 @@ export class Timesheet extends Model {
   @Column({ type: DataType.TEXT, allowNull: true })
   comment: string | null;
 
+  @ApiProperty({
+    required: false,
+    nullable: true,
+    description: 'Авто-сводка недели, прикладывается при отправке',
+  })
+  @Column({ type: DataType.TEXT, allowNull: true })
+  summary: string | null;
+
   @ApiProperty({ required: false, nullable: true, format: 'uuid' })
   @ForeignKey(() => User)
   @Column({ type: DataType.UUID, allowNull: true, field: 'approved_by' })

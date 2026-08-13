@@ -16,10 +16,95 @@ import {
   ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
-import { IsBoolean, IsOptional, IsUUID } from 'class-validator';
+import {
+  IsBoolean,
+  IsIn,
+  IsInt,
+  IsOptional,
+  IsString,
+  IsUUID,
+  Max,
+  MaxLength,
+  Min,
+  MinLength,
+} from 'class-validator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { ReportsService } from './reports.service';
+import {
+  GeneratorMode,
+  StandupDirection,
+  StandupService,
+} from './standup.service';
+
+class GenerateReportDto {
+  @ApiProperty({ enum: ['standup', 'client', 'team', 'notes'] })
+  @IsIn(['standup', 'client', 'team', 'notes'])
+  mode: GeneratorMode;
+
+  @ApiProperty({ required: false, enum: ['ys', 'st'], description: 'Стендап: вчера→сегодня / сегодня→завтра' })
+  @IsOptional()
+  @IsIn(['ys', 'st'])
+  direction?: StandupDirection;
+
+  @ApiProperty({ required: false, description: '+ активности (код-ревью и созвоны)' })
+  @IsOptional()
+  @IsBoolean()
+  include_misc?: boolean;
+
+  @ApiProperty({ required: false, description: 'AI-сводка по задачам' })
+  @IsOptional()
+  @IsBoolean()
+  ai_summary?: boolean;
+
+  @ApiProperty({ required: false, minimum: 1, maximum: 400, example: 80 })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(400)
+  hours_limit?: number;
+
+  @ApiProperty({ required: false, nullable: true, format: 'uuid' })
+  @IsOptional()
+  @IsUUID()
+  project_id?: string | null;
+}
+
+class StandupDto {
+  @ApiProperty({ required: false, enum: ['ys', 'st'] })
+  @IsOptional()
+  @IsIn(['ys', 'st'])
+  direction?: StandupDirection;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsBoolean()
+  include_misc?: boolean;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsBoolean()
+  ai_summary?: boolean;
+
+  @ApiProperty({ required: false, minimum: 1, maximum: 400 })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(400)
+  hours_limit?: number;
+}
+
+class SendReportDto {
+  @ApiProperty({ enum: ['slack', 'tg'] })
+  @IsIn(['slack', 'tg'])
+  channel: 'slack' | 'tg';
+
+  @ApiProperty({ description: 'Текст для отправки' })
+  @IsString()
+  @MinLength(1)
+  @MaxLength(20000)
+  text: string;
+}
 
 class CreateShareDto {
   @ApiProperty({ required: false, nullable: true, format: 'uuid' })
@@ -48,7 +133,40 @@ class UpdateShareDto {
 @ApiTags('reports')
 @Controller()
 export class ReportsController {
-  constructor(private readonly reportsService: ReportsService) {}
+  constructor(
+    private readonly reportsService: ReportsService,
+    private readonly standupService: StandupService,
+  ) {}
+
+  @Post('reports/generate')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary:
+      'Генератор текстов: стендап / отчёт для клиента / сводка команды / release notes',
+  })
+  generate(@CurrentUser('id') userId: string, @Body() dto: GenerateReportDto) {
+    return this.standupService.generate(userId, dto);
+  }
+
+  @Post('reports/standup')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Стендап-отчёт (генерация на сервере)' })
+  standup(@CurrentUser('id') userId: string, @Body() dto: StandupDto) {
+    return this.standupService.generate(userId, { ...dto, mode: 'standup' });
+  }
+
+  @Post('reports/send')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary:
+      'Отправить текст в Slack/Telegram через вебхук (sent=false — демо-режим)',
+  })
+  sendReport(@Body() dto: SendReportDto) {
+    return this.standupService.send(dto.channel, dto.text);
+  }
 
   @Get('invoices/preview')
   @UseGuards(JwtAuthGuard)

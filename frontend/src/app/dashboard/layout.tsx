@@ -13,6 +13,7 @@ import { Sidebar } from '@/components/Sidebar';
 import { Header } from '@/components/Header';
 import { FocusMode } from '@/components/FocusMode';
 import { GlobalOverlays } from '@/components/GlobalOverlays';
+import { ReportGenerator } from '@/components/ReportGenerator';
 import { OnboardingTour } from '@/components/OnboardingTour';
 import { OfflineBanner } from '@/components/OfflineBanner';
 import { RoleGate } from '@/components/RoleGate';
@@ -63,6 +64,7 @@ export default function DashboardLayout({
                 </div>
                 <FocusMode />
                 <GlobalOverlays />
+                <ReportGenerator />
                 <OnboardingTour />
                 <OfflineBanner />
                 <RoleGate />

@@ -17,6 +17,11 @@ export interface AppConfig {
     pass: string;
     from: string;
   };
+  integrations: {
+    slackWebhookUrl: string;
+    telegramBotToken: string;
+    telegramChatId: string;
+  };
 }
 
 export default (): AppConfig => ({
@@ -38,5 +43,11 @@ export default (): AppConfig => ({
     user: process.env.SMTP_USER ?? '',
     pass: process.env.SMTP_PASS ?? '',
     from: process.env.MAIL_FROM ?? 'Хронос <no-reply@chronos.local>',
+  },
+  integrations: {
+    // Вебхуки доставки стендапа; без них отправка работает в демо-режиме.
+    slackWebhookUrl: process.env.SLACK_WEBHOOK_URL ?? '',
+    telegramBotToken: process.env.TELEGRAM_BOT_TOKEN ?? '',
+    telegramChatId: process.env.TELEGRAM_CHAT_ID ?? '',
   },
 });

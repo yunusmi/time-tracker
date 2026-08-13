@@ -4,6 +4,7 @@ import type {
   AuthResponse,
   AuthUser,
   DaySummary,
+  GenerateReportBody,
   InvoicePreview,
   PomodoroPhase,
   PomodoroSettings,
@@ -171,6 +172,7 @@ export const api = {
     assignee_id?: string | null;
     priority?: TaskPriority;
     due_date?: string | null;
+    external_url?: string | null;
   }) =>
     request<Task>('/tasks', { method: 'POST', body: JSON.stringify(body) }),
   updateTask: (
@@ -184,6 +186,7 @@ export const api = {
       assignee_id: string | null;
       priority: TaskPriority;
       due_date: string | null;
+      external_url: string | null;
     }>,
   ) =>
     request<Task>(`/tasks/${id}`, {
@@ -281,6 +284,18 @@ export const api = {
     }),
   getPomodoroStats: (date?: string) =>
     request<PomodoroStats>(`/pomodoro/stats${date ? `?date=${date}` : ''}`),
+
+  // --- Генератор текстов (стендап и другие отчёты) ---
+  generateReport: (body: GenerateReportBody) =>
+    request<{ text: string }>('/reports/generate', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+  sendReport: (channel: 'slack' | 'tg', text: string) =>
+    request<{ sent: boolean }>('/reports/send', {
+      method: 'POST',
+      body: JSON.stringify({ channel, text }),
+    }),
 
   // --- Invoices / public reports ---
   invoicePreview: (from: string, to: string, projectId?: string) =>

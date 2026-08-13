@@ -83,6 +83,56 @@ export class UserSettings extends Model {
   })
   auto_stop_evening: boolean;
 
+  @ApiProperty({
+    description: 'Приветствие в стендап-отчёте',
+    example: 'Всем привет!',
+  })
+  @Default('Всем привет!')
+  @Column({ type: DataType.STRING, allowNull: false, field: 'standup_greeting' })
+  standup_greeting: string;
+
+  @ApiProperty({
+    description: 'Строка «прочие активности» в стендап-отчёте',
+    example: 'код-ревью и созвоны',
+  })
+  @Default('код-ревью и созвоны')
+  @Column({
+    type: DataType.STRING,
+    allowNull: false,
+    field: 'standup_misc_line',
+  })
+  standup_misc_line: string;
+
+  @ApiProperty({ description: 'Подпись в стендап-отчёте', example: '' })
+  @Default('')
+  @Column({
+    type: DataType.STRING,
+    allowNull: false,
+    field: 'standup_signature',
+  })
+  standup_signature: string;
+
+  @ApiProperty({
+    description: 'Авто-отправка стендапа в 10:00 (Slack/Telegram)',
+    example: false,
+  })
+  @Default(false)
+  @Column({
+    type: DataType.BOOLEAN,
+    allowNull: false,
+    field: 'standup_auto_send',
+  })
+  standup_auto_send: boolean;
+
+  @ApiProperty({ description: 'Лимит часов в месяц', example: 80 })
+  @Default(80)
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: false,
+    field: 'monthly_hours_limit',
+  })
+  monthly_hours_limit: number;
+
   @ApiProperty()
   @UpdatedAt
   @Column({ field: 'updated_at' })

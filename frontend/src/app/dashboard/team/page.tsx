@@ -13,6 +13,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useSettings } from '@/context/SettingsContext';
 import { useToast } from '@/context/ToastContext';
 import { ROLE_LABEL, useWorkspace } from '@/context/WorkspaceContext';
+import { openGenerator } from '@/components/ReportGenerator';
 
 const MEMBERS_POLL_MS = 30_000;
 
@@ -164,6 +165,15 @@ export default function TeamPage() {
           {memberCountLabel(members.length)}
         </span>
         <div style={{ flex: 1 }} />
+        {isAdmin && (
+          <button
+            className="btn-ghost"
+            style={{ padding: '8px 14px', fontSize: 13, marginRight: 10 }}
+            onClick={() => openGenerator({ mode: 'team' })}
+          >
+            ⚡ Сводка за вчера
+          </button>
+        )}
         {canInvite && (
           <button
             className="btn btn-accent"

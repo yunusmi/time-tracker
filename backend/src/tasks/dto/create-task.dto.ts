@@ -72,4 +72,15 @@ export class CreateTaskDto {
   @IsOptional()
   @IsDateString()
   due_date?: string | null;
+
+  @ApiProperty({
+    required: false,
+    nullable: true,
+    example: 'https://notion.so/task-123',
+    description: 'Ссылка на задачу во внешней системе (Notion/Jira)',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(1024)
+  external_url?: string | null;
 }

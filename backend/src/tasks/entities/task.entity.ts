@@ -121,6 +121,15 @@ export class Task extends Model {
   @Column({ type: DataType.DATEONLY, allowNull: true, field: 'due_date' })
   due_date: string | null;
 
+  @ApiProperty({
+    required: false,
+    nullable: true,
+    example: 'https://notion.so/task-123',
+    description: 'Ссылка на задачу во внешней системе (Notion/Jira)',
+  })
+  @Column({ type: DataType.STRING(1024), allowNull: true, field: 'external_url' })
+  external_url: string | null;
+
   @HasMany(() => TimeEntry)
   time_entries: TimeEntry[];
 

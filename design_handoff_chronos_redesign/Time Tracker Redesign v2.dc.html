@@ -245,6 +245,7 @@ input,select,button{font-family:inherit}
               <span style="font-weight:600;font-size:14px">Записи за сегодня</span>
               <sc-if value="{{ weekLocked }}" hint-placeholder-val="{{ false }}"><span style="font-size:10.5px;font-weight:600;border-radius:5px;padding:2px 8px;background:var(--gsoft);color:var(--green)">неделя утверждена — заблокировано</span></sc-if>
               <div style="flex:1"></div>
+              <button onClick="{{ openStandup }}" style="background:var(--asoft);border:1px solid var(--accent);border-radius:7px;padding:5px 12px;font-size:12.5px;font-weight:600;color:var(--accent);cursor:pointer">⚡ Стендап-отчёт</button>
               <button onClick="{{ toggleManual }}" style="background:transparent;border:1px solid var(--border2);border-radius:7px;padding:5px 12px;font-size:12.5px;font-weight:500;color:var(--text);cursor:pointer" style-hover="background:var(--surface2)">+ Вручную</button>
               <button onClick="{{ exportXlsx }}" style="background:transparent;border:1px solid var(--border2);border-radius:7px;padding:5px 12px;font-size:12.5px;font-weight:500;color:var(--text);cursor:pointer" style-hover="background:var(--surface2)">↓ Экспорт .xlsx</button>
             </div>
@@ -329,6 +330,9 @@ input,select,button{font-family:inherit}
               </div>
             </sc-if>
             <div style="flex:1"></div>
+            <sc-if value="{{ canAdmin }}" hint-placeholder-val="{{ true }}">
+              <button onClick="{{ openReleaseNotes }}" style="background:transparent;border:1px solid var(--border2);border-radius:8px;padding:8px 14px;font-size:13px;font-weight:600;color:var(--text);cursor:pointer" style-hover="border-color:var(--accent);color:var(--accent)">Release notes</button>
+            </sc-if>
             <button onClick="{{ toggleNewTask }}" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer">+ Новая задача</button>
           </div>
           <sc-if value="{{ hasOverdue }}" hint-placeholder-val="{{ false }}">
@@ -573,6 +577,7 @@ input,select,button{font-family:inherit}
               <sc-if value="{{ canAdmin }}" hint-placeholder-val="{{ true }}">
                 <button onClick="{{ openInvoice }}" style="width:100%;margin-top:8px;background:var(--asoft);border:1px solid var(--accent);border-radius:8px;padding:8px;font-size:13px;font-weight:600;color:var(--accent);cursor:pointer">Сформировать счёт</button>
                 <button onClick="{{ openShare }}" style="width:100%;margin-top:8px;background:transparent;border:1px solid var(--border2);border-radius:8px;padding:8px;font-size:13px;font-weight:600;color:var(--text);cursor:pointer" style-hover="background:var(--surface2)">Поделиться отчётом</button>
+                <button onClick="{{ openClientReport }}" style="width:100%;margin-top:8px;background:transparent;border:1px solid var(--border2);border-radius:8px;padding:8px;font-size:13px;font-weight:600;color:var(--text);cursor:pointer" style-hover="background:var(--surface2)">Отчёт для клиента (текст)</button>
               </sc-if>
             </div>
           </div>
@@ -595,6 +600,12 @@ input,select,button{font-family:inherit}
             </div>
             <sc-if value="{{ tsReturned }}" hint-placeholder-val="{{ false }}">
               <div style="margin-top:12px;background:var(--rsoft);border:1px solid var(--red);border-radius:8px;padding:8px 12px;font-size:12.5px">Комментарий админа: {{ tsComment }}</div>
+            </sc-if>
+            <sc-if value="{{ hasTsSummary }}" hint-placeholder-val="{{ false }}">
+              <div style="margin-top:12px;border-top:1px solid var(--border);padding-top:10px">
+                <div style="font-size:11.5px;color:var(--muted);font-weight:600;margin-bottom:6px">Приложенная сводка (сгенерирована автоматически)</div>
+                <div style="font-size:12px;white-space:pre-wrap;color:var(--muted);line-height:1.6">{{ tsSummary }}</div>
+              </div>
             </sc-if>
           </div>
           <sc-if value="{{ canAdmin }}" hint-placeholder-val="{{ true }}">
@@ -753,6 +764,7 @@ input,select,button{font-family:inherit}
             <span style="font-size:12.5px;color:var(--muted)">4 участника</span>
             <div style="flex:1"></div>
             <sc-if value="{{ canAdmin }}" hint-placeholder-val="{{ true }}">
+              <button onClick="{{ openTeamSummary }}" style="background:transparent;border:1px solid var(--border2);border-radius:8px;padding:8px 14px;font-size:13px;font-weight:600;color:var(--text);cursor:pointer;margin-right:10px" style-hover="border-color:var(--accent);color:var(--accent)">⚡ Сводка за вчера</button>
               <button onClick="{{ toggleInvite }}" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer">+ Пригласить</button>
             </sc-if>
           </div>
@@ -921,6 +933,21 @@ input,select,button{font-family:inherit}
             </label>
           </div>
           <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px">
+            <div style="font-weight:600;font-size:14px;margin-bottom:4px">Стендап-отчёт</div>
+            <div style="font-size:12.5px;color:var(--muted);margin-bottom:12px">Свой шаблон текста; авто-отправка использует подключённые интеграции.</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+              <div><div style="font-size:11.5px;color:var(--muted);margin-bottom:4px">Приветствие</div>
+                <input value="{{ suGreet }}" onChange="{{ onField }}" data-f="suGreet" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:8px 11px;font-size:13px;color:var(--text);outline:none"></input></div>
+              <div><div style="font-size:11.5px;color:var(--muted);margin-bottom:4px">Строка активностей</div>
+                <input value="{{ suMiscText }}" onChange="{{ onField }}" data-f="suMiscText" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:8px 11px;font-size:13px;color:var(--text);outline:none"></input></div>
+            </div>
+            <div style="margin-bottom:12px"><div style="font-size:11.5px;color:var(--muted);margin-bottom:4px">Подпись (необязательно)</div>
+              <input value="{{ suSign }}" onChange="{{ onField }}" data-f="suSign" placeholder="например: Хорошего дня!" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:8px 11px;font-size:13px;color:var(--text);outline:none"></input></div>
+            <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer">
+              <input type="checkbox" checked="{{ suAuto }}" onChange="{{ toggleSuAuto }}" style="accent-color:var(--accent)"></input>Отправлять автоматически в 10:00 (Slack/Telegram)
+            </label>
+          </div>
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px">
             <div style="font-weight:600;font-size:14px;margin-bottom:4px">Интеграции</div>
             <div style="font-size:12.5px;color:var(--muted);margin-bottom:8px">Синхронизация и уведомления (в прототипе — демо).</div>
             <sc-for list="{{ integrations }}" as="ig" hint-placeholder-count="3">
@@ -947,6 +974,39 @@ input,select,button{font-family:inherit}
       </div>
     </main>
   </div>
+  <sc-if value="{{ standupOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeStandup }}" style="position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:72;display:flex;align-items:center;justify-content:center;padding:20px">
+      <div onClick="{{ stopProp }}" style="width:560px;max-height:84vh;display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--border2);border-radius:12px;box-shadow:var(--shadow);padding:20px 22px">
+        <div style="font-weight:700;font-size:15px;margin-bottom:4px">{{ suTitle }}</div>
+        <div style="font-size:12.5px;color:var(--muted);margin-bottom:12px">Сгенерировано из данных трекера — текст можно отредактировать перед отправкой.</div>
+        <sc-if value="{{ suIsStandup }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px">
+            <div style="display:flex;background:var(--surface2);border-radius:8px;padding:2px">
+              <button onClick="{{ setStandupDir }}" data-d="ys" style="border:none;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:500;cursor:pointer;background:{{ suSeg.y.bg }};color:{{ suSeg.y.c }}">Вчера → сегодня</button>
+              <button onClick="{{ setStandupDir }}" data-d="st" style="border:none;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:500;cursor:pointer;background:{{ suSeg.t.bg }};color:{{ suSeg.t.c }}">Сегодня → завтра</button>
+            </div>
+            <label style="display:flex;align-items:center;gap:7px;font-size:12.5px;cursor:pointer">
+              <input type="checkbox" checked="{{ standupMisc }}" onChange="{{ toggleStandupMisc }}" style="accent-color:var(--accent)"></input>+ активности
+            </label>
+            <label style="display:flex;align-items:center;gap:7px;font-size:12.5px;cursor:pointer" title="В продукте — суммаризация через Claude API">
+              <input type="checkbox" checked="{{ aiSum }}" onChange="{{ toggleAiSum }}" style="accent-color:var(--accent)"></input>AI-сводка
+            </label>
+            <div style="flex:1"></div>
+            <span style="font-size:11.5px;color:var(--muted)">Лимит, ч/мес</span>
+            <input type="number" min="1" value="{{ hoursLimit }}" onChange="{{ onHoursLimit }}" style="width:60px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:6px 8px;font-size:12.5px;color:var(--text);outline:none;font-family:'JetBrains Mono',monospace"></input>
+          </div>
+        </sc-if>
+        <textarea value="{{ suText }}" onChange="{{ onSuEdit }}" rows="14" style="flex:1;min-height:220px;background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:14px 16px;font-size:12.5px;line-height:1.65;color:var(--text);outline:none;resize:vertical;font-family:inherit;margin-bottom:14px" style-focus="border-color:var(--accent)"></textarea>
+        <div style="display:flex;gap:10px;justify-content:flex-end">
+          <button onClick="{{ sendSlack }}" style="background:transparent;border:1px solid var(--border2);border-radius:7px;padding:8px 14px;font-size:12.5px;font-weight:600;color:var(--text);cursor:pointer" style-hover="border-color:var(--accent);color:var(--accent)">→ Slack</button>
+          <button onClick="{{ sendTg }}" style="background:transparent;border:1px solid var(--border2);border-radius:7px;padding:8px 14px;font-size:12.5px;font-weight:600;color:var(--text);cursor:pointer" style-hover="border-color:var(--accent);color:var(--accent)">→ Telegram</button>
+          <div style="flex:1"></div>
+          <button onClick="{{ closeStandup }}" style="background:transparent;border:1px solid var(--border2);border-radius:7px;padding:8px 16px;font-size:12.5px;color:var(--text);cursor:pointer">Закрыть</button>
+          <button onClick="{{ copyStandup }}" style="background:var(--accent);color:#fff;border:none;border-radius:7px;padding:8px 18px;font-size:12.5px;font-weight:600;cursor:pointer">Копировать текст</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
   <sc-if value="{{ offline }}" hint-placeholder-val="{{ false }}">
     <div style="position:fixed;top:0;left:0;right:0;background:var(--amber);color:#1a1206;font-size:12px;font-weight:600;text-align:center;padding:4px;z-index:80">Оффлайн — записи сохраняются локально и синхронизируются при подключении</div>
   </sc-if>
@@ -1077,9 +1137,9 @@ class Component extends DCLogic {
         { id: 'p3', name: 'Маркетинг', color: '#fbbf24', rate: 1500, budget: 0 },
       ],
       tasks: [
-        { id: 't1', title: 'API интеграции платежей', proj: 'p1', status: 'in_progress', est: 480, pomos: 6, assignee: 'Вы', prio: 'high', due: 1 },
+        { id: 't1', title: 'API интеграции платежей', proj: 'p1', status: 'in_progress', est: 480, pomos: 6, assignee: 'Вы', prio: 'high', due: 1, link: 'https://app.notion.com/p/team/BE-API-payments-4e60cfac877c828c' },
         { id: 't2', title: 'Редизайн онбординга', proj: 'p2', status: 'in_progress', est: 360, pomos: 4, assignee: 'Аня', prio: 'med', due: 0 },
-        { id: 't3', title: 'Фикс бага с таймзонами', proj: 'p1', status: 'todo', est: 120, pomos: 0, assignee: 'Вы', prio: 'high', due: -1 },
+        { id: 't3', title: 'Фикс бага с таймзонами', proj: 'p1', status: 'todo', est: 120, pomos: 0, assignee: 'Вы', prio: 'high', due: -1, link: 'https://app.notion.com/p/team/BE-timezone-fix-3510cfac877c8051' },
         { id: 't4', title: 'Лендинг Q3-кампании', proj: 'p3', status: 'todo', est: 240, pomos: 2, assignee: 'Марк', prio: 'low', due: 4 },
         { id: 't5', title: 'Ревью пул-реквестов', proj: 'p1', status: 'done', est: 60, pomos: 1, assignee: 'Вы', prio: 'med', due: null },
         { id: 't6', title: 'Аудит доступности', proj: 'p2', status: 'done', est: 180, pomos: 3, assignee: 'Аня', prio: 'low', due: null },
@@ -1124,6 +1184,7 @@ class Component extends DCLogic {
       newPrio: 'med', newDue: '',
       notifOpen: false, unread: true,
       notices: [
+        { txt: 'Не забудьте стендап-отчёт — кнопка ⚡ в Трекере соберёт его за вас', time: 'сегодня, 09:30', dot: 'var(--amber)' },
         { txt: 'Админ изменил вашу запись пн 12:30–13:00 → 12:30–13:15', time: 'вчера, 18:20', dot: 'var(--accent)' },
         { txt: 'Ваш таймшит за 28 июл – 3 авг утверждён', time: 'пн, 09:12', dot: 'var(--green)' },
         { txt: 'Новая задача от админа: «Фикс бага с таймзонами»', time: 'пн, 08:40', dot: 'var(--accent)' },
@@ -1137,6 +1198,10 @@ class Component extends DCLogic {
       repView: 'chart', invoiceOpen: false,
       shareOpen: false, shareOn: true, shareHideMoney: false, shareHideNames: false,
       tfaOpen: false, tfaOn: false, tfaCode: '',
+      standupOpen: false, standupDir: 'ys', standupMisc: true, hoursLimit: 80,
+      standupMode: 'standup', standupDraft: null, aiSum: false,
+      suGreet: 'Всем привет!', suMiscText: 'код-ревью и созвоны', suSign: '', suAuto: false,
+      tsSummary: '',
     };
     this.lastAct = Date.now();
     this.pomoDeadline = 0;
@@ -1195,6 +1260,104 @@ class Component extends DCLogic {
     return { id: e.id, title: (t && t.title) || e.desc || 'Без названия', projColor: pr.color, range: this.fmtT(e.start) + '–' + this.fmtT(e.end), dur: this.fmtDur((e.end - e.start) / 1000), manual: !!e.manual, live: false, note: e.note || '', hasNote: !!e.note, editing: this.state.editEntryId === e.id, notEditing: this.state.editEntryId !== e.id, billBg: e.billable === false ? 'var(--surface2)' : 'var(--gsoft)', billC: e.billable === false ? 'var(--muted)' : 'var(--green)' };
   }
   toastMsg(m, undo) { clearTimeout(this._tt); this.setState({ toast: m, toastUndo: !!undo }); this._tt = setTimeout(() => this.setState({ toast: null, toastUndo: false }), undo ? 5000 : 2600); }
+  buildStandup() {
+    const s = this.state;
+    const fmtD = d => String(d.getDate()).padStart(2, '0') + '.' + String(d.getMonth() + 1).padStart(2, '0');
+    const wdName = d => ['воскресенье', 'понедельник', 'вторник', 'среду', 'четверг', 'пятницу', 'субботу'][d.getDay()];
+    const lines = [s.suGreet || 'Всем привет!', ''];
+    const dayBlock = (off, header) => {
+      const ents = this.dayEntries(off); if (!ents.length) return;
+      lines.push(header, '');
+      const byTask = {}, order = [], misc = [], seenD = {};
+      ents.forEach(en => {
+        const t = en.taskId ? this.taskById(en.taskId) : null;
+        if (t) { if (!byTask[t.id]) { byTask[t.id] = { t, sec: 0 }; order.push(t.id); } byTask[t.id].sec += (en.end - en.start) / 1000; }
+        else if (en.desc && !seenD[en.desc]) { seenD[en.desc] = 1; misc.push(en.desc); }
+      });
+      order.forEach(id => { const v = byTask[id]; lines.push(v.t.link || '— ' + v.t.title); if (s.aiSum) lines.push('   · ' + v.t.title + ' — ' + this.fmtHM(v.sec)); });
+      misc.forEach(m => lines.push('— ' + m));
+      if (s.standupMisc) lines.push(s.suMiscText || 'код-ревью и созвоны');
+      lines.push('');
+    };
+    const today = new Date();
+    if (s.standupDir === 'ys') {
+      for (let off = 3; off >= 1; off--) { const d = new Date(Date.now() - off * 864e5); dayBlock(off, 'Отчёт за ' + (off === 1 ? 'вчера' : wdName(d)) + ' (' + fmtD(d) + '):'); }
+      lines.push('План на сегодня (' + fmtD(today) + ')', '');
+    } else {
+      dayBlock(0, 'Отчёт за сегодня (' + fmtD(today) + '):');
+      lines.push('План на завтра (' + fmtD(new Date(Date.now() + 864e5)) + ')', '');
+    }
+    s.tasks.filter(t => (t.assignee || 'Вы') === 'Вы' && t.status !== 'done').slice(0, 3).forEach(t => lines.push(t.link || '— ' + t.title));
+    if (s.standupMisc) lines.push(s.suMiscText || 'код-ревью и созвоны');
+    lines.push('');
+    let worked = 0; s.entries.forEach(en => worked += (en.end - en.start) / 1000);
+    const wh = Math.round(worked / 3600 * 2) / 2;
+    const num = n => String(n).replace('.', ',');
+    lines.push('Отработано часов: ' + num(wh), 'Осталось часов: ' + num(Math.max(0, s.hoursLimit - wh)));
+    if (s.suSign) lines.push('', s.suSign);
+    return lines.join('\n');
+  }
+  fmtDM(d) { return String(d.getDate()).padStart(2, '0') + '.' + String(d.getMonth() + 1).padStart(2, '0'); }
+  buildWeekSummary() {
+    const out = [];
+    const wd = ['вс', 'пн', 'вт', 'ср', 'чт', 'пт', 'сб'];
+    for (let off = 6; off >= 0; off--) {
+      const ents = this.dayEntries(off); if (!ents.length) continue;
+      const d = new Date(Date.now() - off * 864e5);
+      const sec = ents.reduce((a, e) => a + (e.end - e.start) / 1000, 0);
+      const names = []; const seen = {};
+      ents.forEach(e => { const t = e.taskId ? this.taskById(e.taskId) : null; const n = (t && t.title) || e.desc; if (n && !seen[n]) { seen[n] = 1; names.push(n); } });
+      out.push(wd[d.getDay()] + ' ' + this.fmtDM(d) + ' — ' + this.fmtHM(sec) + ': ' + names.join(', '));
+    }
+    return out.join('\n');
+  }
+  buildClientReport() {
+    const s = this.state;
+    const ip = s.projects.find(p => p.name === s.expProj) || null;
+    const d1 = new Date(Date.now() - 6 * 864e5), d2 = new Date();
+    const lines = ['Отчёт по проекту «' + (ip ? ip.name : 'все проекты') + '» за неделю (' + this.fmtDM(d1) + '–' + this.fmtDM(d2) + ')', ''];
+    let total = 0, money = 0;
+    for (let off = 6; off >= 0; off--) {
+      const ents = this.dayEntries(off).filter(e => { if (!ip) return true; const t = e.taskId && this.taskById(e.taskId); return !!t && t.proj === ip.id; });
+      if (!ents.length) continue;
+      const d = new Date(Date.now() - off * 864e5);
+      const sec = ents.reduce((a, e) => a + (e.end - e.start) / 1000, 0); total += sec;
+      ents.forEach(e => { if (e.billable !== false) { const t = e.taskId && this.taskById(e.taskId); const r = t ? ((s.projects.find(p => p.id === t.proj) || {}).rate || 0) : 0; money += (e.end - e.start) / 1000 / 3600 * r; } });
+      const names = []; const seen = {};
+      ents.forEach(e => { const t = e.taskId ? this.taskById(e.taskId) : null; const n = (t && t.title) || e.desc; if (n && !seen[n]) { seen[n] = 1; names.push(n); } });
+      lines.push(this.fmtDM(d) + ' — ' + this.fmtHM(sec) + ':');
+      names.forEach(n => lines.push('— ' + n));
+      lines.push('');
+    }
+    lines.push('Итого за неделю: ' + this.fmtHM(total) + (money ? ' · ' + this.fmtMoney(money) : ''));
+    return lines.join('\n');
+  }
+  buildTeamSummary() {
+    const d = new Date(Date.now() - 864e5);
+    const lines = ['Сводка команды за вчера (' + this.fmtDM(d) + '):', ''];
+    lines.push('Аня Соколова — Редизайн онбординга (4ч 10м), ревью макетов');
+    lines.push('Марк Ефимов — Лендинг Q3-кампании (3ч 05м), созвон с клиентом');
+    const ents = this.dayEntries(1);
+    if (ents.length) {
+      const names = []; const seen = {};
+      ents.forEach(e => { const t = e.taskId ? this.taskById(e.taskId) : null; const n = (t && t.title) || e.desc; if (n && !seen[n]) { seen[n] = 1; names.push(n); } });
+      const sec = ents.reduce((a, e) => a + (e.end - e.start) / 1000, 0);
+      lines.push('Юнус М. — ' + names.join(', ') + ' (' + this.fmtHM(sec) + ')');
+    }
+    lines.push('Света Ким — выходной');
+    return lines.join('\n');
+  }
+  buildReleaseNotes() {
+    const s = this.state;
+    const d1 = new Date(Date.now() - 6 * 864e5), d2 = new Date();
+    const lines = ['Release notes · ' + this.fmtDM(d1) + '–' + this.fmtDM(d2), '', 'Готово на этой неделе:'];
+    s.tasks.filter(t => t.status === 'done').forEach(t => lines.push('— ' + t.title + ' (' + this.projOf(t).name + ')'));
+    return lines.join('\n');
+  }
+  buildReportText() {
+    const m = this.state.standupMode;
+    return m === 'client' ? this.buildClientReport() : m === 'team' ? this.buildTeamSummary() : m === 'notes' ? this.buildReleaseNotes() : this.buildStandup();
+  }
   startTlDrag(e) {
     if (this.state.tsMyStatus === 'approved') { this.toastMsg('Неделя утверждена — записи заблокированы'); return; }
     const id = e.currentTarget.dataset.id; if (!id) return;
@@ -1262,6 +1425,7 @@ class Component extends DCLogic {
     if (q) { const seen = {}; [...s.entries].sort((a, b) => b.end - a.end).forEach(en => { if (items.length > 8) return; const t = en.taskId ? this.taskById(en.taskId) : null; const title = (t && t.title) || en.desc; if (!title || seen[title] || !title.toLowerCase().includes(q)) return; seen[title] = 1; items.push({ icon: '↺', label: 'Из истории: ' + title, hint: new Date(en.start).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' }), act: () => { this.lastAct = Date.now(); this.setState({ activeTimer: { taskId: en.taskId || null, desc: en.desc || '', startedAt: Date.now() }, screen: 'tracker', paletteOpen: false }); } }); }); }
     if (q) items.push({ icon: '＋', label: 'Создать задачу: «' + s.palQ.trim() + '»', hint: '', act: () => { this.setState({ tasks: [{ id: 't' + (this.tid++), title: s.palQ.trim(), proj: 'p1', status: 'todo', est: 0, pomos: 0, assignee: 'Вы' }, ...s.tasks], screen: 'tasks', paletteOpen: false }); this.toastMsg('Задача создана'); } });
     [['Трекер', 'tracker'], ['Задачи', 'tasks'], ['Проекты', 'projects'], ['Отчёты', 'reports'], ['Таймшиты', 'sheets'], ['Pomodoro', 'pomo'], ['Команда', 'team'], ['Настройки', 'settings']].forEach((p, i) => { if (!q || p[0].toLowerCase().includes(q)) items.push({ icon: '→', label: 'Перейти: ' + p[0], hint: String(i + 1), act: () => this.setState({ screen: p[1], paletteOpen: false }) }); });
+    if (!q || 'отчёт стендап статус'.includes(q)) items.push({ icon: '⚡', label: 'Стендап-отчёт для руководства', hint: '', act: () => this.setState({ standupOpen: true, paletteOpen: false }) });
     if (!q || 'тема'.includes(q)) items.push({ icon: '◐', label: 'Переключить тему', hint: 'T', act: () => this.setState({ theme: s.theme === 'dark' ? 'light' : 'dark', paletteOpen: false }) });
     return items;
   }
@@ -1533,7 +1697,7 @@ class Component extends DCLogic {
       tsMy: (m => ({ label: m[0], bg: m[1], c: m[2] }))(tsMap[s.tsMyStatus]),
       tsCanSubmit: s.tsMyStatus === 'draft' || s.tsMyStatus === 'returned',
       tsReturned: s.tsMyStatus === 'returned', tsComment: s.tsComment,
-      tsSubmit: () => { this.setState({ tsMyStatus: 'pending' }); this.toastMsg('Таймшит отправлен на проверку'); },
+      tsSubmit: () => { this.setState({ tsMyStatus: 'pending', tsSummary: this.buildWeekSummary() }); this.toastMsg('Таймшит отправлен на проверку — сводка приложена'); },
       tsRows: s.teamSheets.map((t, i) => { const m = tsMap[t.status]; return { ...t, i, label: m[0], bg: m[1], c: m[2], pending: t.status === 'pending' }; }),
       tsApprove: e => { const i = Number(e.currentTarget.dataset.i); const t = s.teamSheets[i]; this.setState({ teamSheets: s.teamSheets.map((x, j) => j === i ? { ...x, status: 'approved' } : x) }); this.toastMsg('Таймшит утверждён'); this.logA('утвердили таймшит — ' + t.who + ' (' + t.week + ')'); },
       tsReturn: e => { const i = Number(e.currentTarget.dataset.i); const t = s.teamSheets[i]; this.setState({ teamSheets: s.teamSheets.map((x, j) => j === i ? { ...x, status: 'returned' } : x) }); this.toastMsg('Таймшит возвращён на доработку'); this.logA('вернули таймшит ' + t.who + ' на доработку'); },
@@ -1610,6 +1774,27 @@ class Component extends DCLogic {
       toggle2fa: () => { if (s.tfaOn) { this.setState({ tfaOn: false }); this.toastMsg('2FA отключена'); } else this.setState({ tfaOpen: true, tfaCode: '' }); },
       closeTfa: () => this.setState({ tfaOpen: false }),
       confirmTfa: () => { if (s.tfaCode.trim().length !== 6) { this.toastMsg('Введите 6-значный код'); return; } this.setState({ tfaOn: true, tfaOpen: false }); this.toastMsg('Двухфакторная аутентификация включена'); },
+      standupOpen: s.standupOpen,
+      openStandup: () => this.setState({ standupOpen: true, standupMode: 'standup', standupDraft: null }),
+      openClientReport: () => this.setState({ standupOpen: true, standupMode: 'client', standupDraft: null }),
+      openTeamSummary: () => this.setState({ standupOpen: true, standupMode: 'team', standupDraft: null }),
+      openReleaseNotes: () => this.setState({ standupOpen: true, standupMode: 'notes', standupDraft: null }),
+      closeStandup: () => this.setState({ standupOpen: false }),
+      suTitle: ({ standup: 'Стендап-отчёт', client: 'Отчёт для клиента', team: 'Сводка команды за вчера', notes: 'Release notes' })[s.standupMode],
+      suIsStandup: s.standupMode === 'standup',
+      suText: s.standupOpen ? (s.standupDraft ?? this.buildReportText()) : '',
+      onSuEdit: e => this.setState({ standupDraft: e.currentTarget.value }),
+      suSeg: { y: seg(s.standupDir === 'ys'), t: seg(s.standupDir === 'st') },
+      setStandupDir: e => this.setState({ standupDir: e.currentTarget.dataset.d, standupDraft: null }),
+      standupMisc: s.standupMisc, toggleStandupMisc: () => this.setState({ standupMisc: !s.standupMisc, standupDraft: null }),
+      aiSum: s.aiSum, toggleAiSum: () => this.setState({ aiSum: !s.aiSum, standupDraft: null }),
+      hoursLimit: s.hoursLimit, onHoursLimit: e => this.setState({ hoursLimit: Math.max(1, Number(e.currentTarget.value) || 1), standupDraft: null }),
+      copyStandup: () => { const txt = s.standupDraft ?? this.buildReportText(); if (navigator.clipboard) navigator.clipboard.writeText(txt); this.toastMsg('Текст скопирован — вставьте в чат'); },
+      sendSlack: () => { if (!s.integr.slack) { this.toastMsg('Подключите Slack в Настройках → Интеграции'); return; } this.setState({ standupOpen: false }); this.toastMsg('Отправлено в Slack #standup (демо)'); },
+      sendTg: () => { if (!s.integr.tg) { this.toastMsg('Подключите Telegram в Настройках → Интеграции'); return; } this.setState({ standupOpen: false }); this.toastMsg('Отправлено в Telegram (демо)'); },
+      suGreet: s.suGreet, suMiscText: s.suMiscText, suSign: s.suSign,
+      suAuto: s.suAuto, toggleSuAuto: () => { this.setState({ suAuto: !s.suAuto }); this.toastMsg(!s.suAuto ? 'Авто-отправка в 10:00 включена (демо)' : 'Авто-отправка выключена'); },
+      tsSummary: s.tsSummary, hasTsSummary: !!s.tsSummary && s.tsMyStatus !== 'draft',
     };
   }
 }
