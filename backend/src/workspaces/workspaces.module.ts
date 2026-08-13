@@ -7,6 +7,7 @@ import { User } from '../users/entities/user.entity';
 import { TimeEntry } from '../time-entries/entities/time-entry.entity';
 import { WorkspacesController } from './workspaces.controller';
 import { WorkspacesService } from './workspaces.service';
+import { AuditController } from '../audit/audit.controller';
 
 @Module({
   imports: [
@@ -18,7 +19,7 @@ import { WorkspacesService } from './workspaces.service';
       TimeEntry,
     ]),
   ],
-  controllers: [WorkspacesController],
+  controllers: [WorkspacesController, AuditController],
   providers: [WorkspacesService],
   exports: [WorkspacesService],
 })

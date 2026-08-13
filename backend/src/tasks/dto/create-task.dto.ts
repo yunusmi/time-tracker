@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {
+  IsDateString,
   IsEnum,
   IsInt,
   IsOptional,
@@ -9,7 +10,7 @@ import {
   Min,
   MinLength,
 } from 'class-validator';
-import { TaskStatus } from '../entities/task.entity';
+import { TaskPriority, TaskStatus } from '../entities/task.entity';
 
 export class CreateTaskDto {
   @ApiProperty({ example: 'Write project documentation' })
@@ -51,4 +52,35 @@ export class CreateTaskDto {
   @IsOptional()
   @IsUUID()
   project_id?: string | null;
+
+  @ApiProperty({
+    required: false,
+    nullable: true,
+    format: 'uuid',
+    description: 'Исполнитель (назначать может admin+); по умолчанию — создатель',
+  })
+  @IsOptional()
+  @IsUUID()
+  assignee_id?: string | null;
+
+  @ApiProperty({ required: false, enum: TaskPriority, default: TaskPriority.MED })
+  @IsOptional()
+  @IsEnum(TaskPriority)
+  priority?: TaskPriority;
+
+  @ApiProperty({ required: false, nullable: true, example: '2026-08-20' })
+  @IsOptional()
+  @IsDateString()
+  due_date?: string | null;
+
+  @ApiProperty({
+    required: false,
+    nullable: true,
+    example: 'https://notion.so/task-123',
+    description: 'Ссылка на задачу во внешней системе (Notion/Jira)',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(1024)
+  external_url?: string | null;
 }

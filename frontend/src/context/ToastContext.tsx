@@ -9,25 +9,66 @@ import {
 } from 'react';
 
 interface ToastContextValue {
-  toast: (message: string) => void;
+  /** Тост на ~2.6с; с undo — 5с и кнопкой «Отменить». */
+  toast: (message: string, undo?: () => void | Promise<void>) => void;
 }
 
 const ToastContext = createContext<ToastContextValue | undefined>(undefined);
 
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [message, setMessage] = useState<string | null>(null);
+  const [undoFn, setUndoFn] = useState<(() => void | Promise<void>) | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout>>();
 
-  const toast = useCallback((msg: string) => {
+  const toast = useCallback(
+    (msg: string, undo?: () => void | Promise<void>) => {
+      clearTimeout(timer.current);
+      setMessage(msg);
+      setUndoFn(() => undo ?? null);
+      timer.current = setTimeout(
+        () => {
+          setMessage(null);
+          setUndoFn(null);
+        },
+        undo ? 5000 : 2600,
+      );
+    },
+    [],
+  );
+
+  function onUndo() {
+    const fn = undoFn;
     clearTimeout(timer.current);
-    setMessage(msg);
-    timer.current = setTimeout(() => setMessage(null), 2600);
-  }, []);
+    setMessage(null);
+    setUndoFn(null);
+    if (fn) void fn();
+  }
 
   return (
     <ToastContext.Provider value={{ toast }}>
       {children}
-      {message && <div className="toast">{message}</div>}
+      {message && (
+        <div className="toast" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <span>{message}</span>
+          {undoFn && (
+            <button
+              onClick={onUndo}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: 'var(--accent)',
+                fontWeight: 600,
+                fontSize: 13,
+                cursor: 'pointer',
+                padding: 0,
+                flexShrink: 0,
+              }}
+            >
+              Отменить
+            </button>
+          )}
+        </div>
+      )}
     </ToastContext.Provider>
   );
 }

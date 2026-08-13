@@ -1,13 +1,67 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { useSettings } from '@/context/SettingsContext';
 import { useTheme } from '@/context/ThemeContext';
 import { useToast } from '@/context/ToastContext';
+import { AccountCard } from '@/components/AccountCard';
+import { ROLE_LABEL, useWorkspace } from '@/context/WorkspaceContext';
+
+const ROLE_HINT: Record<string, string> = {
+  owner: 'Полный доступ, включая управление командой и ролями.',
+  admin: 'Проекты, приглашения, задачи и отчёты всей команды.',
+  pm: 'Задачи и отчёты только своего проекта, без денежных сумм.',
+  member: 'Только свои задачи, записи и отчёты.',
+  client: 'Только отчёты своего проекта, read-only.',
+};
+
+const INTEGRATIONS = [
+  { k: 'gcal', ini: 'G', name: 'Google Calendar', desc: 'Записи времени — событиями в календаре' },
+  { k: 'slack', ini: 'S', name: 'Slack', desc: 'Дайджест дня и команда /track' },
+  { k: 'tg', ini: 'T', name: 'Telegram', desc: 'Напоминания и быстрый старт таймера' },
+] as const;
 
 export default function SettingsPage() {
   const { settings, updateSettings } = useSettings();
   const { theme, setTheme } = useTheme();
   const { toast } = useToast();
+  const { role, me } = useWorkspace();
+
+  // Интеграции — демо-переключатели (OAuth-флоу и вебхуки — отдельный этап).
+  const [integr, setIntegr] = useState<Record<string, boolean>>({});
+  useEffect(() => {
+    try {
+      setIntegr(JSON.parse(window.localStorage.getItem('tt_integrations') ?? '{}'));
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  function toggleIntegration(k: string) {
+    const next = { ...integr, [k]: !integr[k] };
+    setIntegr(next);
+    window.localStorage.setItem('tt_integrations', JSON.stringify(next));
+    toast(next[k] ? 'Интеграция подключена (демо)' : 'Интеграция отключена');
+  }
+
+  // Шаблон стендап-отчёта: локальный ввод, сохранение по blur.
+  const [suGreet, setSuGreet] = useState('');
+  const [suMisc, setSuMisc] = useState('');
+  const [suSign, setSuSign] = useState('');
+  useEffect(() => {
+    setSuGreet(settings.standup_greeting);
+    setSuMisc(settings.standup_misc_line);
+    setSuSign(settings.standup_signature);
+  }, [settings.standup_greeting, settings.standup_misc_line, settings.standup_signature]);
+
+  function saveStandupField(
+    key: 'standup_greeting' | 'standup_misc_line' | 'standup_signature',
+    value: string,
+  ) {
+    if (settings[key] === value) return;
+    updateSettings({ [key]: value });
+    toast('Шаблон стендапа сохранён');
+  }
 
   function toggleNotify(
     key: 'notify_day_start' | 'notify_goal_reached',
@@ -24,6 +78,31 @@ export default function SettingsPage() {
 
   return (
     <div style={{ maxWidth: 560, display: 'flex', flexDirection: 'column', gap: 14 }}>
+      <AccountCard />
+
+      <div className="card card-pad">
+        <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 4 }}>Роль в команде</div>
+        <div style={{ fontSize: '12.5px', color: 'var(--muted)', marginBottom: 12 }}>
+          {me?.workspace_name ? `Команда «${me.workspace_name}». ` : ''}
+          Роль назначает владелец или админ команды.
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span
+            style={{
+              fontSize: 12,
+              fontWeight: 600,
+              borderRadius: 6,
+              padding: '4px 12px',
+              background: 'var(--asoft)',
+              color: 'var(--accent)',
+            }}
+          >
+            {ROLE_LABEL[role]}
+          </span>
+          <span style={{ fontSize: '12.5px', color: 'var(--muted)' }}>{ROLE_HINT[role]}</span>
+        </div>
+      </div>
+
       <div className="card card-pad">
         <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 4 }}>Цель дня</div>
         <div style={{ fontSize: '12.5px', color: 'var(--muted)', marginBottom: 12 }}>
@@ -64,6 +143,44 @@ export default function SettingsPage() {
             {settings.idle_threshold_minutes} мин
           </span>
         </div>
+        <label
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            marginTop: 12,
+            fontSize: 13,
+            cursor: 'pointer',
+          }}
+        >
+          <input
+            type="checkbox"
+            checked={settings.auto_stop_evening}
+            onChange={(e) => updateSettings({ auto_stop_evening: e.target.checked })}
+            style={{ accentColor: 'var(--accent)' }}
+          />
+          Авто-стоп таймера в 19:00 при отсутствии активности
+        </label>
+      </div>
+
+      <div className="card card-pad">
+        <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 12 }}>Помощь</div>
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          <button
+            className="btn-outline"
+            style={{ padding: '7px 14px' }}
+            onClick={() => window.dispatchEvent(new Event('tt-open-tour'))}
+          >
+            Тур по интерфейсу
+          </button>
+          <button
+            className="btn-outline"
+            style={{ padding: '7px 14px' }}
+            onClick={() => window.dispatchEvent(new Event('tt-open-help'))}
+          >
+            Горячие клавиши (?)
+          </button>
+        </div>
       </div>
 
       <div className="card card-pad">
@@ -100,6 +217,135 @@ export default function SettingsPage() {
           />
           Сообщить, когда цель дня достигнута
         </label>
+      </div>
+
+      <div className="card card-pad">
+        <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 4 }}>Стендап-отчёт</div>
+        <div style={{ fontSize: '12.5px', color: 'var(--muted)', marginBottom: 12 }}>
+          Свой шаблон текста; авто-отправка использует подключённые интеграции.
+        </div>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: 10,
+            marginBottom: 10,
+          }}
+        >
+          <div>
+            <div style={{ fontSize: '11.5px', color: 'var(--muted)', marginBottom: 4 }}>
+              Приветствие
+            </div>
+            <input
+              className="input input-sm"
+              style={{ width: '100%' }}
+              value={suGreet}
+              onChange={(e) => setSuGreet(e.target.value)}
+              onBlur={() => saveStandupField('standup_greeting', suGreet)}
+            />
+          </div>
+          <div>
+            <div style={{ fontSize: '11.5px', color: 'var(--muted)', marginBottom: 4 }}>
+              Строка активностей
+            </div>
+            <input
+              className="input input-sm"
+              style={{ width: '100%' }}
+              value={suMisc}
+              onChange={(e) => setSuMisc(e.target.value)}
+              onBlur={() => saveStandupField('standup_misc_line', suMisc)}
+            />
+          </div>
+        </div>
+        <div style={{ marginBottom: 12 }}>
+          <div style={{ fontSize: '11.5px', color: 'var(--muted)', marginBottom: 4 }}>
+            Подпись (необязательно)
+          </div>
+          <input
+            className="input input-sm"
+            style={{ width: '100%' }}
+            placeholder="например: Хорошего дня!"
+            value={suSign}
+            onChange={(e) => setSuSign(e.target.value)}
+            onBlur={() => saveStandupField('standup_signature', suSign)}
+          />
+        </div>
+        <label
+          style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer' }}
+        >
+          <input
+            type="checkbox"
+            checked={settings.standup_auto_send}
+            onChange={(e) => {
+              updateSettings({ standup_auto_send: e.target.checked });
+              toast(
+                e.target.checked
+                  ? 'Авто-отправка стендапа включена (будни, 10:00)'
+                  : 'Авто-отправка стендапа выключена',
+              );
+            }}
+            style={{ accentColor: 'var(--accent)' }}
+          />
+          Отправлять автоматически в 10:00 (Slack/Telegram)
+        </label>
+      </div>
+
+      <div className="card card-pad">
+        <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 4 }}>Интеграции</div>
+        <div style={{ fontSize: '12.5px', color: 'var(--muted)', marginBottom: 8 }}>
+          Синхронизация и уведомления (пока демо — OAuth-подключение появится позже).
+        </div>
+        {INTEGRATIONS.map((ig) => {
+          const on = !!integr[ig.k];
+          return (
+            <div
+              key={ig.k}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                padding: '9px 0',
+                borderBottom: '1px solid var(--border)',
+              }}
+            >
+              <div
+                style={{
+                  width: 30,
+                  height: 30,
+                  borderRadius: 8,
+                  background: 'var(--surface2)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontWeight: 700,
+                  fontSize: 13,
+                  color: 'var(--accent)',
+                }}
+              >
+                {ig.ini}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontWeight: 600, fontSize: 13 }}>{ig.name}</div>
+                <div style={{ fontSize: '11.5px', color: 'var(--muted)' }}>{ig.desc}</div>
+              </div>
+              <button
+                onClick={() => toggleIntegration(ig.k)}
+                style={{
+                  background: on ? 'transparent' : 'var(--accent)',
+                  color: on ? 'var(--muted)' : '#fff',
+                  border: `1px solid ${on ? 'var(--border2)' : 'var(--accent)'}`,
+                  borderRadius: 7,
+                  padding: '5px 12px',
+                  fontSize: '12.5px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                {on ? 'Отключить' : 'Подключить'}
+              </button>
+            </div>
+          );
+        })}
       </div>
 
       <div className="card card-pad">

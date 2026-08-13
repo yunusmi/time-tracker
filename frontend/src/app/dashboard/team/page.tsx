@@ -1,17 +1,19 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { api, ApiError } from '@/lib/api';
 import { formatHM } from '@/lib/format';
-import type { WorkspaceInvite, WorkspaceMemberView, WorkspaceRole } from '@/lib/types';
+import type {
+  AuditRow,
+  WorkspaceInvite,
+  WorkspaceMemberView,
+  WorkspaceRole,
+} from '@/lib/types';
 import { useAuth } from '@/context/AuthContext';
+import { useSettings } from '@/context/SettingsContext';
 import { useToast } from '@/context/ToastContext';
-
-const ROLE_LABEL: Record<WorkspaceRole, string> = {
-  owner: 'Владелец',
-  admin: 'Админ',
-  member: 'Участник',
-};
+import { ROLE_LABEL, useWorkspace } from '@/context/WorkspaceContext';
+import { openGenerator } from '@/components/ReportGenerator';
 
 const MEMBERS_POLL_MS = 30_000;
 
@@ -32,12 +34,19 @@ function memberCountLabel(n: number): string {
   return `${n} участников`;
 }
 
+const ASSIGNABLE_ROLES: WorkspaceRole[] = ['admin', 'pm', 'member', 'client'];
+
 export default function TeamPage() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { isAdmin, role: myRole } = useWorkspace();
+  const { settings } = useSettings();
+  const isOwner = myRole === 'owner';
+  const [roleMenuId, setRoleMenuId] = useState<string | null>(null);
 
   const [members, setMembers] = useState<WorkspaceMemberView[]>([]);
   const [invites, setInvites] = useState<WorkspaceInvite[]>([]);
+  const [audit, setAudit] = useState<AuditRow[]>([]);
   const [error, setError] = useState('');
 
   const [inviteOpen, setInviteOpen] = useState(false);
@@ -45,7 +54,35 @@ export default function TeamPage() {
   const [inviteRole, setInviteRole] = useState<WorkspaceRole>('member');
 
   const me = members.find((m) => m.user_id === user?.id);
-  const canInvite = me ? me.role !== 'member' : false;
+  const canInvite = isAdmin;
+
+  // Мини-дашборд команды для админа: кто трекает, недобор, перегруз.
+  const dash = useMemo(() => {
+    const weekGoalSec = settings.daily_goal_hours * 5 * 3600;
+    const active = members.filter((m) => m.active_task_title);
+    const under = members.filter((m) => m.week_seconds < weekGoalSec * 0.5);
+    const over = members.filter((m) => m.week_seconds > weekGoalSec);
+    const firstName = (n: string) => n.split(' ')[0];
+    return {
+      weekGoalH: settings.daily_goal_hours * 5,
+      active: {
+        n: active.length,
+        names: active.map((m) => firstName(m.name)).join(', ') || '—',
+      },
+      under: {
+        n: under.length,
+        names: under.length
+          ? `${firstName(under[0].name)} · ${formatHM(under[0].week_seconds)} из ${settings.daily_goal_hours * 5}ч`
+          : '—',
+      },
+      over: {
+        n: over.length,
+        names: over.length
+          ? `${firstName(over[0].name)} · ${formatHM(over[0].week_seconds)} за неделю`
+          : '—',
+      },
+    };
+  }, [members, settings.daily_goal_hours]);
 
   const load = useCallback(async () => {
     try {
@@ -56,6 +93,10 @@ export default function TeamPage() {
       setMembers(m);
       setInvites(iv.filter((i) => i.email)); // ссылка-приглашение (email='') не показывается в списке
       setError('');
+      api
+        .listAudit()
+        .then(setAudit)
+        .catch(() => setAudit([]));
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Не удалось загрузить команду');
     }
@@ -104,6 +145,17 @@ export default function TeamPage() {
     }
   }
 
+  async function changeRole(targetUserId: string, role: WorkspaceRole) {
+    setRoleMenuId(null);
+    try {
+      await api.changeMemberRole(targetUserId, { role });
+      toast(`Роль изменена: ${ROLE_LABEL[role]}`);
+      await load();
+    } catch (err) {
+      toast(err instanceof ApiError ? err.message : 'Не удалось изменить роль');
+    }
+  }
+
   return (
     <div>
       {error && <p className="error">{error}</p>}
@@ -113,6 +165,15 @@ export default function TeamPage() {
           {memberCountLabel(members.length)}
         </span>
         <div style={{ flex: 1 }} />
+        {isAdmin && (
+          <button
+            className="btn-ghost"
+            style={{ padding: '8px 14px', fontSize: 13, marginRight: 10 }}
+            onClick={() => openGenerator({ mode: 'team' })}
+          >
+            ⚡ Сводка за вчера
+          </button>
+        )}
         {canInvite && (
           <button
             className="btn btn-accent"
@@ -123,6 +184,38 @@ export default function TeamPage() {
           </button>
         )}
       </div>
+
+      {isAdmin && (
+        <div className="grid-stats" style={{ marginBottom: 14 }}>
+          <div className="card" style={{ borderRadius: 10, padding: '13px 16px' }}>
+            <div className="stat-title">Сейчас трекают</div>
+            <div className="mono" style={{ fontSize: 21, fontWeight: 600, margin: '3px 0' }}>
+              {dash.active.n}
+            </div>
+            <div style={{ fontSize: '11.5px', color: 'var(--muted)' }}>{dash.active.names}</div>
+          </div>
+          <div className="card" style={{ borderRadius: 10, padding: '13px 16px' }}>
+            <div className="stat-title">Недобор к цели недели</div>
+            <div
+              className="mono"
+              style={{ fontSize: 21, fontWeight: 600, margin: '3px 0', color: 'var(--amber)' }}
+            >
+              {dash.under.n}
+            </div>
+            <div style={{ fontSize: '11.5px', color: 'var(--muted)' }}>{dash.under.names}</div>
+          </div>
+          <div className="card" style={{ borderRadius: 10, padding: '13px 16px' }}>
+            <div className="stat-title">Перегруз (&gt;{dash.weekGoalH}ч)</div>
+            <div
+              className="mono"
+              style={{ fontSize: 21, fontWeight: 600, margin: '3px 0', color: 'var(--red)' }}
+            >
+              {dash.over.n}
+            </div>
+            <div style={{ fontSize: '11.5px', color: 'var(--muted)' }}>{dash.over.names}</div>
+          </div>
+        </div>
+      )}
 
       {inviteOpen && (
         <div
@@ -199,6 +292,7 @@ export default function TeamPage() {
 
         {members.map((m) => {
           const online = !!m.active_task_title;
+          const canEditRole = isOwner && m.role !== 'owner' && m.user_id !== user?.id;
           return (
             <div
               key={m.user_id}
@@ -230,9 +324,45 @@ export default function TeamPage() {
                 <span style={{ fontWeight: 600 }}>{m.name}</span>
                 {m.user_id === user?.id && <span className="chip-badge">вы</span>}
               </div>
-              <span style={{ width: 80, fontSize: '11.5px', color: 'var(--muted)' }}>
-                {ROLE_LABEL[m.role]}
-              </span>
+              <div className="menu-wrap" style={{ width: 80 }}>
+                {canEditRole ? (
+                  <>
+                    <button
+                      onClick={() => setRoleMenuId(roleMenuId === m.user_id ? null : m.user_id)}
+                      style={{
+                        background: 'transparent',
+                        border: 'none',
+                        color: 'var(--muted)',
+                        fontSize: '11.5px',
+                        cursor: 'pointer',
+                        padding: 0,
+                        textAlign: 'left',
+                      }}
+                      title="Сменить роль"
+                    >
+                      {ROLE_LABEL[m.role]} ▾
+                    </button>
+                    {roleMenuId === m.user_id && (
+                      <div className="menu" style={{ right: 'auto', minWidth: 120 }}>
+                        {ASSIGNABLE_ROLES.map((r) => (
+                          <div
+                            key={r}
+                            className="menu-item"
+                            style={{ fontSize: '12.5px' }}
+                            onClick={() => void changeRole(m.user_id, r)}
+                          >
+                            {ROLE_LABEL[r]}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <span style={{ fontSize: '11.5px', color: 'var(--muted)' }}>
+                    {ROLE_LABEL[m.role]}
+                  </span>
+                )}
+              </div>
               <div
                 style={{
                   flex: 2,
@@ -240,7 +370,7 @@ export default function TeamPage() {
                   alignItems: 'center',
                   gap: 8,
                   fontSize: '12.5px',
-                  color: online ? 'var(--text)' : 'var(--muted)',
+                  color: online || m.dnd ? 'var(--text)' : 'var(--muted)',
                 }}
               >
                 <span
@@ -248,11 +378,19 @@ export default function TeamPage() {
                     width: 7,
                     height: 7,
                     borderRadius: '50%',
-                    background: online ? 'var(--green)' : 'var(--border2)',
+                    background: m.dnd
+                      ? 'var(--red)'
+                      : online
+                        ? 'var(--green)'
+                        : 'var(--border2)',
                     flexShrink: 0,
                   }}
                 />
-                {online ? `Трекает «${m.active_task_title}»` : 'Не в сети'}
+                {m.dnd
+                  ? 'Не беспокоить · фокус-сессия'
+                  : online
+                    ? `Трекает «${m.active_task_title}»`
+                    : 'Не в сети'}
               </div>
               <span className="mono" style={{ width: 90, textAlign: 'right', fontSize: '12.5px' }}>
                 {m.today_seconds ? formatHM(m.today_seconds) : '—'}
@@ -307,6 +445,49 @@ export default function TeamPage() {
           Участники видят агрегаты времени друг друга; приглашать может админ и владелец.
         </div>
       </div>
+
+      {/* Журнал действий (admin+) */}
+      {isAdmin && audit.length > 0 && (
+        <div className="card" style={{ marginTop: 14 }}>
+          <div
+            style={{
+              padding: '12px 16px',
+              borderBottom: '1px solid var(--border)',
+              fontWeight: 600,
+              fontSize: 14,
+            }}
+          >
+            Журнал действий
+          </div>
+          {audit.map((a) => (
+            <div
+              key={a.id}
+              style={{
+                display: 'flex',
+                alignItems: 'baseline',
+                gap: 10,
+                padding: '8px 16px',
+                borderBottom: '1px solid var(--border)',
+                fontSize: '12.5px',
+              }}
+            >
+              <span
+                className="mono"
+                style={{ fontSize: '11.5px', color: 'var(--muted)', width: 44, flexShrink: 0 }}
+              >
+                {new Date(a.created_at).toLocaleTimeString('ru-RU', {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })}
+              </span>
+              <span style={{ fontWeight: 600, flexShrink: 0 }}>
+                {a.user_name.split(' ')[0]}
+              </span>
+              <span style={{ color: 'var(--muted)' }}>{a.action}</span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

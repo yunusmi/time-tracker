@@ -19,6 +19,12 @@ export interface UserSettings {
   idle_threshold_minutes: number;
   notify_day_start: boolean;
   notify_goal_reached: boolean;
+  auto_stop_evening: boolean;
+  standup_greeting: string;
+  standup_misc_line: string;
+  standup_signature: string;
+  standup_auto_send: boolean;
+  monthly_hours_limit: number;
 }
 
 const DEFAULTS: UserSettings = {
@@ -26,6 +32,12 @@ const DEFAULTS: UserSettings = {
   idle_threshold_minutes: 10,
   notify_day_start: false,
   notify_goal_reached: false,
+  auto_stop_evening: false,
+  standup_greeting: 'Всем привет!',
+  standup_misc_line: 'код-ревью и созвоны',
+  standup_signature: '',
+  standup_auto_send: false,
+  monthly_hours_limit: 80,
 };
 
 const SETTINGS_KEY = 'tt_settings';
@@ -64,6 +76,14 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
           idle_threshold_minutes: server.idle_threshold_minutes,
           notify_day_start: server.notify_day_start,
           notify_goal_reached: server.notify_goal_reached,
+          auto_stop_evening: server.auto_stop_evening ?? false,
+          standup_greeting: server.standup_greeting ?? DEFAULTS.standup_greeting,
+          standup_misc_line:
+            server.standup_misc_line ?? DEFAULTS.standup_misc_line,
+          standup_signature: server.standup_signature ?? '',
+          standup_auto_send: server.standup_auto_send ?? false,
+          monthly_hours_limit:
+            server.monthly_hours_limit ?? DEFAULTS.monthly_hours_limit,
         };
         setSettings(next);
         persistLocal(next);

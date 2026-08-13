@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {
+  IsBoolean,
   IsISO8601,
   IsInt,
   IsOptional,
@@ -36,4 +37,15 @@ export class UpdateTimeEntryDto {
   @IsInt()
   @Min(0)
   duration_seconds?: number;
+
+  @ApiProperty({ required: false, description: 'Оплачиваемая запись' })
+  @IsOptional()
+  @IsBoolean()
+  billable?: boolean;
+
+  @ApiProperty({ required: false, nullable: true, description: 'Комментарий' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(1000)
+  note?: string;
 }

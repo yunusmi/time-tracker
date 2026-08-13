@@ -1,10 +1,13 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {
   IsBoolean,
+  IsInt,
+  IsNumber,
   IsOptional,
   IsString,
   Matches,
   MaxLength,
+  Min,
   MinLength,
 } from 'class-validator';
 
@@ -29,4 +32,20 @@ export class UpdateProjectDto {
   @IsOptional()
   @IsBoolean()
   archived?: boolean;
+
+  @ApiProperty({ required: false, description: 'Часовая ставка, ₽/ч', example: 2500 })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  hourly_rate?: number;
+
+  @ApiProperty({
+    required: false,
+    description: 'Недельный бюджет часов (0 — не задан)',
+    example: 20,
+  })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  weekly_budget_hours?: number;
 }

@@ -1,15 +1,26 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { api, ApiError } from '@/lib/api';
 import { formatHM } from '@/lib/format';
 import { projectColor, projectName } from '@/lib/project';
-import type { ProjectWithStats, TaskStatus, TaskWithStats } from '@/lib/types';
+import { dueInfo, PRIO_META } from '@/lib/task';
+import type {
+  ProjectWithStats,
+  TaskPriority,
+  TaskStatus,
+  TaskTemplate,
+  TaskWithStats,
+} from '@/lib/types';
+import { useAuth } from '@/context/AuthContext';
 import { useTimer } from '@/context/TimerContext';
 import { useToast } from '@/context/ToastContext';
+import { useWorkspace } from '@/context/WorkspaceContext';
+import { openGenerator } from '@/components/ReportGenerator';
 
 type Filter = 'all' | 'active' | 'done';
+type Who = 'all' | 'mine';
 
 const STATUS_META: Record<TaskStatus, { label: string; bg: string; color: string }> = {
   todo: { label: 'К работе', bg: 'var(--surface2)', color: 'var(--muted)' },
@@ -17,19 +28,62 @@ const STATUS_META: Record<TaskStatus, { label: string; bg: string; color: string
   done: { label: 'Готово', bg: 'var(--gsoft)', color: 'var(--green)' },
 };
 
+function overdueLabel(n: number): string {
+  const mod10 = n % 10;
+  const mod100 = n % 100;
+  if (mod10 === 1 && mod100 !== 11) return `${n} задача`;
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return `${n} задачи`;
+  return `${n} задач`;
+}
+
+/** Небольшой локальный dropdown (кнопка + меню) с закрытием по клику вне. */
+function useOutsideClose(open: boolean, onClose: () => void) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) onClose();
+    };
+    document.addEventListener('mousedown', onDoc);
+    return () => document.removeEventListener('mousedown', onDoc);
+  }, [open, onClose]);
+  return ref;
+}
+
 export default function TasksPage() {
   const router = useRouter();
+  const { user } = useAuth();
   const { version, start } = useTimer();
   const { toast } = useToast();
+  const { isAdmin, members } = useWorkspace();
 
   const [tasks, setTasks] = useState<TaskWithStats[]>([]);
   const [projects, setProjects] = useState<ProjectWithStats[]>([]);
+  const [templates, setTemplates] = useState<TaskTemplate[]>([]);
   const [filter, setFilter] = useState<Filter>('all');
+  const [who, setWho] = useState<Who>('all');
   const [error, setError] = useState('');
 
   // Форма «+ Новая задача»
   const [newOpen, setNewOpen] = useState(false);
   const [newTitle, setNewTitle] = useState('');
+  const [newEstimate, setNewEstimate] = useState('');
+  const [newProjectId, setNewProjectId] = useState('');
+  const [newAssigneeId, setNewAssigneeId] = useState('');
+  const [newPrio, setNewPrio] = useState<TaskPriority>('med');
+  const [newDue, setNewDue] = useState('');
+  const [newLink, setNewLink] = useState('');
+
+  const [openMenu, setOpenMenu] = useState<null | 'proj' | 'assignee' | 'prio'>(null);
+  const menuRef = useOutsideClose(openMenu !== null, () => setOpenMenu(null));
+
+  // Инлайн-переименование
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState('');
+
+  // Открытый dropdown статуса
+  const [statusMenuId, setStatusMenuId] = useState<string | null>(null);
+  const statusRef = useOutsideClose(statusMenuId !== null, () => setStatusMenuId(null));
 
   // Хоткей N ведёт на /dashboard/tasks#new — открываем форму сразу.
   useEffect(() => {
@@ -43,54 +97,22 @@ export default function TasksPage() {
     window.addEventListener('hashchange', check);
     return () => window.removeEventListener('hashchange', check);
   }, []);
-  const [newEstimate, setNewEstimate] = useState('');
-  const [newProjectId, setNewProjectId] = useState('');
-  const [projMenuOpen, setProjMenuOpen] = useState(false);
-  const projMenuRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!projMenuOpen) return;
-    const onDoc = (e: MouseEvent) => {
-      if (projMenuRef.current && !projMenuRef.current.contains(e.target as Node)) {
-        setProjMenuOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', onDoc);
-    return () => document.removeEventListener('mousedown', onDoc);
-  }, [projMenuOpen]);
-
-  // Инлайн-переименование
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editTitle, setEditTitle] = useState('');
-
-  // Открытый dropdown статуса
-  const [statusMenuId, setStatusMenuId] = useState<string | null>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!statusMenuId) return;
-    const onDoc = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setStatusMenuId(null);
-      }
-    };
-    document.addEventListener('mousedown', onDoc);
-    return () => document.removeEventListener('mousedown', onDoc);
-  }, [statusMenuId]);
 
   const load = useCallback(async () => {
     try {
-      const [t, p] = await Promise.all([
-        api.listTasks(),
+      const [t, p, tpl] = await Promise.all([
+        api.listTasks(isAdmin && who === 'mine' ? 'mine' : undefined),
         api.listProjects().catch(() => [] as ProjectWithStats[]),
+        api.listTaskTemplates().catch(() => [] as TaskTemplate[]),
       ]);
       setTasks(t);
       setProjects(p);
+      setTemplates(tpl);
       setError('');
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Не удалось загрузить задачи');
     }
-  }, []);
+  }, [isAdmin, who]);
 
   useEffect(() => {
     void load();
@@ -98,6 +120,11 @@ export default function TasksPage() {
 
   const visible = tasks.filter((t) =>
     filter === 'all' ? true : filter === 'done' ? t.status === 'done' : t.status !== 'done',
+  );
+
+  const overdueCount = useMemo(
+    () => tasks.filter((t) => dueInfo(t)?.overdue).length,
+    [tasks],
   );
 
   async function addTask() {
@@ -108,9 +135,15 @@ export default function TasksPage() {
         title,
         estimated_minutes: newEstimate ? Number(newEstimate) : undefined,
         project_id: newProjectId || undefined,
+        assignee_id: newAssigneeId || undefined,
+        priority: newPrio,
+        due_date: newDue || undefined,
+        external_url: newLink.trim() || undefined,
       });
       setNewTitle('');
       setNewEstimate('');
+      setNewDue('');
+      setNewLink('');
       setNewOpen(false);
       toast('Задача создана');
       await load();
@@ -142,12 +175,75 @@ export default function TasksPage() {
   }
 
   async function delTask(id: string) {
+    const removed = tasks.find((t) => t.id === id);
     try {
       await api.deleteTask(id);
-      toast('Задача удалена, записи времени сохранены');
       await load();
+      toast(
+        'Задача удалена',
+        removed
+          ? async () => {
+              // Undo: пересоздаём задачу с теми же полями.
+              await api.createTask({
+                title: removed.title,
+                description: removed.description ?? undefined,
+                estimated_minutes: removed.estimated_minutes ?? undefined,
+                status: removed.status,
+                project_id: removed.project_id ?? undefined,
+                assignee_id: removed.assignee_id ?? undefined,
+                external_url: removed.external_url ?? undefined,
+                priority: removed.priority,
+                due_date: removed.due_date ?? undefined,
+              });
+              toast('Восстановлено');
+              await load();
+            }
+          : undefined,
+      );
     } catch (err) {
       toast(err instanceof ApiError ? err.message : 'Не удалось удалить задачу');
+    }
+  }
+
+  async function saveTemplate() {
+    const title = newTitle.trim();
+    if (!title) {
+      toast('Введите название задачи');
+      return;
+    }
+    try {
+      await api.createTaskTemplate({
+        title,
+        project_id: newProjectId || undefined,
+        estimated_minutes: newEstimate ? Number(newEstimate) : undefined,
+      });
+      toast('Шаблон сохранён');
+      await load();
+    } catch (err) {
+      toast(err instanceof ApiError ? err.message : 'Не удалось сохранить шаблон');
+    }
+  }
+
+  async function applyTemplate(tpl: TaskTemplate) {
+    try {
+      await api.createTask({
+        title: tpl.title,
+        project_id: tpl.project_id ?? undefined,
+        estimated_minutes: tpl.estimated_minutes ?? undefined,
+      });
+      toast('Задача из шаблона создана');
+      await load();
+    } catch (err) {
+      toast(err instanceof ApiError ? err.message : 'Не удалось создать задачу');
+    }
+  }
+
+  async function removeTemplate(id: string) {
+    try {
+      await api.deleteTaskTemplate(id);
+      await load();
+    } catch {
+      toast('Не удалось удалить шаблон');
     }
   }
 
@@ -160,6 +256,9 @@ export default function TasksPage() {
       toast(err instanceof ApiError ? err.message : 'Не удалось запустить таймер');
     }
   }
+
+  const selProject = projects.find((p) => p.id === newProjectId);
+  const selAssignee = members.find((m) => m.user_id === newAssigneeId);
 
   return (
     <div>
@@ -179,7 +278,30 @@ export default function TasksPage() {
             </button>
           ))}
         </div>
+        {isAdmin && (
+          <div className="seg">
+            {(
+              [
+                ['all', 'Все сотрудники'],
+                ['mine', 'Мои'],
+              ] as [Who, string][]
+            ).map(([w, label]) => (
+              <button key={w} className={who === w ? 'on' : ''} onClick={() => setWho(w)}>
+                {label}
+              </button>
+            ))}
+          </div>
+        )}
         <div style={{ flex: 1 }} />
+        {isAdmin && (
+          <button
+            className="btn-ghost"
+            style={{ padding: '8px 14px', fontSize: 13 }}
+            onClick={() => openGenerator({ mode: 'notes' })}
+          >
+            Release notes
+          </button>
+        )}
         <button
           className="btn btn-accent"
           style={{ padding: '8px 16px', fontSize: 13 }}
@@ -189,6 +311,25 @@ export default function TasksPage() {
         </button>
       </div>
 
+      {overdueCount > 0 && (
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            background: 'var(--rsoft)',
+            border: '1px solid var(--red)',
+            borderRadius: 10,
+            padding: '9px 14px',
+            marginBottom: 12,
+            fontSize: 13,
+          }}
+        >
+          <b>Просрочено: {overdueLabel(overdueCount)}</b> — пересмотрите дедлайны или
+          закройте задачи.
+        </div>
+      )}
+
       {newOpen && (
         <div
           className="card"
@@ -196,6 +337,7 @@ export default function TasksPage() {
             display: 'flex',
             gap: 10,
             alignItems: 'center',
+            flexWrap: 'wrap',
             borderColor: 'var(--accent)',
             borderRadius: 10,
             padding: '12px 14px',
@@ -212,35 +354,37 @@ export default function TasksPage() {
               if (e.key === 'Enter') void addTask();
               if (e.key === 'Escape') setNewOpen(false);
             }}
-            style={{ flex: 2 }}
+            style={{ flex: 2, minWidth: 160 }}
           />
-          <div className="menu-wrap" ref={projMenuRef} style={{ flex: 1, minWidth: 130 }}>
+
+          {/* Проект */}
+          <div
+            className="menu-wrap"
+            ref={openMenu === 'proj' ? menuRef : undefined}
+            style={{ flex: 1, minWidth: 110 }}
+          >
             <button
               className="dd-btn"
               style={{ borderRadius: 7, padding: '8px 11px' }}
-              onClick={() => setProjMenuOpen((o) => !o)}
+              onClick={() => setOpenMenu(openMenu === 'proj' ? null : 'proj')}
             >
               <span style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
                 <span
                   className="pdot"
-                  style={{
-                    background:
-                      projects.find((p) => p.id === newProjectId)?.color ??
-                      'var(--border2)',
-                  }}
+                  style={{ background: selProject?.color ?? 'var(--border2)' }}
                 />
-                {projects.find((p) => p.id === newProjectId)?.name ?? 'Без проекта'}
+                {selProject?.name ?? 'Без проекта'}
               </span>
               <span style={{ color: 'var(--muted)', fontSize: 10 }}>▾</span>
             </button>
-            {projMenuOpen && (
+            {openMenu === 'proj' && (
               <div className="menu">
                 <div
                   className="menu-item"
                   style={{ color: 'var(--muted)' }}
                   onClick={() => {
                     setNewProjectId('');
-                    setProjMenuOpen(false);
+                    setOpenMenu(null);
                   }}
                 >
                   Без проекта
@@ -251,7 +395,7 @@ export default function TasksPage() {
                     className="menu-item"
                     onClick={() => {
                       setNewProjectId(p.id);
-                      setProjMenuOpen(false);
+                      setOpenMenu(null);
                     }}
                   >
                     <span className="pdot" style={{ background: p.color }} />
@@ -261,6 +405,100 @@ export default function TasksPage() {
               </div>
             )}
           </div>
+
+          {/* Исполнитель (admin+) */}
+          {isAdmin && members.length > 0 && (
+            <div
+              className="menu-wrap"
+              ref={openMenu === 'assignee' ? menuRef : undefined}
+              style={{ flex: 1, minWidth: 110 }}
+            >
+              <button
+                className="dd-btn"
+                style={{ borderRadius: 7, padding: '8px 11px' }}
+                onClick={() => setOpenMenu(openMenu === 'assignee' ? null : 'assignee')}
+              >
+                <span>{selAssignee ? selAssignee.name : 'Себе'}</span>
+                <span style={{ color: 'var(--muted)', fontSize: 10 }}>▾</span>
+              </button>
+              {openMenu === 'assignee' && (
+                <div className="menu">
+                  <div
+                    className="menu-item"
+                    style={{ color: 'var(--muted)' }}
+                    onClick={() => {
+                      setNewAssigneeId('');
+                      setOpenMenu(null);
+                    }}
+                  >
+                    Себе
+                  </div>
+                  {members
+                    .filter((m) => m.user_id !== user?.id)
+                    .map((m) => (
+                      <div
+                        key={m.user_id}
+                        className="menu-item"
+                        onClick={() => {
+                          setNewAssigneeId(m.user_id);
+                          setOpenMenu(null);
+                        }}
+                      >
+                        {m.name}
+                      </div>
+                    ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Приоритет */}
+          <div className="menu-wrap" ref={openMenu === 'prio' ? menuRef : undefined} style={{ flexShrink: 0 }}>
+            <button
+              onClick={() => setOpenMenu(openMenu === 'prio' ? null : 'prio')}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                background: 'var(--surface2)',
+                border: '1px solid var(--border)',
+                borderRadius: 7,
+                padding: '8px 11px',
+                fontSize: 13,
+                color: PRIO_META[newPrio].color,
+                cursor: 'pointer',
+              }}
+            >
+              {PRIO_META[newPrio].label}
+              <span style={{ color: 'var(--muted)', fontSize: 10 }}>▾</span>
+            </button>
+            {openMenu === 'prio' && (
+              <div className="menu" style={{ right: 'auto', minWidth: 120 }}>
+                {(Object.keys(PRIO_META) as TaskPriority[]).map((p) => (
+                  <div
+                    key={p}
+                    className="menu-item"
+                    style={{ fontSize: '12.5px', color: PRIO_META[p].color }}
+                    onClick={() => {
+                      setNewPrio(p);
+                      setOpenMenu(null);
+                    }}
+                  >
+                    {PRIO_META[p].label}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <input
+            type="date"
+            className="input input-time"
+            title="Дедлайн"
+            value={newDue}
+            onChange={(e) => setNewDue(e.target.value)}
+            style={{ fontSize: '12.5px', padding: '7px 9px' }}
+          />
           <input
             className="input input-sm"
             placeholder="Оценка, мин"
@@ -269,7 +507,18 @@ export default function TasksPage() {
             onKeyDown={(e) => {
               if (e.key === 'Enter') void addTask();
             }}
-            style={{ width: 110 }}
+            style={{ width: 90 }}
+          />
+          <input
+            className="input input-sm"
+            placeholder="Ссылка (Notion/Jira)"
+            title="Ссылка на задачу во внешней системе — попадёт в стендап-отчёт"
+            value={newLink}
+            onChange={(e) => setNewLink(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') void addTask();
+            }}
+            style={{ flex: 1, minWidth: 140 }}
           />
           <button
             className="btn btn-accent"
@@ -278,6 +527,66 @@ export default function TasksPage() {
           >
             Создать
           </button>
+          <button
+            className="btn-outline"
+            title="Сохранить как шаблон"
+            style={{ padding: '8px 12px', color: 'var(--muted)' }}
+            onClick={() => void saveTemplate()}
+          >
+            В шаблон
+          </button>
+        </div>
+      )}
+
+      {templates.length > 0 && (
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            flexWrap: 'wrap',
+            marginBottom: 12,
+            fontSize: 12,
+          }}
+        >
+          <span style={{ color: 'var(--muted)' }}>Шаблоны:</span>
+          {templates.map((tpl) => (
+            <span
+              key={tpl.id}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 4,
+                background: 'var(--surface)',
+                border: '1px solid var(--border)',
+                borderRadius: 99,
+                padding: '5px 6px 5px 12px',
+                fontSize: 12,
+              }}
+            >
+              <button
+                onClick={() => void applyTemplate(tpl)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: 'var(--text)',
+                  cursor: 'pointer',
+                  padding: 0,
+                  fontSize: 12,
+                }}
+              >
+                ＋ {tpl.title}
+              </button>
+              <button
+                className="icon-x"
+                title="Удалить шаблон"
+                style={{ fontSize: 11, padding: '0 3px' }}
+                onClick={() => void removeTemplate(tpl.id)}
+              >
+                ✕
+              </button>
+            </span>
+          ))}
         </div>
       )}
 
@@ -289,12 +598,17 @@ export default function TasksPage() {
             ? Math.min(100, Math.round((t.total_tracked_seconds / estSec) * 100))
             : 0;
           const over = estSec > 0 && t.total_tracked_seconds > estSec;
+          const due = dueInfo(t);
+          const assigneeName =
+            t.assignee_id === user?.id || !t.assignee
+              ? 'Вы'
+              : t.assignee.name.split(' ')[0];
           return (
             <div className="list-row" key={t.id} style={{ padding: '11px 16px' }}>
               <div
                 className="menu-wrap"
                 style={{ flexShrink: 0 }}
-                ref={statusMenuId === t.id ? menuRef : undefined}
+                ref={statusMenuId === t.id ? statusRef : undefined}
               >
                 <button
                   onClick={() => setStatusMenuId(statusMenuId === t.id ? null : t.id)}
@@ -374,20 +688,51 @@ export default function TasksPage() {
                   style={{
                     display: 'flex',
                     alignItems: 'center',
-                    gap: 8,
+                    flexWrap: 'wrap',
+                    columnGap: 8,
+                    rowGap: 1,
                     fontSize: '11.5px',
                     color: 'var(--muted)',
                     marginTop: 2,
                   }}
                 >
-                  <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap' }}>
                     <span
                       className="pdot"
                       style={{ width: 6, height: 6, background: projectColor(t) }}
                     />
                     {projectName(t)}
                   </span>
-                  {t.pomodoro_count > 0 && <span>· {t.pomodoro_count} pomodoro</span>}
+                  <span style={{ whiteSpace: 'nowrap' }}>· {assigneeName}</span>
+                  <span
+                    style={{
+                      color: PRIO_META[t.priority ?? 'med'].color,
+                      fontWeight: 600,
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    · {PRIO_META[t.priority ?? 'med'].label}
+                  </span>
+                  {due && (
+                    <span style={{ color: due.color, whiteSpace: 'nowrap' }}>
+                      · {due.label}
+                    </span>
+                  )}
+                  {t.external_url && (
+                    <a
+                      href={t.external_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      title={t.external_url}
+                      onClick={(e) => e.stopPropagation()}
+                      style={{ color: 'var(--accent)', whiteSpace: 'nowrap', textDecoration: 'none' }}
+                    >
+                      · 🔗 ссылка
+                    </a>
+                  )}
+                  {t.pomodoro_count > 0 && (
+                    <span style={{ whiteSpace: 'nowrap' }}>· {t.pomodoro_count} pomodoro</span>
+                  )}
                 </div>
               </div>
 

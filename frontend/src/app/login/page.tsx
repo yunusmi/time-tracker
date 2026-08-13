@@ -11,6 +11,8 @@ export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [totpCode, setTotpCode] = useState('');
+  const [needTotp, setNeedTotp] = useState(false);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
@@ -23,10 +25,16 @@ export default function LoginPage() {
     setError('');
     setSubmitting(true);
     try {
-      await login(email, password);
+      await login(email, password, totpCode || undefined);
       router.replace('/dashboard');
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Login failed');
+      // Включена 2FA — показываем поле кода вместо ошибки.
+      if (err instanceof ApiError && err.message === 'totp_required') {
+        setNeedTotp(true);
+        setError('');
+      } else {
+        setError(err instanceof ApiError ? err.message : 'Не удалось войти');
+      }
     } finally {
       setSubmitting(false);
     }
@@ -58,6 +66,21 @@ export default function LoginPage() {
               required
             />
           </div>
+          {needTotp && (
+            <div className="field">
+              <label htmlFor="totp">Код из приложения-аутентификатора</label>
+              <input
+                id="totp"
+                inputMode="numeric"
+                maxLength={6}
+                placeholder="000000"
+                value={totpCode}
+                onChange={(e) => setTotpCode(e.target.value.replace(/\D/g, ''))}
+                autoFocus
+                style={{ letterSpacing: '0.3em', textAlign: 'center' }}
+              />
+            </div>
+          )}
           {error && <p className="error">{error}</p>}
           <button
             className="btn-primary"

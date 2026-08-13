@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@600&display=swap" rel="stylesheet">
+<style>
+html,body{margin:0;padding:0;background:#ecedf1}
+body{font-family:'Instrument Sans',system-ui,sans-serif}
+a{color:#6366f1;text-decoration:none}a:hover{color:#4f52d9}
+</style>
+</helmet>
+<div style="min-height:100vh;background:#ecedf1;padding:36px 24px;display:flex;gap:32px;flex-wrap:wrap;justify-content:center;align-items:flex-start">
+  <div style="width:560px">
+    <div style="font-size:12px;color:#6b6e78;margin-bottom:8px;padding-left:4px">Тема письма: <b style="color:#191a1f">Подтвердите почту — Хронос</b></div>
+    <div style="background:#ffffff;border-radius:14px;overflow:hidden;box-shadow:0 6px 24px rgba(30,30,60,.1)">
+      <div style="padding:28px 36px 0;display:flex;align-items:center;gap:10px">
+        <div style="width:26px;height:26px;border-radius:7px;background:#6366f1;display:flex;align-items:center;justify-content:center"><div style="width:9px;height:9px;border-radius:50%;border:2px solid #fff"></div></div>
+        <span style="font-weight:700;font-size:16px;color:#191a1f">Хронос</span>
+      </div>
+      <div style="padding:28px 36px 36px">
+        <div style="font-size:21px;font-weight:700;color:#191a1f;margin-bottom:12px">Подтвердите вашу почту</div>
+        <div style="font-size:14.5px;line-height:1.6;color:#3d3f47;margin-bottom:24px">Здравствуйте, Юнус! Вы зарегистрировались в Хроносе с адресом <b>yunus@example.com</b>. Нажмите кнопку ниже, чтобы подтвердить почту и открыть все возможности аккаунта.</div>
+        <a href="#" style="display:inline-block;background:#6366f1;color:#ffffff;border-radius:9px;padding:13px 30px;font-size:14.5px;font-weight:600">Подтвердить почту</a>
+        <div style="font-size:12.5px;line-height:1.6;color:#6b6e78;margin-top:24px">Ссылка действует 24 часа. Если кнопка не работает, скопируйте адрес в браузер:<br><span style="font-family:'JetBrains Mono',monospace;font-size:11.5px;color:#6366f1;word-break:break-all">https://chronos.app/verify?token=f3a9c1…</span></div>
+      </div>
+      <div style="border-top:1px solid #eceded;padding:18px 36px;font-size:12px;color:#8b8f9a;line-height:1.6">Вы получили это письмо, потому что зарегистрировались в Хроносе.<br>Если это были не вы — просто проигнорируйте письмо.</div>
+    </div>
+  </div>
+  <div style="width:560px">
+    <div style="font-size:12px;color:#6b6e78;margin-bottom:8px;padding-left:4px">Тема письма: <b style="color:#191a1f">Аня Соколова приглашает вас в команду «Хронос»</b></div>
+    <div style="background:#ffffff;border-radius:14px;overflow:hidden;box-shadow:0 6px 24px rgba(30,30,60,.1)">
+      <div style="padding:28px 36px 0;display:flex;align-items:center;gap:10px">
+        <div style="width:26px;height:26px;border-radius:7px;background:#6366f1;display:flex;align-items:center;justify-content:center"><div style="width:9px;height:9px;border-radius:50%;border:2px solid #fff"></div></div>
+        <span style="font-weight:700;font-size:16px;color:#191a1f">Хронос</span>
+      </div>
+      <div style="padding:28px 36px 36px">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px">
+          <div style="width:44px;height:44px;border-radius:50%;background:rgba(99,102,241,.12);color:#6366f1;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700">АС</div>
+          <div>
+            <div style="font-size:14.5px;font-weight:600;color:#191a1f">Аня Соколова</div>
+            <div style="font-size:12.5px;color:#6b6e78">anya@example.com</div>
+          </div>
+        </div>
+        <div style="font-size:21px;font-weight:700;color:#191a1f;margin-bottom:12px">Вас пригласили в команду</div>
+        <div style="font-size:14.5px;line-height:1.6;color:#3d3f47;margin-bottom:18px">Аня приглашает вас в рабочее пространство <b>«Хронос»</b> — учёт времени, задачи и отчёты команды в одном месте.</div>
+        <div style="display:inline-flex;align-items:center;gap:8px;background:#f0f0f3;border-radius:8px;padding:8px 14px;font-size:13px;color:#3d3f47;margin-bottom:24px">Ваша роль: <span style="background:rgba(99,102,241,.12);color:#6366f1;border-radius:6px;padding:2px 10px;font-size:12px;font-weight:600">Участник</span></div>
+        <div><a href="#" style="display:inline-block;background:#6366f1;color:#ffffff;border-radius:9px;padding:13px 30px;font-size:14.5px;font-weight:600">Принять приглашение</a></div>
+        <div style="font-size:12.5px;color:#6b6e78;margin-top:24px">Приглашение действует 7 дней. Участник может вести свои задачи и время; доступ к чужим отчётам есть только у админов.</div>
+      </div>
+      <div style="border-top:1px solid #eceded;padding:18px 36px;font-size:12px;color:#8b8f9a;line-height:1.6">Не ожидали этого письма? Просто проигнорируйте его — без вашего подтверждения доступ не появится.</div>
+    </div>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

@@ -16,8 +16,18 @@ import { Workspace } from './workspace.entity';
 export enum WorkspaceRole {
   OWNER = 'owner',
   ADMIN = 'admin',
+  /** Менеджер проекта: задачи и отчёты только своего проекта, без денег. */
+  PM = 'pm',
   MEMBER = 'member',
+  /** Клиент: только отчёты своего проекта, read-only. */
+  CLIENT = 'client',
 }
+
+/** Роли с правами администрирования (проекты, инвайты, чужие данные). */
+export const ADMIN_ROLES: WorkspaceRole[] = [
+  WorkspaceRole.OWNER,
+  WorkspaceRole.ADMIN,
+];
 
 @Table({
   tableName: 'workspace_members',
@@ -55,6 +65,15 @@ export class WorkspaceMember extends Model {
     allowNull: false,
   })
   role: WorkspaceRole;
+
+  @ApiProperty({
+    required: false,
+    nullable: true,
+    format: 'uuid',
+    description: 'Проект, к которому привязаны роли pm/client',
+  })
+  @Column({ type: DataType.UUID, allowNull: true, field: 'project_id' })
+  project_id: string | null;
 
   @ApiProperty()
   @CreatedAt

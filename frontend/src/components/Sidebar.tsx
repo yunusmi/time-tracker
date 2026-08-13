@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/context/ThemeContext';
 import { usePomodoro, PHASE_LABEL } from '@/context/PomodoroContext';
+import { ROLE_LABEL, useWorkspace } from '@/context/WorkspaceContext';
 import { formatClock } from '@/lib/format';
 
 const NAV = [
@@ -45,6 +46,16 @@ const NAV = [
         <path d="M3.5 13.5V9.5" />
         <path d="M8 13.5V3.5" />
         <path d="M12.5 13.5V7" />
+      </svg>
+    ),
+  },
+  {
+    href: '/dashboard/timesheets',
+    label: 'Таймшиты',
+    icon: (
+      <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+        <rect x="3" y="2" width="10" height="12" rx="2" />
+        <path d="M5.5 8.2l1.7 1.7 3.3-3.5" />
       </svg>
     ),
   },
@@ -91,16 +102,29 @@ function initials(name: string): string {
     .join('');
 }
 
-export function Sidebar() {
+export function Sidebar({ mobileOpen = false }: { mobileOpen?: boolean }) {
   const pathname = usePathname();
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const pomo = usePomodoro();
+  const { role, canSeeProjects, isClient } = useWorkspace();
 
   const showMiniPomo = pomo.running && pathname !== '/dashboard/pomodoro';
 
+  // Гейты навигации по ролям: клиент видит только Отчёты и Настройки,
+  // «Проекты» — admin+ и менеджер.
+  const visibleNav = NAV.filter((item) => {
+    if (isClient) {
+      return (
+        item.href === '/dashboard/reports' || item.href === '/dashboard/settings'
+      );
+    }
+    if (item.href === '/dashboard/projects') return canSeeProjects;
+    return true;
+  });
+
   return (
-    <aside className="sidebar">
+    <aside className={`sidebar ${mobileOpen ? 'mobile-open' : ''}`}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '2px 10px 14px' }}>
         <div
           style={{
@@ -120,7 +144,7 @@ export function Sidebar() {
         </span>
       </div>
 
-      {NAV.map((item) => (
+      {visibleNav.map((item) => (
         <Link
           key={item.href}
           href={item.href}
@@ -219,7 +243,7 @@ export function Sidebar() {
               cursor: 'pointer',
             }}
           >
-            Выйти
+            {ROLE_LABEL[role]} · Выйти
           </button>
         </div>
       </div>

@@ -24,7 +24,9 @@ import { PomodoroSettings } from '../../pomodoro/entities/pomodoro-settings.enti
   tableName: 'users',
   timestamps: true,
   updatedAt: false,
-  defaultScope: { attributes: { exclude: ['password_hash'] } },
+  defaultScope: {
+    attributes: { exclude: ['password_hash', 'verify_token', 'totp_secret'] },
+  },
 })
 export class User extends Model {
   @ApiProperty({ format: 'uuid' })
@@ -45,6 +47,34 @@ export class User extends Model {
   // Excluded from queries by default scope; only loaded via `withPassword`.
   @Column({ type: DataType.STRING, allowNull: false, field: 'password_hash' })
   password_hash: string;
+
+  @ApiProperty({
+    required: false,
+    nullable: true,
+    description: 'Когда почта была подтверждена (null — не подтверждена)',
+  })
+  @Column({ type: DataType.DATE, allowNull: true, field: 'email_verified_at' })
+  email_verified_at: Date | null;
+
+  // Одноразовый токен верификации почты (исключён из выдачи по умолчанию).
+  @Column({ type: DataType.STRING(64), allowNull: true, field: 'verify_token' })
+  verify_token: string | null;
+
+  @Column({
+    type: DataType.DATE,
+    allowNull: true,
+    field: 'verify_token_expires',
+  })
+  verify_token_expires: Date | null;
+
+  // Секрет TOTP (исключён из выдачи по умолчанию).
+  @Column({ type: DataType.STRING(64), allowNull: true, field: 'totp_secret' })
+  totp_secret: string | null;
+
+  @ApiProperty({ description: 'Включена ли двухфакторная аутентификация' })
+  @Default(false)
+  @Column({ type: DataType.BOOLEAN, allowNull: false, field: 'totp_enabled' })
+  totp_enabled: boolean;
 
   @ApiProperty()
   @CreatedAt

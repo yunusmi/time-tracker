@@ -39,6 +39,27 @@ export class UserSettingsService {
     if (dto.theme !== undefined) {
       settings.theme = dto.theme;
     }
+    if (dto.dnd_until !== undefined) {
+      settings.dnd_until = dto.dnd_until ? new Date(dto.dnd_until) : null;
+    }
+    if (dto.auto_stop_evening !== undefined) {
+      settings.auto_stop_evening = dto.auto_stop_evening;
+    }
+    if (dto.standup_greeting !== undefined) {
+      settings.standup_greeting = dto.standup_greeting;
+    }
+    if (dto.standup_misc_line !== undefined) {
+      settings.standup_misc_line = dto.standup_misc_line;
+    }
+    if (dto.standup_signature !== undefined) {
+      settings.standup_signature = dto.standup_signature;
+    }
+    if (dto.standup_auto_send !== undefined) {
+      settings.standup_auto_send = dto.standup_auto_send;
+    }
+    if (dto.monthly_hours_limit !== undefined) {
+      settings.monthly_hours_limit = dto.monthly_hours_limit;
+    }
     return settings.save();
   }
 }
