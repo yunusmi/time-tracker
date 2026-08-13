@@ -171,6 +171,7 @@ export function ReportGenerator() {
     toast('Текст скопирован — вставьте в чат');
   };
 
+  // Активный пункт сегмента — asoft/accent (как seg() в прототипе).
   const seg = (active: boolean): React.CSSProperties => ({
     border: 'none',
     borderRadius: 6,
@@ -178,9 +179,8 @@ export function ReportGenerator() {
     fontSize: 12,
     fontWeight: 500,
     cursor: 'pointer',
-    background: active ? 'var(--surface)' : 'transparent',
-    color: active ? 'var(--text)' : 'var(--muted)',
-    boxShadow: active ? '0 1px 3px rgba(0,0,0,.2)' : 'none',
+    background: active ? 'var(--asoft)' : 'transparent',
+    color: active ? 'var(--accent)' : 'var(--muted)',
   });
 
   return (
