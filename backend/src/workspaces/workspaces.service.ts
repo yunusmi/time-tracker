@@ -9,18 +9,39 @@ import { randomBytes } from 'crypto';
 import { Op } from 'sequelize';
 import { Workspace } from './entities/workspace.entity';
 import {
+  ADMIN_ROLES,
   WorkspaceMember,
   WorkspaceRole,
 } from './entities/workspace-member.entity';
+
+/** Контекст текущего пользователя в его workspace для RBAC-проверок. */
+export interface WorkspaceContext {
+  workspace: Workspace;
+  role: WorkspaceRole;
+  /** Проект, к которому привязаны роли pm/client (иначе null). */
+  project_id: string | null;
+  /** id всех участников workspace (для admin-выборок «все сотрудники»). */
+  memberIds: string[];
+  isAdmin: boolean;
+}
 import {
   InviteStatus,
   WorkspaceInvite,
 } from './entities/workspace-invite.entity';
 import { User } from '../users/entities/user.entity';
+import { UserSettings } from '../users/entities/user-settings.entity';
 import { Task } from '../tasks/entities/task.entity';
 import { TimeEntry } from '../time-entries/entities/time-entry.entity';
-import { TimeEntriesService } from '../time-entries/time-entries.service';
+import { dayRange } from '../common/day-range';
+import { MailService } from '../mail/mail.service';
+import { AuditService } from '../audit/audit.service';
 import { CreateInviteDto, WorkspaceMemberViewDto } from './dto/workspaces.dto';
+
+const ROLE_LABELS: Record<string, string> = {
+  owner: 'Владелец',
+  admin: 'Админ',
+  member: 'Участник',
+};
 
 @Injectable()
 export class WorkspacesService {
@@ -35,6 +56,8 @@ export class WorkspacesService {
     private readonly userModel: typeof User,
     @InjectModel(TimeEntry)
     private readonly timeEntryModel: typeof TimeEntry,
+    private readonly mailService: MailService,
+    private readonly auditService: AuditService,
   ) {}
 
   async create(userId: string, name: string): Promise<Workspace> {
@@ -50,18 +73,47 @@ export class WorkspacesService {
     return workspace;
   }
 
-  /** Текущий workspace пользователя; создаётся автоматически при первом обращении. */
+  /**
+   * Текущий workspace пользователя; создаётся автоматически при первом
+   * обращении. Если пользователь принят в чужую команду — она приоритетнее
+   * личного авто-созданного workspace.
+   */
   async getCurrent(userId: string): Promise<Workspace> {
-    const membership = await this.memberModel.findOne({
+    const memberships = await this.memberModel.findAll({
       where: { user_id: userId },
       order: [['created_at', 'ASC']],
     });
-    if (membership) {
-      const ws = await this.workspaceModel.findByPk(membership.workspace_id);
+    const preferred =
+      memberships.find((m) => m.role !== WorkspaceRole.OWNER) ??
+      memberships[0];
+    if (preferred) {
+      const ws = await this.workspaceModel.findByPk(preferred.workspace_id);
       if (ws) return ws;
     }
     const user = await this.userModel.findByPk(userId);
     return this.create(userId, `Команда ${user?.name ?? ''}`.trim());
+  }
+
+  /** Участники workspace (для публичных отчётов и агрегатов). */
+  getMembers(workspaceId: string): Promise<WorkspaceMember[]> {
+    return this.memberModel.findAll({ where: { workspace_id: workspaceId } });
+  }
+
+  /** Роль и границы текущего пользователя (для RBAC в других модулях). */
+  async getContext(userId: string): Promise<WorkspaceContext> {
+    const workspace = await this.getCurrent(userId);
+    const members = await this.memberModel.findAll({
+      where: { workspace_id: workspace.id },
+    });
+    const mine = members.find((m) => m.user_id === userId);
+    const role = mine?.role ?? WorkspaceRole.MEMBER;
+    return {
+      workspace,
+      role,
+      project_id: mine?.project_id ?? null,
+      memberIds: members.map((m) => m.user_id),
+      isAdmin: ADMIN_ROLES.includes(role),
+    };
   }
 
   private async requireMembership(
@@ -78,7 +130,7 @@ export class WorkspacesService {
   }
 
   private assertCanInvite(member: WorkspaceMember): void {
-    if (member.role === WorkspaceRole.MEMBER) {
+    if (!ADMIN_ROLES.includes(member.role)) {
       throw new ForbiddenException('Only admins can manage invites');
     }
   }
@@ -95,12 +147,12 @@ export class WorkspacesService {
     });
     const userIds = members.map((m) => m.user_id);
 
-    const todayRange = TimeEntriesService.dayRange();
+    const todayRange = dayRange();
     const weekStart = new Date(Date.now() - 6 * 24 * 60 * 60 * 1000);
     weekStart.setUTCHours(0, 0, 0, 0);
     const now = Date.now();
 
-    const [weekEntries, activeEntries] = await Promise.all([
+    const [weekEntries, activeEntries, dndRows] = await Promise.all([
       this.timeEntryModel.findAll({
         where: {
           user_id: { [Op.in]: userIds },
@@ -116,7 +168,18 @@ export class WorkspacesService {
         },
         include: [Task],
       }),
+      UserSettings.findAll({
+        where: {
+          user_id: { [Op.in]: userIds },
+          dnd_until: { [Op.gt]: new Date() },
+        },
+        attributes: ['user_id'],
+        raw: true,
+      }),
     ]);
+    const dndUsers = new Set(
+      (dndRows as unknown as Array<{ user_id: string }>).map((r) => r.user_id),
+    );
 
     const todaySec = new Map<string, number>();
     const weekSec = new Map<string, number>();
@@ -152,10 +215,49 @@ export class WorkspacesService {
         active_task_title: active
           ? active.task?.title || active.description || 'Без названия'
           : null,
+        dnd: dndUsers.has(m.user_id),
         today_seconds: todaySec.get(m.user_id) ?? 0,
         week_seconds: weekSec.get(m.user_id) ?? 0,
       };
     });
+  }
+
+  /** Смена роли участника (только владелец; роль владельца не меняется). */
+  async changeRole(
+    ownerId: string,
+    targetUserId: string,
+    role: WorkspaceRole,
+    projectId?: string | null,
+  ): Promise<WorkspaceMember> {
+    const ctx = await this.getContext(ownerId);
+    if (ctx.role !== WorkspaceRole.OWNER) {
+      throw new ForbiddenException('Роли меняет только владелец команды');
+    }
+    if (role === WorkspaceRole.OWNER) {
+      throw new BadRequestException('Владелец назначается при создании команды');
+    }
+    const member = await this.memberModel.findOne({
+      where: { workspace_id: ctx.workspace.id, user_id: targetUserId },
+    });
+    if (!member) {
+      throw new NotFoundException('Участник не найден');
+    }
+    if (member.role === WorkspaceRole.OWNER) {
+      throw new BadRequestException('Роль владельца изменить нельзя');
+    }
+    member.role = role;
+    member.project_id =
+      role === WorkspaceRole.PM || role === WorkspaceRole.CLIENT
+        ? (projectId ?? member.project_id)
+        : null;
+    await member.save();
+    this.auditService.log(
+      ctx.workspace.id,
+      ownerId,
+      `изменил(а) роль участника → ${role}`,
+      { type: 'member', id: member.id },
+    );
+    return member;
   }
 
   async createInvite(
@@ -171,13 +273,36 @@ export class WorkspacesService {
         ? WorkspaceRole.ADMIN
         : WorkspaceRole.MEMBER;
 
-    return this.inviteModel.create({
+    const invite = await this.inviteModel.create({
       workspace_id: workspace.id,
       email: dto.email.toLowerCase(),
       role,
       token: randomBytes(24).toString('hex'),
       status: InviteStatus.PENDING,
     });
+
+    this.auditService.log(
+      workspace.id,
+      userId,
+      `пригласил(а) ${invite.email} — роль ${ROLE_LABELS[role] ?? role}`,
+      { type: 'invite', id: invite.id },
+    );
+
+    // Письмо-приглашение (дизайн Emails.dc.html); ошибка почты не ломает инвайт.
+    const inviter = await this.userModel.findByPk(userId);
+    if (inviter) {
+      this.mailService
+        .sendInvite(
+          invite.email,
+          { name: inviter.name, email: inviter.email },
+          workspace.name,
+          ROLE_LABELS[role] ?? role,
+          invite.token,
+        )
+        .catch(() => undefined);
+    }
+
+    return invite;
   }
 
   async listInvites(userId: string): Promise<WorkspaceInvite[]> {
@@ -202,6 +327,12 @@ export class WorkspacesService {
     }
     invite.status = InviteStatus.REVOKED;
     await invite.save();
+    this.auditService.log(
+      workspace.id,
+      userId,
+      `отозвал(а) приглашение ${invite.email}`,
+      { type: 'invite', id: invite.id },
+    );
   }
 
   /** Многоразовая ссылка-приглашение (роль member): создаётся один раз на workspace. */

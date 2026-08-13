@@ -133,6 +133,15 @@ export function PomodoroProvider({ children }: { children: React.ReactNode }) {
     } else {
       setRunning(false);
     }
+    // DND действует только во время фокус-фазы.
+    api
+      .updateUserSettings({
+        dnd_until:
+          s.auto_start && next === 'work'
+            ? new Date(Date.now() + nextSeconds * 1000).toISOString()
+            : null,
+      })
+      .catch(() => undefined);
     toast(
       cur === 'work'
         ? 'Фокус-сессия завершена — перерыв!'
@@ -156,17 +165,29 @@ export function PomodoroProvider({ children }: { children: React.ReactNode }) {
     return () => clearInterval(id);
   }, [running, handleComplete]);
 
+  /** «Не беспокоить» в команде на время фокус-сессии. */
+  const setDnd = useCallback((until: Date | null) => {
+    api
+      .updateUserSettings({ dnd_until: until ? until.toISOString() : null })
+      .catch(() => undefined);
+  }, []);
+
   const start = useCallback(() => {
     deadlineRef.current = Date.now() + Math.max(1, secondsLeft) * 1000;
     setRunning(true);
-  }, [secondsLeft]);
+    if (phase === 'work') setDnd(new Date(deadlineRef.current));
+  }, [secondsLeft, phase, setDnd]);
 
-  const pause = useCallback(() => setRunning(false), []);
+  const pause = useCallback(() => {
+    setRunning(false);
+    setDnd(null);
+  }, [setDnd]);
 
   const reset = useCallback(() => {
     setRunning(false);
+    setDnd(null);
     if (settings) setSecondsLeft(phaseSeconds(phase, settings));
-  }, [settings, phase]);
+  }, [settings, phase, setDnd]);
 
   const switchPhase = useCallback(
     (p: PomodoroPhase) => {

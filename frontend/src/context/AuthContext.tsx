@@ -13,9 +13,11 @@ import type { AuthUser } from '@/lib/types';
 interface AuthContextValue {
   user: AuthUser | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string, totpCode?: string) => Promise<void>;
   register: (email: string, name: string, password: string) => Promise<void>;
   logout: () => void;
+  /** Обновить пользователя в стейте (после PATCH /users/me и т.п.). */
+  setUser: (user: AuthUser) => void;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -37,11 +39,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .finally(() => setLoading(false));
   }, []);
 
-  const login = useCallback(async (email: string, password: string) => {
-    const res = await api.login({ email, password });
-    setToken(res.access_token);
-    setUser(res.user);
-  }, []);
+  const login = useCallback(
+    async (email: string, password: string, totpCode?: string) => {
+      const res = await api.login({ email, password, totp_code: totpCode });
+      setToken(res.access_token);
+      setUser(res.user);
+    },
+    [],
+  );
 
   const register = useCallback(
     async (email: string, name: string, password: string) => {
@@ -58,7 +63,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
+    <AuthContext.Provider
+      value={{ user, loading, login, register, logout, setUser }}
+    >
       {children}
     </AuthContext.Provider>
   );

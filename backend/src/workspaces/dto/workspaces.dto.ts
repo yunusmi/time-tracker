@@ -32,6 +32,28 @@ export class CreateInviteDto {
   role?: WorkspaceRole;
 }
 
+export class ChangeRoleDto {
+  @ApiProperty({
+    enum: [
+      WorkspaceRole.ADMIN,
+      WorkspaceRole.PM,
+      WorkspaceRole.MEMBER,
+      WorkspaceRole.CLIENT,
+    ],
+  })
+  @IsEnum(WorkspaceRole)
+  role: WorkspaceRole;
+
+  @ApiProperty({
+    required: false,
+    nullable: true,
+    format: 'uuid',
+    description: 'Проект для ролей pm/client',
+  })
+  @IsOptional()
+  project_id?: string | null;
+}
+
 export class WorkspaceMemberViewDto {
   @ApiProperty({ format: 'uuid' })
   user_id: string;
@@ -50,6 +72,9 @@ export class WorkspaceMemberViewDto {
     description: 'Название активной задачи/описание таймера (null — не трекает)',
   })
   active_task_title: string | null;
+
+  @ApiProperty({ description: '«Не беспокоить» — идёт фокус-сессия' })
+  dnd: boolean;
 
   @ApiProperty({ example: 15120 })
   today_seconds: number;

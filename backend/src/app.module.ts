@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { SequelizeModule } from '@nestjs/sequelize';
 import configuration from './config/configuration';
+import { MailModule } from './mail/mail.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { TasksModule } from './tasks/tasks.module';
@@ -21,6 +22,15 @@ import { WorkspacesModule } from './workspaces/workspaces.module';
 import { Workspace } from './workspaces/entities/workspace.entity';
 import { WorkspaceMember } from './workspaces/entities/workspace-member.entity';
 import { WorkspaceInvite } from './workspaces/entities/workspace-invite.entity';
+import { TimesheetsModule } from './timesheets/timesheets.module';
+import { Timesheet } from './timesheets/entities/timesheet.entity';
+import { AuditModule } from './audit/audit.module';
+import { AuditLog } from './audit/audit-log.entity';
+import { NotificationsModule } from './notifications/notifications.module';
+import { AppNotification } from './notifications/notification.entity';
+import { ReportsModule } from './reports/reports.module';
+import { ReportShare } from './reports/report-share.entity';
+import { TaskTemplate } from './tasks/entities/task-template.entity';
 
 @Module({
   imports: [
@@ -48,6 +58,11 @@ import { WorkspaceInvite } from './workspaces/entities/workspace-invite.entity';
           Workspace,
           WorkspaceMember,
           WorkspaceInvite,
+          Timesheet,
+          AuditLog,
+          AppNotification,
+          ReportShare,
+          TaskTemplate,
         ],
         // Dev convenience: auto-create/alter schema. Use migrations in production.
         synchronize: true,
@@ -56,6 +71,9 @@ import { WorkspaceInvite } from './workspaces/entities/workspace-invite.entity';
         logging: false,
       }),
     }),
+    MailModule,
+    AuditModule,
+    NotificationsModule,
     AuthModule,
     UsersModule,
     TasksModule,
@@ -63,6 +81,8 @@ import { WorkspaceInvite } from './workspaces/entities/workspace-invite.entity';
     PomodoroModule,
     ProjectsModule,
     WorkspacesModule,
+    TimesheetsModule,
+    ReportsModule,
     ExportModule,
   ],
   controllers: [HealthController],

@@ -23,6 +23,12 @@ export enum TaskStatus {
   DONE = 'done',
 }
 
+export enum TaskPriority {
+  HIGH = 'high',
+  MED = 'med',
+  LOW = 'low',
+}
+
 @Table({ tableName: 'tasks', timestamps: true })
 export class Task extends Model {
   @ApiProperty({ format: 'uuid' })
@@ -85,6 +91,35 @@ export class Task extends Model {
 
   @BelongsTo(() => Project)
   project: Project | null;
+
+  @ApiProperty({
+    format: 'uuid',
+    nullable: true,
+    description: 'Исполнитель (по умолчанию — создатель задачи)',
+  })
+  @ForeignKey(() => User)
+  @Column({ type: DataType.UUID, allowNull: true, field: 'assignee_id' })
+  assignee_id: string | null;
+
+  @BelongsTo(() => User, 'assignee_id')
+  assignee: User | null;
+
+  @ApiProperty({ enum: TaskPriority, example: TaskPriority.MED })
+  @Default(TaskPriority.MED)
+  @Column({
+    type: DataType.ENUM(...Object.values(TaskPriority)),
+    allowNull: false,
+  })
+  priority: TaskPriority;
+
+  @ApiProperty({
+    required: false,
+    nullable: true,
+    example: '2026-08-20',
+    description: 'Дедлайн (дата без времени)',
+  })
+  @Column({ type: DataType.DATEONLY, allowNull: true, field: 'due_date' })
+  due_date: string | null;
 
   @HasMany(() => TimeEntry)
   time_entries: TimeEntry[];

@@ -6,9 +6,11 @@ import { formatHM } from '@/lib/format';
 import { PROJECT_COLORS } from '@/lib/project';
 import type { ProjectWithStats } from '@/lib/types';
 import { useToast } from '@/context/ToastContext';
+import { useWorkspace } from '@/context/WorkspaceContext';
 
 export default function ProjectsPage() {
   const { toast } = useToast();
+  const { isAdmin, canSeeProjects, me } = useWorkspace();
   const [projects, setProjects] = useState<ProjectWithStats[]>([]);
   const [error, setError] = useState('');
 
@@ -68,13 +70,40 @@ export default function ProjectsPage() {
     }
   }
 
+  async function saveMoney(
+    id: string,
+    patch: { hourly_rate?: number; weekly_budget_hours?: number },
+  ) {
+    try {
+      await api.updateProject(id, patch);
+      await load();
+    } catch (err) {
+      toast(err instanceof ApiError ? err.message : 'Не удалось сохранить');
+    }
+  }
+
   const maxWeek = Math.max(...projects.map((p) => p.week_tracked_seconds), 1);
+
+  // Участник не видит раздел «Проекты» (в т.ч. по прямому URL / хоткею 3).
+  if (me && !canSeeProjects) {
+    return (
+      <div className="card">
+        <div className="empty" style={{ padding: '48px 16px' }}>
+          <div className="empty-title">Раздел доступен админам</div>
+          <div className="empty-sub">
+            Проектами управляет владелец или админ команды; цвета проектов видны в задачах и отчётах.
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>
       {error && <p className="error">{error}</p>}
 
-      {/* Форма создания */}
+      {/* Форма создания (управлять проектами может админ) */}
+      {isAdmin && (
       <div
         className="card"
         style={{
@@ -122,10 +151,20 @@ export default function ProjectsPage() {
           + Создать
         </button>
       </div>
+      )}
 
       {/* Список */}
       <div className="card">
-        {projects.map((p) => (
+        {projects.map((p) => {
+          const budget = p.weekly_budget_hours || 0;
+          const budgetSec = budget * 3600;
+          const over = budget > 0 && p.week_tracked_seconds > budgetSec;
+          const warn = budget > 0 && p.week_tracked_seconds > budgetSec * 0.8;
+          const barColor = over ? 'var(--red)' : warn ? 'var(--amber)' : p.color;
+          const pct = budget
+            ? Math.min(100, Math.round((p.week_tracked_seconds / budgetSec) * 100))
+            : Math.round((p.week_tracked_seconds / maxWeek) * 100);
+          return (
           <div className="list-row" key={p.id} style={{ padding: '12px 16px' }}>
             <span
               className="pdot"
@@ -153,12 +192,13 @@ export default function ProjectsPage() {
                 />
               ) : (
                 <div
-                  title="Нажмите, чтобы переименовать"
+                  title={isAdmin ? 'Нажмите, чтобы переименовать' : undefined}
                   onClick={() => {
+                    if (!isAdmin) return;
                     setEditingId(p.id);
                     setEditName(p.name);
                   }}
-                  style={{ fontWeight: 600, cursor: 'text' }}
+                  style={{ fontWeight: 600, cursor: isAdmin ? 'text' : 'default' }}
                 >
                   {p.name}
                 </div>
@@ -167,6 +207,40 @@ export default function ProjectsPage() {
                 {p.task_count} задач(и)
               </div>
             </div>
+
+            {isAdmin && (
+              <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 6 }}>
+                <input
+                  type="number"
+                  min={0}
+                  className="input input-time"
+                  title="Часовая ставка"
+                  defaultValue={p.hourly_rate || 0}
+                  onBlur={(e) => {
+                    const v = Math.max(0, Number(e.target.value) || 0);
+                    if (v !== p.hourly_rate) void saveMoney(p.id, { hourly_rate: v });
+                  }}
+                  style={{ width: 70, fontSize: '12.5px' }}
+                />
+                <span style={{ fontSize: '11.5px', color: 'var(--muted)' }}>₽/ч</span>
+                <input
+                  type="number"
+                  min={0}
+                  className="input input-time"
+                  title="Бюджет часов в неделю"
+                  defaultValue={p.weekly_budget_hours || 0}
+                  onBlur={(e) => {
+                    const v = Math.max(0, Math.round(Number(e.target.value) || 0));
+                    if (v !== p.weekly_budget_hours) {
+                      void saveMoney(p.id, { weekly_budget_hours: v });
+                    }
+                  }}
+                  style={{ width: 54, fontSize: '12.5px' }}
+                />
+                <span style={{ fontSize: '11.5px', color: 'var(--muted)' }}>ч</span>
+              </div>
+            )}
+
             <div style={{ width: 180, flexShrink: 0 }}>
               <div
                 style={{
@@ -177,28 +251,35 @@ export default function ProjectsPage() {
                   marginBottom: 3,
                 }}
               >
-                <span>за неделю</span>
-                <span className="mono">{formatHM(p.week_tracked_seconds)}</span>
+                <span>{budget ? 'бюджет недели' : 'за неделю'}</span>
+                <span
+                  className="mono"
+                  style={{
+                    color: over ? 'var(--red)' : warn ? 'var(--amber)' : 'var(--muted)',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {formatHM(p.week_tracked_seconds)}
+                  {budget ? ` из ${budget}ч` : ''}
+                </span>
               </div>
               <div className="progress" style={{ height: 4 }}>
-                <div
-                  style={{
-                    background: p.color,
-                    width: `${Math.round((p.week_tracked_seconds / maxWeek) * 100)}%`,
-                  }}
-                />
+                <div style={{ background: barColor, width: `${pct}%` }} />
               </div>
             </div>
-            <button
-              className="btn-outline"
-              title="Архивировать проект"
-              style={{ color: 'var(--muted)', flexShrink: 0 }}
-              onClick={() => void archive(p.id)}
-            >
-              В архив
-            </button>
+            {isAdmin && (
+              <button
+                className="btn-outline"
+                title="Архивировать проект"
+                style={{ color: 'var(--muted)', flexShrink: 0 }}
+                onClick={() => void archive(p.id)}
+              >
+                В архив
+              </button>
+            )}
           </div>
-        ))}
+          );
+        })}
 
         {projects.length === 0 && (
           <div className="empty">

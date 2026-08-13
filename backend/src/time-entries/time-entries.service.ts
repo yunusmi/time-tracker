@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -12,6 +13,8 @@ import { StartTimerDto } from './dto/start-timer.dto';
 import { CreateManualEntryDto } from './dto/create-manual-entry.dto';
 import { UpdateTimeEntryDto } from './dto/update-time-entry.dto';
 import { TasksService } from '../tasks/tasks.service';
+import { WorkspacesService } from '../workspaces/workspaces.service';
+import { TimesheetsService } from '../timesheets/timesheets.service';
 
 @Injectable()
 export class TimeEntriesService {
@@ -19,7 +22,16 @@ export class TimeEntriesService {
     @InjectModel(TimeEntry)
     private readonly timeEntryModel: typeof TimeEntry,
     private readonly tasksService: TasksService,
+    private readonly workspacesService: WorkspacesService,
+    private readonly timesheetsService: TimesheetsService,
   ) {}
+
+  /** Утверждённая неделя блокирует изменение её записей. */
+  private async assertWeekUnlocked(userId: string, date: Date): Promise<void> {
+    if (await this.timesheetsService.isWeekLocked(userId, date)) {
+      throw new ForbiddenException('Неделя утверждена — записи заблокированы');
+    }
+  }
 
   private async assertTaskOwnership(
     userId: string,
@@ -102,16 +114,22 @@ export class TimeEntriesService {
     userId: string,
     from: string,
     to: string,
+    targetUserId?: string,
   ): Promise<
     Array<{
       date: string;
       total_seconds: number;
-      by_project: Array<{ project_id: string | null; seconds: number }>;
+      by_project: Array<{
+        project_id: string | null;
+        seconds: number;
+        billable_seconds: number;
+      }>;
       by_task: Array<{
         task_id: string;
         task_title: string;
         project_id: string | null;
         seconds: number;
+        billable_seconds: number;
       }>;
     }>
   > {
@@ -121,9 +139,24 @@ export class TimeEntriesService {
       throw new BadRequestException('from must not be after to');
     }
 
+    // Чужие данные — только admin+ и только по участникам своей команды.
+    let scopeUserId = userId;
+    if (targetUserId && targetUserId !== userId) {
+      const ctx = await this.workspacesService.getContext(userId);
+      if (!ctx.isAdmin) {
+        throw new ForbiddenException(
+          'Отчёты других участников доступны только админу',
+        );
+      }
+      if (!ctx.memberIds.includes(targetUserId)) {
+        throw new NotFoundException('Участник не найден в команде');
+      }
+      scopeUserId = targetUserId;
+    }
+
     const entries = await this.timeEntryModel.findAll({
       where: {
-        user_id: userId,
+        user_id: scopeUserId,
         started_at: { [Op.between]: [start, end] },
       },
       include: [{ model: Task, include: [Project] }],
@@ -132,10 +165,15 @@ export class TimeEntriesService {
 
     type DayAgg = {
       total: number;
-      byProject: Map<string | null, number>;
+      byProject: Map<string | null, { seconds: number; billable: number }>;
       byTask: Map<
         string,
-        { title: string; project_id: string | null; seconds: number }
+        {
+          title: string;
+          project_id: string | null;
+          seconds: number;
+          billable: number;
+        }
       >;
     };
     const days = new Map<string, DayAgg>();
@@ -148,20 +186,26 @@ export class TimeEntriesService {
         days.set(date, agg);
       }
       const seconds = e.duration_seconds;
+      const billableSec = e.billable === false ? 0 : seconds;
       agg.total += seconds;
 
       const projectId = e.task?.project_id ?? null;
-      agg.byProject.set(projectId, (agg.byProject.get(projectId) ?? 0) + seconds);
+      const p = agg.byProject.get(projectId) ?? { seconds: 0, billable: 0 };
+      p.seconds += seconds;
+      p.billable += billableSec;
+      agg.byProject.set(projectId, p);
 
       if (e.task) {
         const t = agg.byTask.get(e.task.id);
         if (t) {
           t.seconds += seconds;
+          t.billable += billableSec;
         } else {
           agg.byTask.set(e.task.id, {
             title: e.task.title,
             project_id: projectId,
             seconds,
+            billable: billableSec,
           });
         }
       }
@@ -172,15 +216,17 @@ export class TimeEntriesService {
       .map(([date, agg]) => ({
         date,
         total_seconds: agg.total,
-        by_project: [...agg.byProject.entries()].map(([project_id, seconds]) => ({
+        by_project: [...agg.byProject.entries()].map(([project_id, p]) => ({
           project_id,
-          seconds,
+          seconds: p.seconds,
+          billable_seconds: p.billable,
         })),
         by_task: [...agg.byTask.entries()].map(([task_id, t]) => ({
           task_id,
           task_title: t.title,
           project_id: t.project_id,
           seconds: t.seconds,
+          billable_seconds: t.billable,
         })),
       }));
   }
@@ -190,6 +236,7 @@ export class TimeEntriesService {
     dto: CreateManualEntryDto,
   ): Promise<TimeEntry> {
     await this.assertTaskOwnership(userId, dto.task_id);
+    await this.assertWeekUnlocked(userId, new Date(dto.started_at));
 
     const startedAt = new Date(dto.started_at);
     const endedAt = new Date(dto.ended_at);
@@ -211,11 +258,25 @@ export class TimeEntriesService {
     });
   }
 
-  findAll(
+  async findAll(
     userId: string,
-    filters: { date?: string; task_id?: string },
+    filters: { date?: string; task_id?: string; user_id?: string },
   ): Promise<TimeEntry[]> {
-    const where: Record<string, unknown> = { user_id: userId };
+    // Чужие записи — только admin+ и только по своей команде.
+    let scopeUserId = userId;
+    if (filters.user_id && filters.user_id !== userId) {
+      const ctx = await this.workspacesService.getContext(userId);
+      if (!ctx.isAdmin) {
+        throw new ForbiddenException(
+          'Записи других участников доступны только админу',
+        );
+      }
+      if (!ctx.memberIds.includes(filters.user_id)) {
+        throw new NotFoundException('Участник не найден в команде');
+      }
+      scopeUserId = filters.user_id;
+    }
+    const where: Record<string, unknown> = { user_id: scopeUserId };
     if (filters.task_id) {
       where.task_id = filters.task_id;
     }
@@ -227,6 +288,17 @@ export class TimeEntriesService {
       where,
       include: [{ model: Task, include: [Project] }],
       order: [['started_at', 'DESC']],
+    });
+  }
+
+  /** Записи, начавшиеся в диапазоне UTC-дней [from..to] (для экспорта). */
+  findForRange(userId: string, from: string, to: string): Promise<TimeEntry[]> {
+    const start = TimeEntriesService.dayRange(from).start;
+    const end = TimeEntriesService.dayRange(to).end;
+    return this.timeEntryModel.findAll({
+      where: { user_id: userId, started_at: { [Op.between]: [start, end] } },
+      include: [{ model: Task, include: [Project] }],
+      order: [['started_at', 'ASC']],
     });
   }
 
@@ -257,6 +329,7 @@ export class TimeEntriesService {
     dto: UpdateTimeEntryDto,
   ): Promise<TimeEntry> {
     const entry = await this.findOne(userId, id);
+    await this.assertWeekUnlocked(userId, entry.started_at);
     if (dto.task_id !== undefined) {
       await this.assertTaskOwnership(userId, dto.task_id);
       entry.task_id = dto.task_id ?? null;
@@ -269,6 +342,12 @@ export class TimeEntriesService {
     }
     if (dto.ended_at) {
       entry.ended_at = new Date(dto.ended_at);
+    }
+    if (dto.billable !== undefined) {
+      entry.billable = dto.billable;
+    }
+    if (dto.note !== undefined) {
+      entry.note = dto.note || null;
     }
     if (dto.duration_seconds !== undefined) {
       entry.duration_seconds = dto.duration_seconds;
@@ -285,6 +364,7 @@ export class TimeEntriesService {
 
   async remove(userId: string, id: string): Promise<void> {
     const entry = await this.findOne(userId, id);
+    await this.assertWeekUnlocked(userId, entry.started_at);
     await entry.destroy();
   }
 

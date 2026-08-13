@@ -8,11 +8,13 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiOperation,
+  ApiQuery,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
@@ -42,10 +44,17 @@ export class TasksController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'List all tasks with tracked time and pomodoro stats' })
+  @ApiOperation({
+    summary:
+      'List tasks by role: admin+ sees the whole team (who=mine — только свои), member — свои',
+  })
+  @ApiQuery({ name: 'who', required: false, enum: ['all', 'mine'] })
   @ApiResponse({ status: 200, type: [TaskWithStatsDto] })
-  findAll(@CurrentUser('id') userId: string): Promise<TaskWithStatsDto[]> {
-    return this.tasksService.findAll(userId);
+  findAll(
+    @CurrentUser('id') userId: string,
+    @Query('who') who?: 'all' | 'mine',
+  ): Promise<TaskWithStatsDto[]> {
+    return this.tasksService.findAll(userId, { who });
   }
 
   @Get(':id')

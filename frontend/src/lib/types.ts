@@ -1,11 +1,15 @@
 export type TaskStatus = 'todo' | 'in_progress' | 'done';
 
+export type TaskPriority = 'high' | 'med' | 'low';
+
 export type PomodoroPhase = 'work' | 'short_break' | 'long_break';
 
 export interface AuthUser {
   id: string;
   email: string;
   name: string;
+  email_verified_at?: string | null;
+  totp_enabled?: boolean;
 }
 
 export interface AuthResponse {
@@ -18,6 +22,8 @@ export interface Project {
   name: string;
   color: string;
   archived: boolean;
+  hourly_rate: number;
+  weekly_budget_hours: number;
   created_at: string;
   updated_at: string;
   user_id: string;
@@ -40,6 +46,10 @@ export interface Task {
   user_id: string;
   project_id: string | null;
   project?: Project | null;
+  assignee_id: string | null;
+  assignee?: { id: string; name: string; email: string } | null;
+  priority: TaskPriority;
+  due_date: string | null;
 }
 
 export interface TaskWithStats extends Task {
@@ -54,6 +64,8 @@ export interface TimeEntry {
   ended_at: string | null;
   duration_seconds: number;
   is_manual: boolean;
+  billable: boolean;
+  note: string | null;
   created_at: string;
   task_id: string | null;
   task?: Task | null;
@@ -62,12 +74,17 @@ export interface TimeEntry {
 export interface DaySummary {
   date: string;
   total_seconds: number;
-  by_project: { project_id: string | null; seconds: number }[];
+  by_project: {
+    project_id: string | null;
+    seconds: number;
+    billable_seconds: number;
+  }[];
   by_task: {
     task_id: string;
     task_title: string;
     project_id: string | null;
     seconds: number;
+    billable_seconds: number;
   }[];
 }
 
@@ -82,7 +99,14 @@ export interface PomodoroSettings {
   updated_at: string;
 }
 
-export type WorkspaceRole = 'owner' | 'admin' | 'member';
+export type WorkspaceRole = 'owner' | 'admin' | 'pm' | 'member' | 'client';
+
+export interface WorkspaceMe {
+  workspace_id: string;
+  workspace_name: string;
+  role: WorkspaceRole;
+  project_id: string | null;
+}
 
 export interface WorkspaceMemberView {
   user_id: string;
@@ -90,6 +114,7 @@ export interface WorkspaceMemberView {
   email: string;
   role: WorkspaceRole;
   active_task_title: string | null;
+  dnd: boolean;
   today_seconds: number;
   week_seconds: number;
 }
@@ -104,6 +129,76 @@ export interface WorkspaceInvite {
   created_at: string;
 }
 
+export interface AppNotification {
+  id: string;
+  text: string;
+  dot: 'accent' | 'green' | 'red';
+  read: boolean;
+  created_at: string;
+}
+
+export interface AuditRow {
+  id: string;
+  user_id: string;
+  user_name: string;
+  action: string;
+  created_at: string;
+}
+
+export interface TaskTemplate {
+  id: string;
+  title: string;
+  project_id: string | null;
+  project?: Project | null;
+  estimated_minutes: number | null;
+}
+
+export interface InvoicePreview {
+  number: string;
+  period: { from: string; to: string };
+  project_name: string;
+  rows: { task_title: string; hours: number; rate: number; sum: number }[];
+  total: number;
+}
+
+export interface ReportShare {
+  id: string;
+  project_id: string | null;
+  token: string;
+  hide_money: boolean;
+  hide_names: boolean;
+  active: boolean;
+}
+
+export interface PublicReport {
+  project_name: string;
+  project_color: string | null;
+  period: { from: string; to: string };
+  days: { date: string; seconds: number }[];
+  tasks: { title: string; seconds: number }[];
+  members: { name: string; seconds: number }[];
+  total_seconds: number;
+  money: number | null;
+}
+
+export type TimesheetStatus = 'draft' | 'pending' | 'approved' | 'returned';
+
+export interface TimesheetView {
+  id: string | null;
+  user_id: string;
+  user_name: string;
+  week_start: string;
+  status: TimesheetStatus;
+  comment: string | null;
+  total_seconds: number;
+}
+
+export interface TimesheetsResponse {
+  week_start: string;
+  mine: TimesheetView;
+  team: TimesheetView[];
+}
+
 export interface UserSettingsResponse {
   id: string;
   daily_goal_hours: number;
@@ -111,6 +206,8 @@ export interface UserSettingsResponse {
   notify_day_start: boolean;
   notify_goal_reached: boolean;
   theme: 'dark' | 'light';
+  dnd_until: string | null;
+  auto_stop_evening: boolean;
   updated_at: string;
   user_id: string;
 }

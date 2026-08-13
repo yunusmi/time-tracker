@@ -426,6 +426,73 @@ input::placeholder {
   margin: 0 auto;
 }
 
+/* ===== Адаптивные сетки ===== */
+.grid-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.grid-reports {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr;
+  gap: 14px;
+  align-items: start;
+}
+
+.burger {
+  display: none;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  padding: 5px 10px;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.sidebar-backdrop {
+  display: none;
+}
+
+/* ===== Мобильный режим (<760px): сайдбар-шторка, сетки в одну колонку ===== */
+@media (max-width: 760px) {
+  .sidebar {
+    display: none;
+  }
+  .sidebar.mobile-open {
+    display: flex;
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 60;
+    background: var(--bg);
+    border-right: 1px solid var(--border2);
+  }
+  .sidebar-backdrop.mobile-open {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 59;
+  }
+  .burger {
+    display: flex;
+  }
+  .grid-stats,
+  .grid-reports {
+    grid-template-columns: 1fr;
+  }
+  .topbar {
+    gap: 8px;
+    padding: 0 12px;
+  }
+  .content {
+    padding: 16px 12px 40px;
+  }
+}
+
 /* ===== Auth-страницы (login/register) ===== */
 .auth-wrap {
   min-height: 100vh;

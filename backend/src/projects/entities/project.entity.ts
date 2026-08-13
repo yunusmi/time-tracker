@@ -51,6 +51,23 @@ export class Project extends Model {
   @Column({ type: DataType.BOOLEAN, allowNull: false })
   archived: boolean;
 
+  @ApiProperty({ description: 'Часовая ставка, ₽/ч', example: 2500 })
+  @Default(0)
+  @Column({ type: DataType.FLOAT, allowNull: false, field: 'hourly_rate' })
+  hourly_rate: number;
+
+  @ApiProperty({
+    description: 'Недельный бюджет часов (0 — не задан)',
+    example: 20,
+  })
+  @Default(0)
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: false,
+    field: 'weekly_budget_hours',
+  })
+  weekly_budget_hours: number;
+
   @ApiProperty()
   @CreatedAt
   @Column({ field: 'created_at' })

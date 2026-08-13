@@ -19,6 +19,7 @@ export interface UserSettings {
   idle_threshold_minutes: number;
   notify_day_start: boolean;
   notify_goal_reached: boolean;
+  auto_stop_evening: boolean;
 }
 
 const DEFAULTS: UserSettings = {
@@ -26,6 +27,7 @@ const DEFAULTS: UserSettings = {
   idle_threshold_minutes: 10,
   notify_day_start: false,
   notify_goal_reached: false,
+  auto_stop_evening: false,
 };
 
 const SETTINGS_KEY = 'tt_settings';
@@ -64,6 +66,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
           idle_threshold_minutes: server.idle_threshold_minutes,
           notify_day_start: server.notify_day_start,
           notify_goal_reached: server.notify_goal_reached,
+          auto_stop_evening: server.auto_stop_evening ?? false,
         };
         setSettings(next);
         persistLocal(next);

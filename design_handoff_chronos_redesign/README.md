@@ -51,7 +51,7 @@
 Тулбар: «N участников», «+ Пригласить» → панель: email, роль (Участник/Админ, сегмент), «Отправить», «Копировать ссылку». Таблица: аватар-инициалы, имя (+бейдж «вы»), роль, live-статус («Трекает „задача“» с зелёной точкой / «Не в сети»), Сегодня, Неделя. Ниже — отправленные приглашения с «Отозвать».
 
 ### 7. Настройки
-Цель дня (слайдер 1–12ч), порог idle (слайдер 1–30 мин), напоминания (2 чекбокса: начать день / цель достигнута), тема (сегмент).
+Карточка «Аккаунт»: имя, email, бейдж верификации (green «подтверждена» / amber «не подтверждена» + кнопка «Отправить письмо»), смена пароля (текущий/новый мин. 8/повтор). Карточка «Роль в команде» — в прототипе демо-переключатель (в продукте роль назначает админ). Карточка «Интеграции» (GCal/Slack/Telegram). Далее: Цель дня (слайдер 1–12ч), порог idle (слайдер 1–30 мин), напоминания (2 чекбокса: начать день / цель достигнута), тема (сегмент).
 
 ### Оверлеи
 - **⌘K палитра** (Cmd/Ctrl+K): input + список: «Запустить таймер: „текст“», задачи (старт), «Создать задачу: „текст“», навигация, тема. ↑↓ выбор, Enter, Esc. Фон `rgba(0,0,0,.5)`, окно 520px, top 12vh.
@@ -60,9 +60,41 @@
 - Тосты: фикс. право-низ, surface-карточка, ~2.6с.
 
 ### Горячие клавиши (игнорировать при фокусе в input)
-⌘K палитра · S стоп/продолжить последнюю · N новая задача · F фокус-режим · T тема · 1–7 экраны · ? справка · Esc закрыть. Учитывать русскую раскладку (ы=s, т=n, а=f, е=t).
+⌘K палитра · S стоп/продолжить последнюю · N новая задача · F фокус-режим · T тема · 1–8 экраны · ? справка · Esc закрыть. Учитывать русскую раскладку (ы=s, т=n, а=f, е=t).
 
 ---
+
+## Дополнительные фичи (в прототипе)
+- **Таймшиты** (экран, клавиша 5): участник отправляет неделю на проверку (статусы черновик/на проверке/утверждён/возвращён + комментарий админа); админ видит список таймшитов команды, «Утвердить»/«Вернуть». BE: таблица `timesheets (id, user_id, workspace_id, week_start date, status enum, comment, approved_by, timestamps)`, эндпоинты `POST /api/timesheets/submit`, `GET /api/timesheets?week=`, `PATCH /api/timesheets/:id` (approve/return, admin+).
+- **Аудит-лог** (карточка в «Команде», admin+): время, кто, действие. BE: таблица `audit_log (id, workspace_id, user_id, action, entity_type, entity_id, meta jsonb, created_at)`, писать из сервисов (task/project/invite/timesheet мутации), `GET /api/audit?limit=` (admin+).
+- **Ставки и billable**: у проекта `hourly_rate numeric` (редактируется в экране «Проекты», ₽/ч), у time-entry `billable boolean default true` (тумблер ₽ в списке записей); в отчётах «По проектам» — суммы (billable-часы × ставка) и общий итог за неделю.
+- **Дедлайны/приоритеты**: у задач `priority enum('high','med','low') default 'med'`, `due_date date NULL`; в форме создания — селектор приоритета и дата; в строке — цветной приоритет и «до N мес» / красное «просрочено»; баннер «Просрочено: N задач».
+- **Интеграции** (Настройки): Google Calendar / Slack / Telegram — карточки подключения (в прототипе демо; BE — OAuth-флоу и вебхуки, отдельный этап).
+
+## Финальный пакет удобств (в прототипе)
+- **Onboarding**: тур из 3 шагов (оверлей) + чек-лист «Первые шаги» в Трекере (проект/задача/таймер, вычисляется из данных).
+- **Drag на таймлайне**: тянуть левый/правый край записи (шаг 5 мин, границы 08:00–20:00); заблокировано при утверждённой неделе. FE: pointer events + PATCH /time-entries/:id.
+- **Undo**: тост «Запись/Задача удалена · Отменить» (5 сек). BE: soft-delete (deleted_at) либо восстановление на клиенте до подтверждения.
+- **⌘K**: + поиск по истории записей (уникальные названия, старт таймера из истории).
+- **Мобильный режим**: <760px — сайдбар-шторка (☰ в шапке, backdrop), сетки в одну колонку.
+- **Календарь недели** в Отчётах: переключатель График/Календарь, 7 колонок 08:00–20:00, блоки записей цветом проекта, клик по дню выбирает его.
+- **Инвойс**: превью счёта из billable-часов выбранного проекта/периода (задача × часы × ставка, итог) + PDF. BE: GET /api/invoices/preview?project_id=&from=&to=.
+- **Шаблоны задач**: чипы быстрого создания + «В шаблон» из формы. BE: таблица task_templates (user_id, title, project_id, estimated_minutes).
+- **Оффлайн-индикатор**: navigator.onLine → баннер; записи в localStorage, синк при подключении.
+- **Публичная ссылка на отчёт**: токен-ссылка, опции «скрыть суммы/имена», выключатель. BE: report_shares (token, project_id, hide_money, hide_names, active).
+- **Роль «Клиент»**: видит только Отчёты своего проекта (без денег, имена по опции), навигация урезана до Отчёты+Настройки.
+- **2FA**: QR + 6-значный код для owner/admin. BE: TOTP (otplib), поле totp_secret, проверка при логине.
+
+## Роли и права (RBAC)
+- **owner**: всё, включая управление workspace и ролями.
+- **admin**: проекты (CRUD), команда (приглашения/отзыв), отчёты всех участников (селектор участника в Отчётах), задачи — создаёт и назначает любому (поле «Исполнитель»), видит и редактирует чужие, фильтр «Все сотрудники/Мои».
+- **member**: только свои задачи (создаёт себе, assignee скрыт), свои отчёты и записи; не видит раздел «Проекты», в «Команде» только список без приглашений.
+Гейтить и на фронте (скрытие UI), и на бэке (guards по роли на каждом эндпоинте).
+
+## Письма (Emails.dc.html)
+Два transactional-письма, вёрстка для email (таблично-инлайновая при реализации, 560–600px, белая карточка на #ecedf1, кнопка #6366f1, radius 9–14px):
+1. **Верификация почты** — тема «Подтвердите почту — Хронос»; лого, заголовок, кнопка «Подтвердить почту», fallback-ссылка `/verify?token=`, срок 24ч, футер «если это были не вы».
+2. **Приглашение в команду** — тема «N приглашает вас в команду»; аватар+имя+email приглашающего, бейдж роли, кнопка «Принять приглашение» (`/invites/:token/accept`), срок 7 дней, пояснение прав роли.
 
 ## ТЗ Frontend (Next.js, `frontend/`)
 1. Заменить текущие страницы dashboard/pomodoro новой оболочкой: layout с сайдбаром+шапкой (client component), маршруты `/dashboard` (трекер), `/dashboard/tasks`, `/dashboard/projects`, `/dashboard/reports`, `/dashboard/pomodoro`, `/dashboard/team`, `/dashboard/settings`.
@@ -80,7 +112,9 @@
 
 1. **Модуль `projects`**: модель `projects (id uuid, user_id/workspace_id, name, color, archived boolean default false, timestamps)`. CRUD: `GET/POST /api/projects`, `PATCH /api/projects/:id` (name, color, archived), `DELETE`. У `tasks` новое поле `project_id uuid NULL` (+ в DTO create/update). В `GET /api/tasks` возвращать проект. Записи архивного проекта не удалять.
 2. **`time-entries` доработки**: `POST /time-entries/stop` принимает опциональный `ended_at` (для вычета простоя, валидация > started_at); `PATCH /time-entries/:id` (started_at, ended_at, description, task_id) — для инлайн-редактирования; `GET /time-entries/summary?from=&to=` → на каждый день: `total_seconds`, разбивка по `project_id` и `task_id` (для графика недели, streak, heatmap — один запрос вместо 7–14).
-3. **Настройки пользователя**: `GET/PATCH /api/users/me/settings` → `daily_goal_hours int default 6, idle_threshold_minutes int default 10, notify_day_start bool, notify_goal_reached bool, theme enum('dark','light')`. Отдельная таблица `user_settings` (1:1 users) или JSONB.
+3. **Аккаунт и верификация**: `PATCH /api/users/me` (name, email — смена email сбрасывает верификацию), `POST /api/users/me/password` (current_password, new_password), `POST /api/auth/verify/send` + `GET /api/auth/verify?token=` (поле `email_verified_at` в users, токен одноразовый, TTL 24ч). Отправка почты — nodemailer/Resend, шаблоны из Emails.dc.html.
+3b. **RBAC**: role в workspace_members ('owner'|'admin'|'member'); NestJS guard/decorator `@Roles()`. tasks: поле `assignee_id uuid` (default создатель); member видит/редактирует только assignee_id=self, admin+ — все и может назначать. time-entries/summary и отчёты: параметр `user_id` доступен только admin+. projects: мутации только admin+. invites: только admin+, письмо через тот же мейлер.
+4. **Настройки пользователя**: `GET/PATCH /api/users/me/settings` → `daily_goal_hours int default 6, idle_threshold_minutes int default 10, notify_day_start bool, notify_goal_reached bool, theme enum('dark','light')`. Отдельная таблица `user_settings` (1:1 users) или JSONB.
 4. **Pomodoro**: в settings добавить `track_to_timer boolean default true` (создание time-entry делает клиент — серверных изменений кроме поля нет).
 5. **Модуль `workspaces` (команды)**: `workspaces (id, name, owner_id)`, `workspace_members (workspace_id, user_id, role enum('owner','admin','member'))`, `workspace_invites (id, workspace_id, email, role, token, status enum('pending','revoked','accepted'), created_at)`. Эндпоинты: `POST /api/workspaces`, `GET /api/workspaces/current/members` (с `active_task_title` — join активного time-entry, `today_seconds`, `week_seconds`), `POST /api/workspaces/current/invites`, `DELETE /api/workspaces/current/invites/:id`, `POST /api/invites/:token/accept`. Приглашение по ссылке: `GET /api/workspaces/current/invite-link`. Доступ к данным участников — только чтение агрегатов, роли: member видит список, admin+ приглашает.
 6. **Экспорт**: существующий `/api/export/today?date=` оставить; добавить в Summary разбивку по проектам.
@@ -92,4 +126,5 @@
 ## Файлы в пакете
 - `Time Tracker Redesign v2.dc.html` + `support.js` — интерактивный прототип (открыть в браузере)
 - `ROADMAP.md` — список фичей
+- `Emails.dc.html` — дизайн писем (верификация + инвайт)
 - `screenshots/` — 8 скриншотов: все экраны в тёмной теме + трекер в светлой

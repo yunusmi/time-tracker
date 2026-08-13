@@ -6,6 +6,7 @@ import {
   HttpCode,
   Param,
   ParseUUIDPipe,
+  Patch,
   Post,
   UseGuards,
 } from '@nestjs/common';
@@ -19,6 +20,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { WorkspacesService } from './workspaces.service';
 import {
+  ChangeRoleDto,
   CreateInviteDto,
   CreateWorkspaceDto,
   InviteLinkDto,
@@ -53,6 +55,20 @@ export class WorkspacesController {
     return this.workspacesService.getCurrent(userId);
   }
 
+  @Get('workspaces/current/me')
+  @ApiOperation({
+    summary: 'Current user role and scope in the workspace',
+  })
+  async getMyContext(@CurrentUser('id') userId: string) {
+    const ctx = await this.workspacesService.getContext(userId);
+    return {
+      workspace_id: ctx.workspace.id,
+      workspace_name: ctx.workspace.name,
+      role: ctx.role,
+      project_id: ctx.project_id,
+    };
+  }
+
   @Get('workspaces/current/members')
   @ApiOperation({
     summary: 'List members with live status and today/week totals',
@@ -62,6 +78,21 @@ export class WorkspacesController {
     @CurrentUser('id') userId: string,
   ): Promise<WorkspaceMemberViewDto[]> {
     return this.workspacesService.listMembers(userId);
+  }
+
+  @Patch('workspaces/current/members/:userId/role')
+  @ApiOperation({ summary: 'Сменить роль участника (только владелец)' })
+  changeRole(
+    @CurrentUser('id') userId: string,
+    @Param('userId', ParseUUIDPipe) targetUserId: string,
+    @Body() dto: ChangeRoleDto,
+  ) {
+    return this.workspacesService.changeRole(
+      userId,
+      targetUserId,
+      dto.role,
+      dto.project_id,
+    );
   }
 
   @Get('workspaces/current/invites')

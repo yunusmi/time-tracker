@@ -53,6 +53,22 @@ export class TimeEntry extends Model {
   @Column({ type: DataType.BOOLEAN, allowNull: false, field: 'is_manual' })
   is_manual: boolean;
 
+  @ApiProperty({
+    description: 'Оплачиваемая запись (учитывается в суммах и инвойсах)',
+    example: true,
+  })
+  @Default(true)
+  @Column({ type: DataType.BOOLEAN, allowNull: false })
+  billable: boolean;
+
+  @ApiProperty({
+    required: false,
+    nullable: true,
+    description: 'Комментарий к записи времени',
+  })
+  @Column({ type: DataType.TEXT, allowNull: true })
+  note: string | null;
+
   @ApiProperty()
   @CreatedAt
   @Column({ field: 'created_at' })

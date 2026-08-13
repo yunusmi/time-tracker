@@ -1,5 +1,14 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsBoolean, IsEnum, IsInt, IsOptional, Max, Min } from 'class-validator';
+import {
+  IsBoolean,
+  IsEnum,
+  IsInt,
+  IsISO8601,
+  IsOptional,
+  Max,
+  Min,
+  ValidateIf,
+} from 'class-validator';
 import { ThemePreference } from '../entities/user-settings.entity';
 
 export class UpdateUserSettingsDto {
@@ -31,4 +40,19 @@ export class UpdateUserSettingsDto {
   @IsOptional()
   @IsEnum(ThemePreference)
   theme?: ThemePreference;
+
+  @ApiProperty({
+    required: false,
+    nullable: true,
+    description: '«Не беспокоить» до (ISO); null — снять',
+  })
+  @IsOptional()
+  @ValidateIf((_, v) => v !== null)
+  @IsISO8601()
+  dnd_until?: string | null;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsBoolean()
+  auto_stop_evening?: boolean;
 }

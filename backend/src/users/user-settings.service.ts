@@ -39,6 +39,12 @@ export class UserSettingsService {
     if (dto.theme !== undefined) {
       settings.theme = dto.theme;
     }
+    if (dto.dnd_until !== undefined) {
+      settings.dnd_until = dto.dnd_until ? new Date(dto.dnd_until) : null;
+    }
+    if (dto.auto_stop_evening !== undefined) {
+      settings.auto_stop_evening = dto.auto_stop_evening;
+    }
     return settings.save();
   }
 }

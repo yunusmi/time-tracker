@@ -10,7 +10,7 @@ import {
 import { usePathname, useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { projectName } from '@/lib/project';
-import type { TaskWithStats } from '@/lib/types';
+import type { TaskWithStats, TimeEntry } from '@/lib/types';
 import { useTheme } from '@/context/ThemeContext';
 import { useTimer } from '@/context/TimerContext';
 import { useToast } from '@/context/ToastContext';
@@ -20,6 +20,7 @@ const SCREENS: [string, string][] = [
   ['Задачи', '/dashboard/tasks'],
   ['Проекты', '/dashboard/projects'],
   ['Отчёты', '/dashboard/reports'],
+  ['Таймшиты', '/dashboard/timesheets'],
   ['Pomodoro', '/dashboard/pomodoro'],
   ['Команда', '/dashboard/team'],
   ['Настройки', '/dashboard/settings'],
@@ -31,7 +32,7 @@ const HOTKEYS: { k: string; d: string }[] = [
   { k: 'N', d: 'Новая задача' },
   { k: 'F', d: 'Фокус-режим' },
   { k: 'T', d: 'Сменить тему' },
-  { k: '1–7', d: 'Экраны' },
+  { k: '1–8', d: 'Экраны' },
   { k: '?', d: 'Эта справка' },
   { k: 'Esc', d: 'Закрыть окна' },
 ];
@@ -56,6 +57,7 @@ export function GlobalOverlays() {
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState(0);
   const [tasks, setTasks] = useState<TaskWithStats[]>([]);
+  const [history, setHistory] = useState<TimeEntry[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const openPalette = useCallback(() => {
@@ -66,14 +68,24 @@ export function GlobalOverlays() {
       .listTasks()
       .then((t) => setTasks(t.filter((x) => x.status !== 'done')))
       .catch(() => undefined);
+    // История записей — для поиска и старта таймера из прошлого.
+    api
+      .listEntries()
+      .then((e) => setHistory(e.filter((x) => x.ended_at).slice(0, 200)))
+      .catch(() => undefined);
     setTimeout(() => inputRef.current?.focus(), 60);
   }, []);
 
-  // Кнопка «⌘K Поиск и команды» в шапке шлёт это событие.
+  // Кнопка «⌘K Поиск и команды» в шапке и «Горячие клавиши» в настройках.
   useEffect(() => {
     const onOpen = () => openPalette();
+    const onHelp = () => setHelpOpen(true);
     window.addEventListener('tt-open-palette', onOpen);
-    return () => window.removeEventListener('tt-open-palette', onOpen);
+    window.addEventListener('tt-open-help', onHelp);
+    return () => {
+      window.removeEventListener('tt-open-palette', onOpen);
+      window.removeEventListener('tt-open-help', onHelp);
+    };
   }, [openPalette]);
 
   const resumeLast = useCallback(async () => {
@@ -178,6 +190,33 @@ export function GlobalOverlays() {
         },
       });
     }
+    // Поиск по истории записей: уникальные названия, старт в один клик.
+    if (q) {
+      const seen = new Set<string>();
+      for (const en of history) {
+        if (out.length > 8) break;
+        const title = en.task?.title || en.description || '';
+        if (!title || seen.has(title) || !title.toLowerCase().includes(q)) continue;
+        if (en.task && en.task.status === 'done') continue;
+        seen.add(title);
+        out.push({
+          icon: '↺',
+          label: `Из истории: ${title}`,
+          hint: new Date(en.started_at).toLocaleDateString('ru-RU', {
+            day: 'numeric',
+            month: 'short',
+          }),
+          act: async () => {
+            close();
+            await start({
+              task_id: en.task_id ?? undefined,
+              description: en.task_id ? undefined : (en.description ?? undefined),
+            });
+            router.push('/dashboard');
+          },
+        });
+      }
+    }
     if (q) {
       out.push({
         icon: '＋',
@@ -216,7 +255,7 @@ export function GlobalOverlays() {
       });
     }
     return out;
-  }, [paletteOpen, query, tasks, start, router, toast, toggleTheme]);
+  }, [paletteOpen, query, tasks, history, start, router, toast, toggleTheme]);
 
   const sel = Math.min(selected, Math.max(0, items.length - 1));
 

@@ -69,13 +69,19 @@ export class TimeEntriesController {
   })
   @ApiQuery({ name: 'from', required: true, example: '2026-08-06' })
   @ApiQuery({ name: 'to', required: true, example: '2026-08-12' })
+  @ApiQuery({
+    name: 'user_id',
+    required: false,
+    description: 'Сводка другого участника команды (только admin+)',
+  })
   @ApiResponse({ status: 200, type: [DaySummaryDto] })
   summary(
     @CurrentUser('id') userId: string,
     @Query('from') from: string,
     @Query('to') to: string,
+    @Query('user_id') targetUserId?: string,
   ) {
-    return this.timeEntriesService.summary(userId, from, to);
+    return this.timeEntriesService.summary(userId, from, to, targetUserId);
   }
 
   @Get('active')
@@ -99,13 +105,19 @@ export class TimeEntriesController {
   @ApiOperation({ summary: 'List time entries' })
   @ApiQuery({ name: 'date', required: false, example: '2026-05-21' })
   @ApiQuery({ name: 'task_id', required: false })
+  @ApiQuery({
+    name: 'user_id',
+    required: false,
+    description: 'Записи другого участника команды (только admin+)',
+  })
   @ApiResponse({ status: 200, type: [TimeEntry] })
   findAll(
     @CurrentUser('id') userId: string,
     @Query('date') date?: string,
     @Query('task_id') task_id?: string,
+    @Query('user_id') user_id?: string,
   ): Promise<TimeEntry[]> {
-    return this.timeEntriesService.findAll(userId, { date, task_id });
+    return this.timeEntriesService.findAll(userId, { date, task_id, user_id });
   }
 
   @Patch(':id')

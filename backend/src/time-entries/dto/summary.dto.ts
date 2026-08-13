@@ -10,6 +10,9 @@ export class SummaryProjectBreakdownDto {
 
   @ApiProperty({ example: 7200 })
   seconds: number;
+
+  @ApiProperty({ example: 5400, description: 'Из них оплачиваемых' })
+  billable_seconds: number;
 }
 
 export class SummaryTaskBreakdownDto {
@@ -27,6 +30,9 @@ export class SummaryTaskBreakdownDto {
 
   @ApiProperty({ example: 3600 })
   seconds: number;
+
+  @ApiProperty({ example: 3600, description: 'Из них оплачиваемых' })
+  billable_seconds: number;
 }
 
 export class DaySummaryDto {

@@ -62,6 +62,27 @@ export class UserSettings extends Model {
   })
   theme: ThemePreference;
 
+  @ApiProperty({
+    required: false,
+    nullable: true,
+    description:
+      '«Не беспокоить» до этого момента (ставится на время фокус-сессии)',
+  })
+  @Column({ type: DataType.DATE, allowNull: true, field: 'dnd_until' })
+  dnd_until: Date | null;
+
+  @ApiProperty({
+    description: 'Авто-стоп таймера в 19:00 при отсутствии активности',
+    example: true,
+  })
+  @Default(false)
+  @Column({
+    type: DataType.BOOLEAN,
+    allowNull: false,
+    field: 'auto_stop_evening',
+  })
+  auto_stop_evening: boolean;
+
   @ApiProperty()
   @UpdatedAt
   @Column({ field: 'updated_at' })

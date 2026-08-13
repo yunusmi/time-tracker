@@ -1,9 +1,16 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { col, fn, Op } from 'sequelize';
 import { Project, PROJECT_COLORS } from './entities/project.entity';
 import { Task } from '../tasks/entities/task.entity';
 import { TimeEntry } from '../time-entries/entities/time-entry.entity';
+import { WorkspacesService } from '../workspaces/workspaces.service';
+import { WorkspaceRole } from '../workspaces/entities/workspace-member.entity';
+import { AuditService } from '../audit/audit.service';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
 import { ProjectWithStatsDto } from './dto/project-with-stats.dto';
@@ -17,15 +24,28 @@ export class ProjectsService {
     private readonly taskModel: typeof Task,
     @InjectModel(TimeEntry)
     private readonly timeEntryModel: typeof TimeEntry,
+    private readonly workspacesService: WorkspacesService,
+    private readonly auditService: AuditService,
   ) {}
 
-  create(userId: string, dto: CreateProjectDto): Promise<Project> {
-    return this.projectModel.create({
+  async create(userId: string, dto: CreateProjectDto): Promise<Project> {
+    const ctx = await this.workspacesService.getContext(userId);
+    if (!ctx.isAdmin) {
+      throw new ForbiddenException('Управлять проектами может админ');
+    }
+    const project = await this.projectModel.create({
       user_id: userId,
       name: dto.name,
       color: dto.color ?? PROJECT_COLORS[0],
       archived: false,
     });
+    this.auditService.log(
+      ctx.workspace.id,
+      userId,
+      `создал(а) проект «${project.name}»`,
+      { type: 'project', id: project.id },
+    );
+    return project;
   }
 
   /**
@@ -36,9 +56,17 @@ export class ProjectsService {
     userId: string,
     opts: { includeArchived?: boolean } = {},
   ): Promise<ProjectWithStatsDto[]> {
-    const where: Record<string, unknown> = { user_id: userId };
+    const ctx = await this.workspacesService.getContext(userId);
+    // Проекты общие для всей команды (созданы любым её участником).
+    const where: Record<string, unknown> = {
+      user_id: { [Op.in]: ctx.memberIds },
+    };
     if (!opts.includeArchived) {
       where.archived = false;
+    }
+    // PM и клиент видят только свой проект.
+    if (ctx.role === WorkspaceRole.PM || ctx.role === WorkspaceRole.CLIENT) {
+      where.id = ctx.project_id ?? '00000000-0000-0000-0000-000000000000';
     }
     const projects = await this.projectModel.findAll({
       where,
@@ -53,7 +81,7 @@ export class ProjectsService {
     const [taskCounts, weekRows] = await Promise.all([
       this.taskModel.findAll({
         attributes: ['project_id', [fn('COUNT', col('id')), 'cnt']],
-        where: { user_id: userId, project_id: { [Op.in]: projectIds } },
+        where: { project_id: { [Op.in]: projectIds } },
         group: ['project_id'],
         raw: true,
       }),
@@ -63,7 +91,7 @@ export class ProjectsService {
           [fn('COALESCE', fn('SUM', col('TimeEntry.duration_seconds')), 0), 'total'],
         ],
         where: {
-          user_id: userId,
+          user_id: { [Op.in]: ctx.memberIds },
           started_at: { [Op.gte]: weekStart },
         },
         include: [
@@ -105,9 +133,14 @@ export class ProjectsService {
     })) as ProjectWithStatsDto[];
   }
 
-  async findOne(userId: string, id: string): Promise<Project> {
+  /** Проект команды; мутации доступны только admin+. */
+  private async findForMutation(userId: string, id: string): Promise<Project> {
+    const ctx = await this.workspacesService.getContext(userId);
+    if (!ctx.isAdmin) {
+      throw new ForbiddenException('Управлять проектами может админ');
+    }
     const project = await this.projectModel.findOne({
-      where: { id, user_id: userId },
+      where: { id, user_id: { [Op.in]: ctx.memberIds } },
     });
     if (!project) {
       throw new NotFoundException('Project not found');
@@ -120,19 +153,34 @@ export class ProjectsService {
     id: string,
     dto: UpdateProjectDto,
   ): Promise<Project> {
-    const project = await this.findOne(userId, id);
+    const project = await this.findForMutation(userId, id);
     if (dto.name !== undefined) project.name = dto.name;
     if (dto.color !== undefined) project.color = dto.color;
-    if (dto.archived !== undefined) project.archived = dto.archived;
+    if (dto.archived !== undefined && dto.archived !== project.archived) {
+      project.archived = dto.archived;
+      const ctx = await this.workspacesService.getContext(userId);
+      this.auditService.log(
+        ctx.workspace.id,
+        userId,
+        dto.archived
+          ? `архивировал(а) проект «${project.name}»`
+          : `вернул(а) проект «${project.name}» из архива`,
+        { type: 'project', id: project.id },
+      );
+    }
+    if (dto.hourly_rate !== undefined) project.hourly_rate = dto.hourly_rate;
+    if (dto.weekly_budget_hours !== undefined) {
+      project.weekly_budget_hours = dto.weekly_budget_hours;
+    }
     return project.save();
   }
 
   /** Удаляет проект; задачи остаются без проекта (project_id = NULL). */
   async remove(userId: string, id: string): Promise<void> {
-    const project = await this.findOne(userId, id);
+    const project = await this.findForMutation(userId, id);
     await this.taskModel.update(
       { project_id: null },
-      { where: { user_id: userId, project_id: id } },
+      { where: { project_id: id } },
     );
     await project.destroy();
   }

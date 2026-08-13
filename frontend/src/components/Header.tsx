@@ -4,12 +4,14 @@ import { usePathname } from 'next/navigation';
 import { useTimer } from '@/context/TimerContext';
 import { useToast } from '@/context/ToastContext';
 import { formatTicker } from '@/lib/format';
+import { NotificationsBell } from '@/components/NotificationsBell';
 
 const TITLES: Record<string, string> = {
   '/dashboard': 'Трекер',
   '/dashboard/tasks': 'Задачи',
   '/dashboard/projects': 'Проекты',
   '/dashboard/reports': 'Отчёты',
+  '/dashboard/timesheets': 'Таймшиты',
   '/dashboard/pomodoro': 'Pomodoro',
   '/dashboard/team': 'Команда',
   '/dashboard/settings': 'Настройки',
@@ -22,7 +24,7 @@ export function entryTitle(entry: {
   return entry.task?.title || entry.description || 'Без названия';
 }
 
-export function Header() {
+export function Header({ onBurger }: { onBurger?: () => void }) {
   const pathname = usePathname();
   const { active, elapsedSeconds, stop } = useTimer();
   const { toast } = useToast();
@@ -40,10 +42,14 @@ export function Header() {
 
   return (
     <header className="topbar">
+      <button className="burger" title="Меню" onClick={onBurger}>
+        ☰
+      </button>
       <span style={{ fontWeight: 600, fontSize: '14.5px' }}>
         {TITLES[pathname] ?? 'Хронос'}
       </span>
       <div style={{ flex: 1 }} />
+      <NotificationsBell />
       <button
         title="Командная палитра (Cmd+K)"
         onClick={() => window.dispatchEvent(new Event('tt-open-palette'))}

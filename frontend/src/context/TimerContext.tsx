@@ -53,6 +53,8 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
   const lastActivityRef = useRef(Date.now());
   const idleThresholdRef = useRef(settings.idle_threshold_minutes);
   idleThresholdRef.current = settings.idle_threshold_minutes;
+  const autoStopRef = useRef(settings.auto_stop_evening);
+  autoStopRef.current = settings.auto_stop_evening;
 
   // Отслеживаем активность пользователя для контроля простоя.
   useEffect(() => {
@@ -100,11 +102,29 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
     setNow(Date.now());
     const id = setInterval(() => {
       setNow(Date.now());
-      if (
+      const idleNow =
         Date.now() - lastActivityRef.current >
-        idleThresholdRef.current * 60_000
-      ) {
+        idleThresholdRef.current * 60_000;
+      if (idleNow) {
         setIdle(true);
+      }
+      // Авто-стоп вечером: после 19:00 при отсутствии активности.
+      if (idleNow && autoStopRef.current && new Date().getHours() >= 19) {
+        const startedAt = activeRef.current
+          ? new Date(activeRef.current.started_at).getTime()
+          : 0;
+        const endedAt = Math.min(
+          Date.now(),
+          Math.max(lastActivityRef.current, startedAt + 60_000),
+        );
+        api
+          .stopTimer({ ended_at: new Date(endedAt).toISOString() })
+          .then(() => {
+            setActive(null);
+            setIdle(false);
+            setVersion((v) => v + 1);
+          })
+          .catch(() => undefined);
       }
     }, 1000);
     return () => clearInterval(id);

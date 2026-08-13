@@ -14,6 +14,37 @@ export class ExportService {
     private readonly pomodoroService: PomodoroService,
   ) {}
 
+  /**
+   * Отчёт за произвольный период (день/неделя/месяц) с опциональным
+   * фильтром по проекту: листы Time Entries + Summary.
+   */
+  async buildRangeReport(
+    userId: string,
+    from: string,
+    to: string,
+    projectId?: string,
+  ): Promise<{ buffer: Buffer; filename: string }> {
+    let entries = await this.timeEntriesService.findForRange(userId, from, to);
+    if (projectId) {
+      entries = entries.filter((e) => e.task?.project_id === projectId);
+    }
+
+    const workbook = new Workbook();
+    workbook.creator = 'Time Tracker';
+    workbook.created = new Date();
+    this.addTimeEntriesSheet(workbook, entries);
+    this.addSummarySheet(workbook, `${from} — ${to}`, [], entries, {
+      completed_work_sessions: 0,
+      total_focus_seconds: 0,
+    });
+
+    const arrayBuffer = await workbook.xlsx.writeBuffer();
+    return {
+      buffer: Buffer.from(arrayBuffer),
+      filename: `time-report-${from}_${to}.xlsx`,
+    };
+  }
+
   /** Builds an .xlsx daily report for the given (UTC) day, default today. */
   async buildDailyReport(
     userId: string,

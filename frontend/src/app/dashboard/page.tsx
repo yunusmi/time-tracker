@@ -14,8 +14,11 @@ import {
 import type { PomodoroStats, TaskWithStats, TimeEntry } from '@/lib/types';
 import { useTimer } from '@/context/TimerContext';
 import { useToast } from '@/context/ToastContext';
+import { useAuth } from '@/context/AuthContext';
 import { useSettings } from '@/context/SettingsContext';
 import { useReminders } from '@/hooks/useReminders';
+import { dueInfo, PRIO_META } from '@/lib/task';
+import { enqueueEntry } from '@/lib/offline';
 import { entryTitle } from '@/components/Header';
 import { TaskDropdown } from '@/components/TaskDropdown';
 import {
@@ -47,12 +50,29 @@ export default function TrackerPage() {
   } = useTimer();
   const { toast } = useToast();
   const { settings } = useSettings();
+  const { user } = useAuth();
 
   const [tasks, setTasks] = useState<TaskWithStats[]>([]);
   const [todayEntries, setTodayEntries] = useState<TimeEntry[]>([]);
   const [weekEntries, setWeekEntries] = useState<TimeEntry[]>([]);
   const [pomoStats, setPomoStats] = useState<PomodoroStats | null>(null);
+  const [weekLocked, setWeekLocked] = useState(false);
   const [error, setError] = useState('');
+
+  // Чек-лист «Первые шаги» + баннер забытого таймера (>4ч).
+  const [checklistDismissed, setChecklistDismissed] = useState(true);
+  const [longDismissed, setLongDismissed] = useState(false);
+  const [projectsCount, setProjectsCount] = useState(0);
+
+  useEffect(() => {
+    setChecklistDismissed(
+      window.localStorage.getItem('tt_checklist_dismissed') === '1',
+    );
+    api
+      .listProjects()
+      .then((p) => setProjectsCount(p.length))
+      .catch(() => undefined);
+  }, []);
 
   // Строка старта
   const [timerDesc, setTimerDesc] = useState('');
@@ -69,6 +89,7 @@ export default function TrackerPage() {
   const [editEntryId, setEditEntryId] = useState<string | null>(null);
   const [eeFrom, setEeFrom] = useState('');
   const [eeTo, setEeTo] = useState('');
+  const [eeNote, setEeNote] = useState('');
 
   const load = useCallback(async () => {
     try {
@@ -83,6 +104,11 @@ export default function TrackerPage() {
       setTodayEntries(byDay[0]);
       setWeekEntries(byDay.flat());
       setError('');
+      // Утверждённая неделя блокирует записи (бейдж + серверные 403).
+      api
+        .listTimesheets()
+        .then((ts) => setWeekLocked(ts.mine.status === 'approved'))
+        .catch(() => setWeekLocked(false));
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Не удалось загрузить данные');
     }
@@ -96,6 +122,37 @@ export default function TrackerPage() {
     () => tasks.filter((t) => t.status !== 'done'),
     [tasks],
   );
+
+  // «Мои задачи на сегодня»: просроченные, с дедлайном сегодня или в работе.
+  const myToday = useMemo(() => {
+    return tasks
+      .filter((t) => {
+        if (t.status === 'done') return false;
+        const mine =
+          t.assignee_id === user?.id || (!t.assignee_id && t.user_id === user?.id);
+        if (!mine) return false;
+        const due = dueInfo(t);
+        return !!due?.overdue || !!due?.dueToday || t.status === 'in_progress';
+      })
+      .map((t) => {
+        const due = dueInfo(t);
+        return {
+          id: t.id,
+          title: t.title,
+          prioColor: PRIO_META[t.priority ?? 'med'].color,
+          label: due?.overdue
+            ? 'просрочено'
+            : due?.dueToday
+              ? 'дедлайн сегодня'
+              : 'в работе',
+          labelColor: due?.overdue
+            ? 'var(--red)'
+            : due?.dueToday
+              ? 'var(--amber)'
+              : 'var(--muted)',
+        };
+      });
+  }, [tasks, user]);
 
   // «Продолжить» — последние уникальные работы (по task_id/описанию), без done-задач
   const recent = useMemo<RecentItem[]>(() => {
@@ -178,13 +235,22 @@ export default function TrackerPage() {
       toast('«До» должно быть позже «С»');
       return;
     }
+    const body = {
+      task_id: manualTaskId || undefined,
+      description: manualDesc.trim() || undefined,
+      started_at: from.toISOString(),
+      ended_at: to.toISOString(),
+    };
+    // Оффлайн: сохраняем локально, синк при подключении (OfflineBanner).
+    if (!navigator.onLine) {
+      enqueueEntry(body);
+      setManualDesc('');
+      setManualOpen(false);
+      toast('Оффлайн — запись сохранена локально и будет синхронизирована');
+      return;
+    }
     try {
-      await api.createManualEntry({
-        task_id: manualTaskId || undefined,
-        description: manualDesc.trim() || undefined,
-        started_at: from.toISOString(),
-        ended_at: to.toISOString(),
-      });
+      await api.createManualEntry(body);
       setManualDesc('');
       setManualOpen(false);
       toast('Запись добавлена');
@@ -195,9 +261,26 @@ export default function TrackerPage() {
   }
 
   async function delEntry(id: string) {
+    const removed = todayEntries.find((e) => e.id === id);
     try {
       await api.deleteEntry(id);
       await load();
+      toast(
+        'Запись удалена',
+        removed && removed.ended_at
+          ? async () => {
+              // Undo: пересоздаём запись с теми же параметрами.
+              await api.createManualEntry({
+                task_id: removed.task_id ?? undefined,
+                description: removed.description ?? undefined,
+                started_at: removed.started_at,
+                ended_at: removed.ended_at as string,
+              });
+              toast('Восстановлено');
+              await load();
+            }
+          : undefined,
+      );
     } catch (err) {
       toast(err instanceof ApiError ? err.message : 'Не удалось удалить запись');
     }
@@ -207,6 +290,7 @@ export default function TrackerPage() {
     setEditEntryId(e.id);
     setEeFrom(formatTime(e.started_at));
     setEeTo(e.ended_at ? formatTime(e.ended_at) : nowHHMM());
+    setEeNote(e.note ?? '');
   }
 
   async function saveEntryEdit(e: TimeEntry) {
@@ -221,12 +305,22 @@ export default function TrackerPage() {
       await api.updateEntry(e.id, {
         started_at: from.toISOString(),
         ended_at: to.toISOString(),
+        note: eeNote.trim(),
       });
       setEditEntryId(null);
       toast('Время записи обновлено');
       await load();
     } catch (err) {
       toast(err instanceof ApiError ? err.message : 'Не удалось обновить запись');
+    }
+  }
+
+  async function toggleBillable(e: TimeEntry) {
+    try {
+      await api.updateEntry(e.id, { billable: !e.billable });
+      await load();
+    } catch (err) {
+      toast(err instanceof ApiError ? err.message : 'Не удалось изменить запись');
     }
   }
 
@@ -240,6 +334,66 @@ export default function TrackerPage() {
 
   const manualPreviewSec =
     (timeToDate(manualTo).getTime() - timeToDate(manualFrom).getTime()) / 1000;
+
+  // Drag краёв записи на таймлайне: шаг 5 минут, границы 08:00–20:00.
+  const [dragPreview, setDragPreview] = useState<{
+    id: string;
+    startMs: number;
+    endMs: number;
+  } | null>(null);
+
+  function startTimelineDrag(
+    ev: React.PointerEvent<HTMLDivElement>,
+    entry: TimeEntry,
+  ) {
+    if (!entry.ended_at) return;
+    if (weekLocked) {
+      toast('Неделя утверждена — записи заблокированы');
+      return;
+    }
+    ev.preventDefault();
+    const seg = ev.currentTarget.getBoundingClientRect();
+    const track = ev.currentTarget.parentElement?.getBoundingClientRect();
+    if (!track) return;
+    const edge = ev.clientX - seg.left < seg.width / 2 ? 'start' : 'end';
+    const day = new Date(entry.started_at);
+    day.setHours(0, 0, 0, 0);
+    let preview = {
+      id: entry.id,
+      startMs: new Date(entry.started_at).getTime(),
+      endMs: new Date(entry.ended_at).getTime(),
+    };
+    setDragPreview(preview);
+
+    const move = (e: PointerEvent) => {
+      let min = 480 + ((e.clientX - track.left) / track.width) * 720;
+      min = Math.max(480, Math.min(1200, Math.round(min / 5) * 5));
+      const t = day.getTime() + min * 60_000;
+      if (edge === 'start' && t < preview.endMs - 300_000) {
+        preview = { ...preview, startMs: t };
+      } else if (edge === 'end' && t > preview.startMs + 300_000) {
+        preview = { ...preview, endMs: t };
+      }
+      setDragPreview(preview);
+    };
+    const up = async () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+      setDragPreview(null);
+      try {
+        await api.updateEntry(entry.id, {
+          started_at: new Date(preview.startMs).toISOString(),
+          ended_at: new Date(preview.endMs).toISOString(),
+        });
+        toast('Время записи обновлено');
+        await load();
+      } catch (err) {
+        toast(err instanceof ApiError ? err.message : 'Не удалось обновить запись');
+      }
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+  }
 
   // Таймлайн 08:00–20:00
   const TL_START = 8 * 60;
@@ -279,10 +433,11 @@ export default function TrackerPage() {
     };
     for (const e of todayEntries) {
       if (!e.ended_at) continue;
+      const isDragging = dragPreview?.id === e.id;
       push(
         e.id,
-        new Date(e.started_at).getTime(),
-        new Date(e.ended_at).getTime(),
+        isDragging ? dragPreview.startMs : new Date(e.started_at).getTime(),
+        isDragging ? dragPreview.endMs : new Date(e.ended_at).getTime(),
         entryTitle(e),
         false,
         entryProjectColor(e),
@@ -299,7 +454,7 @@ export default function TrackerPage() {
       );
     }
     return segs;
-  }, [todayEntries, active, elapsedSeconds]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [todayEntries, active, elapsedSeconds, dragPreview]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Записи за сегодня: активная сверху, дальше по убыванию времени старта
   const rows = useMemo(() => {
@@ -360,6 +515,96 @@ export default function TrackerPage() {
             onClick={() => void onIdleStop()}
           >
             Стоп и вычесть простой
+          </button>
+        </div>
+      )}
+
+      {/* Чек-лист «Первые шаги» */}
+      {!checklistDismissed && (
+        <div className="card" style={{ padding: '14px 16px', marginBottom: 14 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+            <span style={{ fontWeight: 600, fontSize: 14 }}>Первые шаги</span>
+            <div style={{ flex: 1 }} />
+            <button
+              className="btn-outline"
+              style={{ padding: '4px 12px', fontSize: 12 }}
+              onClick={() => window.dispatchEvent(new Event('tt-open-tour'))}
+            >
+              Тур по интерфейсу
+            </button>
+            <button
+              className="icon-x"
+              title="Скрыть"
+              onClick={() => {
+                setChecklistDismissed(true);
+                window.localStorage.setItem('tt_checklist_dismissed', '1');
+              }}
+            >
+              ✕
+            </button>
+          </div>
+          <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap' }}>
+            {[
+              { label: 'Создан проект', done: projectsCount > 0 },
+              { label: 'Создана задача', done: tasks.length > 0 },
+              {
+                label: 'Запущен таймер',
+                done: todayEntries.length > 0 || weekEntries.length > 0 || !!active,
+              },
+            ].map((c) => (
+              <span
+                key={c.label}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 7,
+                  fontSize: '12.5px',
+                  color: c.done ? 'var(--green)' : 'var(--muted)',
+                }}
+              >
+                <span style={{ fontWeight: 700 }}>{c.done ? '✓' : '○'}</span>
+                {c.label}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* «Забыли выключить?» — таймер идёт дольше 4 часов */}
+      {active && elapsedSeconds > 4 * 3600 && !longDismissed && (
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+            background: 'var(--ysoft)',
+            border: '1px solid var(--amber)',
+            borderRadius: 10,
+            padding: '10px 14px',
+            marginBottom: 14,
+          }}
+        >
+          <span style={{ fontSize: 13 }}>
+            <b>Таймер идёт уже {formatHM(elapsedSeconds)}.</b> Забыли выключить?
+          </span>
+          <div style={{ flex: 1 }} />
+          <button
+            style={{
+              background: 'var(--amber)',
+              border: 'none',
+              borderRadius: 7,
+              padding: '5px 12px',
+              fontSize: '12.5px',
+              fontWeight: 600,
+              color: '#1a1206',
+              cursor: 'pointer',
+            }}
+            onClick={() => void onStop()}
+          >
+            Остановить сейчас
+          </button>
+          <button className="btn-outline" onClick={() => setLongDismissed(true)}>
+            Всё в порядке
           </button>
         </div>
       )}
@@ -494,14 +739,7 @@ export default function TrackerPage() {
       )}
 
       {/* Stat-карточки */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(3, 1fr)',
-          gap: 12,
-          marginBottom: 16,
-        }}
-      >
+      <div className="grid-stats" style={{ marginBottom: 16 }}>
         <div className="card" style={{ borderRadius: 10, padding: '13px 16px' }}>
           <div className="stat-title">Сегодня</div>
           <div className="mono" style={{ fontSize: 21, fontWeight: 600, margin: '3px 0 8px' }}>
@@ -534,6 +772,74 @@ export default function TrackerPage() {
         </div>
       </div>
 
+      {/* Мои задачи на сегодня */}
+      {myToday.length > 0 && (
+        <div className="card" style={{ marginBottom: 16 }}>
+          <div
+            style={{
+              padding: '11px 16px',
+              borderBottom: '1px solid var(--border)',
+              fontWeight: 600,
+              fontSize: 14,
+            }}
+          >
+            Мои задачи на сегодня
+          </div>
+          {myToday.map((t) => (
+            <div
+              key={t.id}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+                padding: '9px 16px',
+                borderBottom: '1px solid var(--border)',
+              }}
+            >
+              <span
+                style={{
+                  width: 7,
+                  height: 7,
+                  borderRadius: '50%',
+                  background: t.prioColor,
+                  flexShrink: 0,
+                }}
+              />
+              <span
+                style={{
+                  flex: 1,
+                  fontWeight: 500,
+                  minWidth: 0,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {t.title}
+              </span>
+              <span
+                style={{
+                  fontSize: '11.5px',
+                  color: t.labelColor,
+                  whiteSpace: 'nowrap',
+                  fontWeight: 600,
+                }}
+              >
+                {t.label}
+              </span>
+              <button
+                className="btn-green-soft"
+                title="Запустить таймер"
+                style={{ border: 'none', cursor: 'pointer', padding: '5px 11px', fontSize: 12 }}
+                onClick={() => void onStart(t.id, '')}
+              >
+                ▶
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Таймлайн дня */}
       <div className="card" style={{ padding: '14px 16px', marginBottom: 16 }}>
         <div
@@ -562,6 +868,11 @@ export default function TrackerPage() {
               key={g.key}
               title={g.tip}
               className={g.live ? 'pulse' : undefined}
+              onPointerDown={(ev) => {
+                if (g.live) return;
+                const entry = todayEntries.find((x) => x.id === g.key);
+                if (entry) startTimelineDrag(ev, entry);
+              }}
               style={{
                 position: 'absolute',
                 top: 3,
@@ -570,6 +881,8 @@ export default function TrackerPage() {
                 background: g.color,
                 left: `${g.left}%`,
                 width: `${g.width}%`,
+                cursor: g.live ? 'default' : 'ew-resize',
+                touchAction: 'none',
               }}
             />
           ))}
@@ -588,6 +901,20 @@ export default function TrackerPage() {
           }}
         >
           <span style={{ fontWeight: 600, fontSize: 14 }}>Записи за сегодня</span>
+          {weekLocked && (
+            <span
+              style={{
+                fontSize: '10.5px',
+                fontWeight: 600,
+                borderRadius: 5,
+                padding: '2px 8px',
+                background: 'var(--gsoft)',
+                color: 'var(--green)',
+              }}
+            >
+              неделя утверждена — заблокировано
+            </span>
+          )}
           <div style={{ flex: 1 }} />
           <button className="btn-outline" onClick={() => setManualOpen((o) => !o)}>
             + Вручную
@@ -748,6 +1075,21 @@ export default function TrackerPage() {
                     outline: 'none',
                   }}
                 />
+                <input
+                  value={eeNote}
+                  onChange={(ev) => setEeNote(ev.target.value)}
+                  placeholder="Комментарий к записи"
+                  style={{
+                    width: 150,
+                    background: 'var(--surface2)',
+                    border: '1px solid var(--accent)',
+                    borderRadius: 5,
+                    padding: '2px 6px',
+                    fontSize: '11.5px',
+                    color: 'var(--text)',
+                    outline: 'none',
+                  }}
+                />
                 <button
                   onClick={() => void saveEntryEdit(e)}
                   style={{
@@ -785,22 +1127,51 @@ export default function TrackerPage() {
               </button>
             )}
             <span className="pdot" style={{ background: entryProjectColor(e) }} />
-            <span
-              style={{
-                flex: 1,
-                fontWeight: 500,
-                minWidth: 0,
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {entryTitle(e)}
-            </span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div
+                style={{
+                  fontWeight: 500,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {entryTitle(e)}
+              </div>
+              {e.note && (
+                <div
+                  style={{
+                    fontSize: '11.5px',
+                    color: 'var(--muted)',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  — {e.note}
+                </div>
+              )}
+            </div>
             {e.is_manual && <span className="chip-badge">вручную</span>}
             <span className="mono" style={{ fontSize: 13, fontWeight: 600, width: 70, textAlign: 'right' }}>
               {formatTicker(e.duration_seconds)}
             </span>
+            <button
+              title="Оплачиваемое время (вкл/выкл)"
+              onClick={() => void toggleBillable(e)}
+              style={{
+                background: e.billable === false ? 'var(--surface2)' : 'var(--gsoft)',
+                color: e.billable === false ? 'var(--muted)' : 'var(--green)',
+                border: 'none',
+                borderRadius: 5,
+                padding: '2px 7px',
+                fontSize: 11,
+                fontWeight: 700,
+                cursor: 'pointer',
+              }}
+            >
+              ₽
+            </button>
             <button className="icon-x" title="Удалить запись" onClick={() => void delEntry(e.id)}>
               ✕
             </button>
