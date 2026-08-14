@@ -145,6 +145,51 @@ export class UsersService {
     return { user, token };
   }
 
+  /**
+   * SSO: аккаунт создаётся/находится по почте (ТЗ Auth 2.0).
+   * Вход через провайдера подтверждает почту; новому аккаунту ставится
+   * случайный пароль — задать свой можно через «Забыли пароль?».
+   */
+  async findOrCreateFromOauth(
+    provider: string,
+    profile: { email: string; name: string; avatar_url: string | null },
+  ): Promise<User> {
+    const email = normalizeEmail(profile.email);
+    const existing = await this.userModel
+      .scope('withPassword')
+      .findOne({ where: { email } });
+
+    if (existing) {
+      // Провайдер подтвердил владение почтой.
+      if (!existing.email_verified_at) {
+        existing.email_verified_at = new Date();
+        existing.verify_token = null;
+        existing.verify_token_expires = null;
+      }
+      if (!existing.oauth_provider) existing.oauth_provider = provider;
+      // Аватар из провайдера — только если свой ещё не загружен.
+      if (!existing.avatar_url && profile.avatar_url) {
+        existing.avatar_url = profile.avatar_url;
+      }
+      await existing.save();
+      return existing;
+    }
+
+    const password_hash = await bcrypt.hash(
+      randomBytes(24).toString('hex'),
+      10,
+    );
+    const user = await this.userModel.create({
+      email,
+      name: profile.name.trim() || email.split('@')[0],
+      password_hash,
+      email_verified_at: new Date(),
+      oauth_provider: provider,
+      avatar_url: profile.avatar_url,
+    });
+    return user;
+  }
+
   /** Токен сброса пароля (TTL 1ч); null — пользователя с такой почтой нет. */
   async issueResetToken(
     email: string,

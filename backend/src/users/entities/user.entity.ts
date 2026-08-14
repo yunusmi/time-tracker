@@ -95,6 +95,19 @@ export class User extends Model {
   @ApiProperty({
     required: false,
     nullable: true,
+    example: 'google',
+    description: 'Провайдер SSO, через которого создан аккаунт (google/yandex)',
+  })
+  @Column({
+    type: DataType.STRING(16),
+    allowNull: true,
+    field: 'oauth_provider',
+  })
+  oauth_provider: string | null;
+
+  @ApiProperty({
+    required: false,
+    nullable: true,
     format: 'uuid',
     description: 'Выбранная компания (переключатель в сайдбаре)',
   })

@@ -173,6 +173,18 @@ export class AuthService {
     return this.buildResponse(user, meta);
   }
 
+  /**
+   * Вход после SSO: провайдер уже подтвердил личность — создаём сессию
+   * и выдаём JWT кабинета (2FA при SSO не спрашиваем: её заменяет провайдер).
+   */
+  async loginWithOauthUser(
+    user: User,
+    meta: RequestMeta = {},
+  ): Promise<AuthResponseDto> {
+    this.clearFailures(user.email);
+    return this.buildResponse(user, meta);
+  }
+
   /** Шаг 1 подключения 2FA: генерирует секрет и otpauth-URL для QR. */
   async setupTotp(
     userId: string,

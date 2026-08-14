@@ -115,6 +115,13 @@ export const api = {
     }),
   me: () => request<AuthUser>('/auth/me'),
 
+  // --- SSO: Google / Яндекс ---
+  oauthProviders: () =>
+    request<{ google: boolean; yandex: boolean }>('/auth/oauth/providers'),
+  /** URL старта SSO-входа: браузер уходит на провайдера и вернётся с токеном. */
+  oauthStartUrl: (provider: 'google' | 'yandex') =>
+    `${API_URL}/auth/oauth/${provider}`,
+
   // --- Auth 2.0: капча, magic link, сброс пароля, сессии ---
   captchaRequired: (email: string) =>
     request<{ required: boolean }>(

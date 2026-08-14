@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { api, ApiError, setToken } from '@/lib/api';
 import { Logo } from '@/components/Logo';
+import { SsoButtons } from '@/components/SsoButtons';
 
 type Mode = 'password' | 'magic-sent' | 'totp';
 
@@ -45,6 +46,23 @@ function LoginForm() {
           err instanceof ApiError ? err.message : 'Ссылка недействительна',
         ),
       );
+  }, [params, refresh, router]);
+
+  // Возврат из SSO: токен приходит во fragment (#sso=…), ошибка — в query.
+  useEffect(() => {
+    const ssoError = params.get('sso_error');
+    if (ssoError) {
+      setError(ssoError);
+      router.replace('/login', { scroll: false });
+      return;
+    }
+    const hash = window.location.hash;
+    if (!hash.startsWith('#sso=')) return;
+    const token = decodeURIComponent(hash.slice(5));
+    // Сразу чистим fragment, чтобы токен не остался в истории браузера.
+    window.history.replaceState(null, '', window.location.pathname);
+    setToken(token);
+    void refresh().then(() => router.replace('/dashboard'));
   }, [params, refresh, router]);
 
   async function onSubmit(e: FormEvent) {
@@ -128,6 +146,8 @@ function LoginForm() {
           ? 'Введите код из приложения-аутентификатора (2FA включена)'
           : 'Войдите, чтобы продолжить'}
       </p>
+
+      {mode === 'password' && <SsoButtons />}
 
       <form onSubmit={onSubmit}>
         {mode === 'password' && (

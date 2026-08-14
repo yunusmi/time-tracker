@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { api, ApiError } from '@/lib/api';
 import { Logo } from '@/components/Logo';
+import { SsoButtons } from '@/components/SsoButtons';
 
 type Kind = 'team' | 'solo';
 type Step = 'kind' | 'account' | 'company' | 'project' | 'invites' | 'done';
@@ -179,6 +180,7 @@ export default function RegisterPage() {
               {kind === 'team' ? 'Для команды' : 'Для себя'} · на почту придёт
               письмо для подтверждения.
             </p>
+            <SsoButtons divider="или вручную" />
             <form onSubmit={createAccount}>
               <div className="field">
                 <label htmlFor="name">Имя</label>
