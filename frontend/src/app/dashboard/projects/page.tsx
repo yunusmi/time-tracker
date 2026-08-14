@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { api, ApiError } from '@/lib/api';
+import { SkeletonRows } from '@/components/Skeleton';
+import { MilestoneEditor } from '@/components/MilestoneEditor';
 import { formatHM } from '@/lib/format';
 import { PROJECT_COLORS } from '@/lib/project';
 import type { ProjectWithStats } from '@/lib/types';
@@ -10,9 +12,12 @@ import { useWorkspace } from '@/context/WorkspaceContext';
 
 export default function ProjectsPage() {
   const { toast } = useToast();
-  const { isAdmin, canSeeProjects, me } = useWorkspace();
+  const { isAdmin, canSeeProjects, me, role, rateLabel } = useWorkspace();
+  // Вехи задаёт админ или менеджер своего проекта.
+  const canEditMilestones = isAdmin || role === 'pm';
   const [projects, setProjects] = useState<ProjectWithStats[]>([]);
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(true);
 
   // Форма создания
   const [name, setName] = useState('');
@@ -20,14 +25,18 @@ export default function ProjectsPage() {
 
   // Инлайн-переименование
   const [editingId, setEditingId] = useState<string | null>(null);
+  // Раскрытый редактор вех проекта.
+  const [msOpen, setMsOpen] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
 
   const load = useCallback(async () => {
     try {
       setProjects(await api.listProjects());
       setError('');
+      setLoading(false);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Не удалось загрузить проекты');
+      setLoading(false);
     }
   }, []);
 
@@ -94,6 +103,14 @@ export default function ProjectsPage() {
             Проектами управляет владелец или админ команды; цвета проектов видны в задачах и отчётах.
           </div>
         </div>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="card card-pad">
+        <SkeletonRows rows={4} height={52} />
       </div>
     );
   }
@@ -165,7 +182,8 @@ export default function ProjectsPage() {
             ? Math.min(100, Math.round((p.week_tracked_seconds / budgetSec) * 100))
             : Math.round((p.week_tracked_seconds / maxWeek) * 100);
           return (
-          <div className="list-row" key={p.id} style={{ padding: '12px 16px' }}>
+          <div key={p.id}>
+          <div className="list-row" style={{ padding: '12px 16px' }}>
             <span
               className="pdot"
               style={{ width: 10, height: 10, borderRadius: 3, background: p.color }}
@@ -222,7 +240,7 @@ export default function ProjectsPage() {
                   }}
                   style={{ width: 70, fontSize: '12.5px' }}
                 />
-                <span style={{ fontSize: '11.5px', color: 'var(--muted)' }}>₽/ч</span>
+                <span style={{ fontSize: '11.5px', color: 'var(--muted)' }}>{rateLabel}</span>
                 <input
                   type="number"
                   min={0}
@@ -267,6 +285,14 @@ export default function ProjectsPage() {
                 <div style={{ background: barColor, width: `${pct}%` }} />
               </div>
             </div>
+            <button
+              className="btn-outline"
+              title="Вехи проекта"
+              style={{ color: 'var(--muted)', flexShrink: 0 }}
+              onClick={() => setMsOpen(msOpen === p.id ? null : p.id)}
+            >
+              Вехи
+            </button>
             {isAdmin && (
               <button
                 className="btn-outline"
@@ -277,6 +303,12 @@ export default function ProjectsPage() {
                 В архив
               </button>
             )}
+          </div>
+          {msOpen === p.id && (
+            <div style={{ padding: '0 16px 6px' }}>
+              <MilestoneEditor projectId={p.id} editable={canEditMilestones} />
+            </div>
+          )}
           </div>
           );
         })}

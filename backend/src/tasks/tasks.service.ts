@@ -14,14 +14,17 @@ import {
   PomodoroSession,
 } from '../pomodoro/entities/pomodoro-session.entity';
 import {
+  workspaceScope,
   WorkspaceContext,
   WorkspacesService,
 } from '../workspaces/workspaces.service';
 import { WorkspaceRole } from '../workspaces/entities/workspace-member.entity';
 import { AuditService } from '../audit/audit.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { MailService } from '../mail/mail.service';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
+import { BulkTaskAction } from './dto/bulk-tasks.dto';
 import { TaskWithStatsDto } from './dto/task-with-stats.dto';
 
 const TASK_INCLUDES = [
@@ -40,10 +43,56 @@ export class TasksService {
     private readonly pomodoroSessionModel: typeof PomodoroSession,
     @InjectModel(Project)
     private readonly projectModel: typeof Project,
+    @InjectModel(User)
+    private readonly userModel: typeof User,
     private readonly workspacesService: WorkspacesService,
     private readonly auditService: AuditService,
     private readonly notificationsService: NotificationsService,
+    private readonly mailService: MailService,
   ) {}
+
+  /** Уведомление + письмо «вам назначена задача» (ошибки почты не ломают операцию). */
+  private async notifyAssignment(
+    assigneeId: string,
+    assignerId: string,
+    task: Task,
+  ): Promise<void> {
+    this.notificationsService.notify(
+      assigneeId,
+      `Новая задача от админа: «${task.title}»`,
+      'accent',
+      { kind: 'task', action: 'tasks', event: 'task_assigned' },
+    );
+    try {
+      const [assignee, assigner, project] = await Promise.all([
+        this.userModel.findByPk(assigneeId),
+        this.userModel.findByPk(assignerId),
+        task.project_id
+          ? this.projectModel.findByPk(task.project_id)
+          : Promise.resolve(null),
+      ]);
+      const emailOn = await this.notificationsService.channelEnabled(
+        assigneeId,
+        'task_assigned',
+        'email',
+      );
+      if (assignee && emailOn) {
+        await this.mailService.sendTaskAssigned(
+          assignee.email,
+          assignee.name,
+          assigner?.name ?? 'Администратор',
+          {
+            title: task.title,
+            project_name: project?.name ?? null,
+            priority: (task.priority ?? 'med') as 'high' | 'med' | 'low',
+            due_date: task.due_date ?? null,
+          },
+        );
+      }
+    } catch {
+      /* письмо не критично */
+    }
+  }
 
   /** Throws NotFoundException if the project does not belong to the workspace admins/creator. */
   private async assertProjectOwnership(
@@ -53,10 +102,7 @@ export class TasksService {
   ): Promise<void> {
     if (!projectId) return;
     const project = await this.projectModel.findOne({
-      where: {
-        id: projectId,
-        user_id: { [Op.in]: ctx.memberIds },
-      },
+      where: { id: projectId, ...(workspaceScope(ctx) as object) },
     });
     if (!project) {
       throw new NotFoundException('Project not found');
@@ -69,6 +115,14 @@ export class TasksService {
 
   /** Условие видимости задач для роли. */
   private visibilityWhere(ctx: WorkspaceContext, userId: string): WhereOptions {
+    // Через Op.and: оба условия используют Op.or и при spread затёрли бы друг друга.
+    return {
+      [Op.and]: [workspaceScope(ctx), this.roleVisibility(ctx, userId)],
+    } as WhereOptions;
+  }
+
+  /** Видимость по роли внутри компании (изоляция добавляется отдельно). */
+  private roleVisibility(ctx: WorkspaceContext, userId: string): WhereOptions {
     if (ctx.isAdmin) {
       // Все задачи участников workspace (старые записи без assignee — по создателю).
       return {
@@ -110,6 +164,7 @@ export class TasksService {
     }
 
     const task = await this.taskModel.create({
+      workspace_id: ctx.workspace.id,
       title: dto.title,
       description: dto.description ?? null,
       status: dto.status ?? TaskStatus.TODO,
@@ -130,10 +185,7 @@ export class TasksService {
       { type: 'task', id: task.id },
     );
     if (assigneeId !== userId) {
-      this.notificationsService.notify(
-        assigneeId,
-        `Новая задача от админа: «${task.title}»`,
-      );
+      void this.notifyAssignment(assigneeId, userId, task);
     }
 
     return (await task.reload({ include: TASK_INCLUDES })) as Task;
@@ -154,11 +206,16 @@ export class TasksService {
     let where = this.visibilityWhere(ctx, userId);
     if (ctx.isAdmin && opts.who === 'mine') {
       where = {
-        [Op.or]: [
-          { assignee_id: userId },
-          { assignee_id: { [Op.is]: null }, user_id: userId },
+        [Op.and]: [
+          workspaceScope(ctx),
+          {
+            [Op.or]: [
+              { assignee_id: userId },
+              { assignee_id: { [Op.is]: null }, user_id: userId },
+            ],
+          },
         ],
-      };
+      } as WhereOptions;
     }
     const tasks = await this.taskModel.findAll({
       where,
@@ -173,9 +230,11 @@ export class TasksService {
     userId: string,
     range: { start: Date; end: Date },
   ): Promise<TaskWithStatsDto[]> {
+    const ctx = await this.workspacesService.getContext(userId);
     const tasks = await this.taskModel.findAll({
       where: {
         [Op.and]: [
+          workspaceScope(ctx),
           {
             [Op.or]: [
               { assignee_id: userId },
@@ -249,10 +308,7 @@ export class TasksService {
       }
       const next = dto.assignee_id ?? userId;
       if (next !== task.assignee_id && next !== userId) {
-        this.notificationsService.notify(
-          next,
-          `Новая задача от админа: «${task.title}»`,
-        );
+        void this.notifyAssignment(next, userId, task);
       }
       task.assignee_id = next;
     }
@@ -274,6 +330,56 @@ export class TasksService {
       `удалил(а) задачу «${task.title}»`,
       { type: 'task', id: task.id },
     );
+  }
+
+  /** Групповые действия над выбранными задачами (панель «Выбрано: N»). */
+  async bulk(
+    userId: string,
+    ids: string[],
+    action: BulkTaskAction,
+  ): Promise<{ updated: number }> {
+    if (!ids.length) return { updated: 0 };
+    const ctx = await this.workspacesService.getContext(userId);
+    if (ctx.role === WorkspaceRole.CLIENT) {
+      throw new ForbiddenException('Клиенту недоступно изменение задач');
+    }
+    // Действуем только над задачами, видимыми пользователю по его роли.
+    const tasks = await this.taskModel.findAll({
+      where: {
+        id: { [Op.in]: ids },
+        ...(this.visibilityWhere(ctx, userId) as object),
+      },
+    });
+    if (!tasks.length) return { updated: 0 };
+
+    if (action === 'delete') {
+      await this.taskModel.destroy({ where: { id: tasks.map((t) => t.id) } });
+      this.auditService.log(
+        ctx.workspace.id,
+        userId,
+        `удалил(а) задач: ${tasks.length}`,
+        { type: 'task' },
+      );
+      return { updated: tasks.length };
+    }
+
+    const status = action as TaskStatus;
+    await this.taskModel.update(
+      {
+        status,
+        completed_at: status === TaskStatus.DONE ? new Date() : null,
+      },
+      { where: { id: tasks.map((t) => t.id) } },
+    );
+    this.auditService.log(
+      ctx.workspace.id,
+      userId,
+      `изменил(а) статус задач (${tasks.length}) → ${
+        { todo: 'К работе', in_progress: 'В работе', done: 'Готово' }[status]
+      }`,
+      { type: 'task' },
+    );
+    return { updated: tasks.length };
   }
 
   /** Merges tracked-time sums and pomodoro counts onto plain task objects. */

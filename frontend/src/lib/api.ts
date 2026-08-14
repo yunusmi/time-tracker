@@ -1,9 +1,22 @@
 import type {
+  Absence,
+  AbsenceKind,
   AppNotification,
   AuditRow,
   AuthResponse,
   AuthUser,
+  ClientDashboard,
+  Currency,
   DaySummary,
+  Department,
+  MemberSummary,
+  Milestone,
+  MilestoneStatus,
+  PayKind,
+  ReportCommentView,
+  SessionView,
+  Workspace,
+  WorkspaceListItem,
   GenerateReportBody,
   InvoicePreview,
   PomodoroPhase,
@@ -90,12 +103,48 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(body),
     }),
-  login: (body: { email: string; password: string; totp_code?: string }) =>
+  login: (body: {
+    email: string;
+    password: string;
+    totp_code?: string;
+    captcha_answer?: string;
+  }) =>
     request<AuthResponse>('/auth/login', {
       method: 'POST',
       body: JSON.stringify(body),
     }),
   me: () => request<AuthUser>('/auth/me'),
+
+  // --- Auth 2.0: капча, magic link, сброс пароля, сессии ---
+  captchaRequired: (email: string) =>
+    request<{ required: boolean }>(
+      `/auth/captcha-required?email=${encodeURIComponent(email)}`,
+    ),
+  sendMagicLink: (email: string) =>
+    request<{ sent: boolean }>('/auth/magic-link', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    }),
+  magicLogin: (token: string) =>
+    request<AuthResponse>('/auth/magic-login', {
+      method: 'POST',
+      body: JSON.stringify({ token }),
+    }),
+  forgotPassword: (email: string) =>
+    request<{ sent: boolean }>('/auth/forgot-password', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    }),
+  resetPassword: (token: string, newPassword: string) =>
+    request<AuthResponse>('/auth/reset-password', {
+      method: 'POST',
+      body: JSON.stringify({ token, new_password: newPassword }),
+    }),
+  listSessions: () => request<SessionView[]>('/auth/sessions'),
+  revokeSession: (id: string) =>
+    request<void>(`/auth/sessions/${id}`, { method: 'DELETE' }),
+  revokeAllSessions: () =>
+    request<void>('/auth/sessions/revoke-all', { method: 'POST' }),
 
   // --- Account / verification ---
   updateMe: (body: Partial<{ name: string; email: string }>) =>
@@ -107,6 +156,17 @@ export const api = {
     request<void>('/users/me/password', {
       method: 'POST',
       body: JSON.stringify(body),
+    }),
+  updateAvatar: (avatarUrl: string | null) =>
+    request<AuthUser>('/users/me/avatar', {
+      method: 'PATCH',
+      body: JSON.stringify({ avatar_url: avatarUrl }),
+    }),
+  exportMyData: () => request<Record<string, unknown>>('/users/me/export'),
+  deleteAccount: (email: string) =>
+    request<void>('/users/me/delete', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
     }),
   sendVerifyEmail: () =>
     request<{ sent: boolean }>('/auth/verify/send', { method: 'POST' }),
@@ -160,6 +220,32 @@ export const api = {
   deleteProject: (id: string) =>
     request<void>(`/projects/${id}`, { method: 'DELETE' }),
 
+  // --- Вехи проекта ---
+  listMilestones: (projectId: string) =>
+    request<Milestone[]>(`/projects/${projectId}/milestones`),
+  createMilestone: (
+    projectId: string,
+    body: { title: string; due_date?: string | null },
+  ) =>
+    request<Milestone>(`/projects/${projectId}/milestones`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+  updateMilestone: (
+    id: string,
+    body: Partial<{
+      title: string;
+      due_date: string | null;
+      status: MilestoneStatus;
+    }>,
+  ) =>
+    request<Milestone>(`/projects/milestones/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(body),
+    }),
+  deleteMilestone: (id: string) =>
+    request<void>(`/projects/milestones/${id}`, { method: 'DELETE' }),
+
   // --- Tasks ---
   listTasks: (who?: 'all' | 'mine') =>
     request<TaskWithStats[]>(`/tasks${who ? `?who=${who}` : ''}`),
@@ -195,6 +281,11 @@ export const api = {
     }),
   deleteTask: (id: string) =>
     request<void>(`/tasks/${id}`, { method: 'DELETE' }),
+  bulkTasks: (ids: string[], action: 'todo' | 'in_progress' | 'done' | 'delete') =>
+    request<{ updated: number }>('/tasks/bulk', {
+      method: 'PATCH',
+      body: JSON.stringify({ ids, action }),
+    }),
 
   // --- Task templates ---
   listTaskTemplates: () => request<TaskTemplate[]>('/task-templates'),
@@ -318,14 +409,57 @@ export const api = {
   publicReport: (token: string) =>
     request<PublicReport>(`/public/reports/${token}`),
   myProjectReport: () => request<PublicReport>('/reports/my-project'),
+  clientDashboard: () => request<ClientDashboard>('/reports/client-dashboard'),
+  listReportComments: (projectId?: string | null) =>
+    request<ReportCommentView[]>(
+      `/report-comments${projectId ? `?project_id=${projectId}` : ''}`,
+    ),
+  addReportComment: (body: string, projectId?: string | null) =>
+    request<ReportCommentView>('/report-comments', {
+      method: 'POST',
+      body: JSON.stringify({ body, project_id: projectId ?? undefined }),
+    }),
 
   // --- Notifications / audit ---
-  listNotifications: () =>
-    request<{ items: AppNotification[]; unread: number }>('/notifications'),
+  listNotifications: (opts: {
+    limit?: number;
+    filter?: 'all' | 'unread' | 'timesheets' | 'tasks';
+    before?: string;
+  } = {}) => {
+    const params = new URLSearchParams();
+    if (opts.limit) params.set('limit', String(opts.limit));
+    if (opts.filter && opts.filter !== 'all') params.set('filter', opts.filter);
+    if (opts.before) params.set('before', opts.before);
+    const qs = params.toString();
+    return request<{ items: AppNotification[]; unread: number }>(
+      `/notifications${qs ? `?${qs}` : ''}`,
+    );
+  },
   readAllNotifications: () =>
     request<void>('/notifications/read-all', { method: 'POST' }),
+  readNotification: (id: string) =>
+    request<void>(`/notifications/${id}/read`, { method: 'POST' }),
+  deleteNotification: (id: string) =>
+    request<void>(`/notifications/${id}`, { method: 'DELETE' }),
   clearNotifications: () =>
     request<void>('/notifications', { method: 'DELETE' }),
+
+  // --- Web Push ---
+  getVapidKey: () =>
+    request<{ public_key: string; enabled: boolean }>('/notifications/push/key'),
+  subscribePush: (body: {
+    endpoint: string;
+    keys: { p256dh: string; auth: string };
+  }) =>
+    request<void>('/notifications/push/subscribe', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+  unsubscribePush: (endpoint: string) =>
+    request<void>('/notifications/push/unsubscribe', {
+      method: 'POST',
+      body: JSON.stringify({ endpoint }),
+    }),
   listAudit: (limit = 20) => request<AuditRow[]>(`/audit?limit=${limit}`),
 
   // --- Timesheets ---
@@ -349,6 +483,83 @@ export const api = {
 
   // --- Workspaces / команда ---
   getWorkspaceMe: () => request<WorkspaceMe>('/workspaces/current/me'),
+  listWorkspaces: () => request<WorkspaceListItem[]>('/workspaces'),
+  createWorkspace: (body: {
+    name: string;
+    departments?: string[];
+    invites?: string[];
+  }) =>
+    request<Workspace>('/workspaces', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+  switchWorkspace: (workspaceId: string) =>
+    request<Workspace>('/workspaces/switch', {
+      method: 'POST',
+      body: JSON.stringify({ workspace_id: workspaceId }),
+    }),
+  updateWorkspace: (
+    body: Partial<{
+      name: string;
+      currency: Currency;
+      brand_color: string;
+      logo_url: string | null;
+      day_norm_hours: number;
+      rounding_minutes: number;
+    }>,
+  ) =>
+    request<Workspace>('/workspaces/current', {
+      method: 'PATCH',
+      body: JSON.stringify(body),
+    }),
+
+  // --- Отделы ---
+  listDepartments: () =>
+    request<Department[]>('/workspaces/current/departments'),
+  createDepartment: (name: string) =>
+    request<Department>('/workspaces/current/departments', {
+      method: 'POST',
+      body: JSON.stringify({ name }),
+    }),
+  deleteDepartment: (id: string) =>
+    request<void>(`/workspaces/current/departments/${id}`, {
+      method: 'DELETE',
+    }),
+
+  // --- Профиль сотрудника, оплата, отсутствия ---
+  memberSummary: (userId: string) =>
+    request<MemberSummary>(`/members/${userId}/summary`),
+  updateMember: (
+    userId: string,
+    body: Partial<{
+      department_id: string | null;
+      pay_kind: PayKind;
+      pay_rate: number;
+    }>,
+  ) =>
+    request<unknown>(`/workspaces/current/members/${userId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(body),
+    }),
+  listAbsences: (userId?: string) =>
+    request<Absence[]>(`/absences${userId ? `?user_id=${userId}` : ''}`),
+  createAbsence: (body: {
+    user_id: string;
+    date_from: string;
+    date_to: string;
+    kind?: AbsenceKind;
+  }) =>
+    request<Absence>('/absences', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+  deleteAbsence: (id: string) =>
+    request<void>(`/absences/${id}`, { method: 'DELETE' }),
+  bulkInvite: (emails: string[], role?: WorkspaceRole) =>
+    request<{ invited: number }>('/workspaces/current/invites/bulk', {
+      method: 'POST',
+      body: JSON.stringify({ emails, role }),
+    }),
   changeMemberRole: (
     userId: string,
     body: { role: WorkspaceRole; project_id?: string | null },

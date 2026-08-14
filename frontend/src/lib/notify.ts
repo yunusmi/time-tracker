@@ -14,3 +14,36 @@ export function onceToday(key: string): boolean {
   window.localStorage.setItem(key, today);
   return true;
 }
+
+/**
+ * Короткий звуковой сигнал через WebAudio — по завершении фазы Pomodoro.
+ * Не требует файлов и не падает, если аудио недоступно.
+ */
+export function chime(): void {
+  if (typeof window === 'undefined') return;
+  try {
+    const Ctx =
+      window.AudioContext ??
+      (window as unknown as { webkitAudioContext?: typeof AudioContext })
+        .webkitAudioContext;
+    if (!Ctx) return;
+    const ctx = new Ctx();
+    const now = ctx.currentTime;
+    // Две ноты: «дин-дон».
+    [880, 1320].forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.0001, now + i * 0.18);
+      gain.gain.exponentialRampToValueAtTime(0.25, now + i * 0.18 + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + i * 0.18 + 0.22);
+      osc.connect(gain).connect(ctx.destination);
+      osc.start(now + i * 0.18);
+      osc.stop(now + i * 0.18 + 0.24);
+    });
+    setTimeout(() => void ctx.close(), 900);
+  } catch {
+    /* звук не критичен */
+  }
+}

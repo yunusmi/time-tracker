@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+html,body{margin:0;padding:0;background:#111216;color:#e7e8ec}
+body{font-family:'Instrument Sans',system-ui,sans-serif}
+a{color:#818cf8;text-decoration:none}a:hover{color:#a5b4fc}
+input::placeholder{color:#5b5e68}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+</style>
+</helmet>
+<div onClick="{{ rootClick }}" style="min-height:100vh;display:flex;flex-direction:column;align-items:center;background:radial-gradient(ellipse 800px 500px at 50% -10%, rgba(99,102,241,.14), transparent), #111216;padding:20px;box-sizing:border-box">
+  <div style="display:flex;gap:6px;background:#191a20;border:1px solid #23252c;border-radius:99px;padding:4px;margin:8px 0 34px;flex-wrap:wrap;justify-content:center">
+    <sc-for list="{{ flowTabs }}" as="ft" hint-placeholder-count="4">
+      <button onClick="{{ pickFlow }}" data-f="{{ ft.k }}" style="border:none;border-radius:99px;padding:6px 16px;font-size:12.5px;font-weight:600;cursor:pointer;background:{{ ft.bg }};color:{{ ft.c }}">{{ ft.label }}</button>
+    </sc-for>
+  </div>
+  <div style="width:400px;max-width:100%;animation:fadeUp .35s ease">
+    <div style="display:flex;align-items:center;justify-content:center;gap:9px;margin-bottom:22px">
+      <svg width="26" height="26" viewBox="0 0 24 24" style="flex-shrink:0"><rect width="24" height="24" rx="7" fill="#6366f1"></rect><circle cx="12" cy="12" r="6.3" stroke="#fff" stroke-width="1.8" fill="none"></circle><path d="M12 8.6V12l2.6 1.7" stroke="#fff" stroke-width="1.8" stroke-linecap="round" fill="none"></path></svg>
+      <span style="font-weight:700;font-size:17px">Хронос</span>
+    </div>
+    <div style="background:#191a20;border:1px solid #23252c;border-radius:14px;padding:26px 28px;box-shadow:0 18px 50px rgba(0,0,0,.4)">
+
+      <sc-if value="{{ isLogin }}" hint-placeholder-val="{{ true }}">
+        <div style="font-weight:700;font-size:17px;margin-bottom:4px;text-align:center">С возвращением</div>
+        <div style="font-size:12.5px;color:#8b8f9a;text-align:center;margin-bottom:20px">Войдите, чтобы продолжить</div>
+        <div style="display:flex;gap:8px;margin-bottom:14px">
+          <button onClick="{{ ssoGoogle }}" style="flex:1;display:flex;align-items:center;justify-content:center;gap:8px;background:#22242b;border:1px solid #33363f;border-radius:9px;padding:10px;font-size:13px;font-weight:600;color:#e7e8ec;cursor:pointer" style-hover="border-color:#6366f1"><span style="font-weight:800;color:#818cf8">G</span>Google</button>
+          <button onClick="{{ ssoMs }}" style="flex:1;display:flex;align-items:center;justify-content:center;gap:8px;background:#22242b;border:1px solid #33363f;border-radius:9px;padding:10px;font-size:13px;font-weight:600;color:#e7e8ec;cursor:pointer" style-hover="border-color:#6366f1"><span style="display:inline-grid;grid-template-columns:5px 5px;gap:1px"><span style="width:5px;height:5px;background:#f87171"></span><span style="width:5px;height:5px;background:#34d399"></span><span style="width:5px;height:5px;background:#60a5fa"></span><span style="width:5px;height:5px;background:#fbbf24"></span></span>Microsoft</button>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px"><div style="flex:1;height:1px;background:#23252c"></div><span style="font-size:11px;color:#6b6e78">или по почте</span><div style="flex:1;height:1px;background:#23252c"></div></div>
+        <div style="font-size:11.5px;color:#8b8f9a;margin-bottom:4px">Email</div>
+        <input value="{{ email }}" onChange="{{ onField }}" data-f="email" placeholder="you@company.ru" style="width:100%;box-sizing:border-box;background:#22242b;border:1px solid #33363f;border-radius:8px;padding:10px 12px;font-size:13.5px;color:#e7e8ec;outline:none;margin-bottom:12px" style-focus="border-color:#6366f1"></input>
+        <div style="font-size:11.5px;color:#8b8f9a;margin-bottom:4px">Пароль</div>
+        <input type="password" value="{{ pass }}" onChange="{{ onField }}" data-f="pass" placeholder="••••••••" style="width:100%;box-sizing:border-box;background:#22242b;border:1px solid #33363f;border-radius:8px;padding:10px 12px;font-size:13.5px;color:#e7e8ec;outline:none;margin-bottom:6px" style-focus="border-color:#6366f1"></input>
+        <div style="text-align:right;margin-bottom:16px"><a href="#" onClick="{{ goReset }}" style="font-size:12px">Забыли пароль?</a></div>
+        <sc-if value="{{ showCaptcha }}" hint-placeholder-val="{{ false }}">
+          <label style="display:flex;align-items:center;gap:9px;background:#22242b;border:1px solid #33363f;border-radius:9px;padding:11px 13px;margin-bottom:14px;font-size:13px;cursor:pointer;animation:fadeUp .3s ease">
+            <input type="checkbox" checked="{{ captchaOk }}" onChange="{{ toggleCaptcha }}" style="accent-color:#6366f1"></input>Я не робот <span style="font-size:11px;color:#6b6e78">· после 2 неудачных попыток (демо)</span>
+          </label>
+        </sc-if>
+        <button onClick="{{ doLogin }}" style="width:100%;background:#6366f1;color:#fff;border:none;border-radius:9px;padding:12px;font-size:14px;font-weight:600;cursor:pointer">Войти</button>
+        <button onClick="{{ magicSend }}" style="width:100%;margin-top:8px;background:transparent;border:1px solid #33363f;border-radius:9px;padding:11px;font-size:13px;font-weight:500;color:#8b8f9a;cursor:pointer" style-hover="color:#e7e8ec;border-color:#6366f1">Войти по ссылке из письма — без пароля</button>
+        <sc-if value="{{ magicSent }}" hint-placeholder-val="{{ false }}">
+          <div style="margin-top:12px;background:rgba(99,102,241,.08);border:1px solid rgba(99,102,241,.35);border-radius:9px;padding:11px 13px;font-size:12.5px;color:#b6b9c2;line-height:1.55;animation:fadeUp .3s ease">Ссылка для входа отправлена на <b style="color:#e7e8ec">{{ emailShown }}</b> — действует 15 минут, работает один раз.</div>
+        </sc-if>
+        <sc-if value="{{ show2fa }}" hint-placeholder-val="{{ false }}">
+          <div style="margin-top:14px;background:#22242b;border-radius:9px;padding:12px;text-align:center;animation:fadeUp .3s ease">
+            <div style="font-size:12.5px;color:#8b8f9a;margin-bottom:8px">Введите код из приложения-аутентификатора (2FA включена)</div>
+            <input value="{{ code2fa }}" onChange="{{ onField }}" data-f="code2fa" placeholder="000000" maxLength="6" style="width:130px;text-align:center;background:#191a20;border:1px solid #33363f;border-radius:8px;padding:9px;font-size:16px;letter-spacing:.3em;color:#e7e8ec;outline:none;font-family:'JetBrains Mono',monospace" style-focus="border-color:#6366f1"></input>
+            <button onClick="{{ do2fa }}" style="display:block;width:100%;margin-top:10px;background:#6366f1;color:#fff;border:none;border-radius:8px;padding:9px;font-size:13px;font-weight:600;cursor:pointer">Подтвердить</button>
+          </div>
+        </sc-if>
+        <div style="text-align:center;font-size:12.5px;color:#8b8f9a;margin-top:18px">Нет аккаунта? <a href="#" onClick="{{ goSignup }}">Зарегистрироваться</a></div>
+      </sc-if>
+
+      <sc-if value="{{ isSignup }}" hint-placeholder-val="{{ false }}">
+        <sc-if value="{{ su1 }}" hint-placeholder-val="{{ true }}">
+          <div style="font-weight:700;font-size:17px;margin-bottom:4px;text-align:center">Как будете использовать Хронос?</div>
+          <div style="font-size:12.5px;color:#8b8f9a;text-align:center;margin-bottom:20px">Это определит первый шаг — изменить можно всегда</div>
+          <button onClick="{{ pickKind }}" data-k="owner" style="width:100%;text-align:left;background:{{ kOwner.bg }};border:1px solid {{ kOwner.bd }};border-radius:11px;padding:14px 16px;cursor:pointer;margin-bottom:10px;color:#e7e8ec">
+            <div style="font-weight:700;font-size:14px;margin-bottom:3px">Для команды или агентства</div>
+            <div style="font-size:12.5px;color:#8b8f9a;line-height:1.5">Вы владелец: создадите компанию, пригласите сотрудников, будете видеть отчёты всех и выставлять счета</div>
+          </button>
+          <button onClick="{{ pickKind }}" data-k="solo" style="width:100%;text-align:left;background:{{ kSolo.bg }};border:1px solid {{ kSolo.bd }};border-radius:11px;padding:14px 16px;cursor:pointer;margin-bottom:18px;color:#e7e8ec">
+            <div style="font-weight:700;font-size:14px;margin-bottom:3px">Для себя</div>
+            <div style="font-size:12.5px;color:#8b8f9a;line-height:1.5">Фриланс или личный учёт: свои проекты, время и отчёты. Команду можно добавить позже</div>
+          </button>
+          <button onClick="{{ suNext }}" style="width:100%;background:#6366f1;color:#fff;border:none;border-radius:9px;padding:12px;font-size:14px;font-weight:600;cursor:pointer">Продолжить</button>
+        </sc-if>
+        <sc-if value="{{ su2 }}" hint-placeholder-val="{{ false }}">
+          <div style="font-weight:700;font-size:17px;margin-bottom:4px;text-align:center">Создание аккаунта</div>
+          <div style="font-size:12.5px;color:#8b8f9a;text-align:center;margin-bottom:20px">{{ suKindLabel }}</div>
+          <div style="display:flex;gap:8px;margin-bottom:14px">
+            <button onClick="{{ ssoGoogle }}" style="flex:1;display:flex;align-items:center;justify-content:center;gap:8px;background:#22242b;border:1px solid #33363f;border-radius:9px;padding:10px;font-size:13px;font-weight:600;color:#e7e8ec;cursor:pointer" style-hover="border-color:#6366f1"><span style="font-weight:800;color:#818cf8">G</span>Через Google</button>
+            <button onClick="{{ ssoMs }}" style="flex:1;display:flex;align-items:center;justify-content:center;gap:8px;background:#22242b;border:1px solid #33363f;border-radius:9px;padding:10px;font-size:13px;font-weight:600;color:#e7e8ec;cursor:pointer" style-hover="border-color:#6366f1">Microsoft</button>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px"><div style="flex:1;height:1px;background:#23252c"></div><span style="font-size:11px;color:#6b6e78">или вручную</span><div style="flex:1;height:1px;background:#23252c"></div></div>
+          <div style="font-size:11.5px;color:#8b8f9a;margin-bottom:4px">Имя</div>
+          <input value="{{ name }}" onChange="{{ onField }}" data-f="name" placeholder="Юнус Мирзаев" style="width:100%;box-sizing:border-box;background:#22242b;border:1px solid #33363f;border-radius:8px;padding:10px 12px;font-size:13.5px;color:#e7e8ec;outline:none;margin-bottom:12px" style-focus="border-color:#6366f1"></input>
+          <div style="font-size:11.5px;color:#8b8f9a;margin-bottom:4px">Email</div>
+          <input value="{{ email }}" onChange="{{ onField }}" data-f="email" placeholder="you@company.ru" style="width:100%;box-sizing:border-box;background:#22242b;border:1px solid #33363f;border-radius:8px;padding:10px 12px;font-size:13.5px;color:#e7e8ec;outline:none;margin-bottom:12px" style-focus="border-color:#6366f1"></input>
+          <div style="font-size:11.5px;color:#8b8f9a;margin-bottom:4px">Пароль (мин. 8 символов)</div>
+          <input type="password" value="{{ pass }}" onChange="{{ onField }}" data-f="pass" placeholder="••••••••" style="width:100%;box-sizing:border-box;background:#22242b;border:1px solid #33363f;border-radius:8px;padding:10px 12px;font-size:13.5px;color:#e7e8ec;outline:none;margin-bottom:18px" style-focus="border-color:#6366f1"></input>
+          <button onClick="{{ suNext }}" style="width:100%;background:#6366f1;color:#fff;border:none;border-radius:9px;padding:12px;font-size:14px;font-weight:600;cursor:pointer">{{ su2Next }}</button>
+          <div style="font-size:11px;color:#6b6e78;text-align:center;margin-top:12px;line-height:1.5">Продолжая, вы соглашаетесь с условиями сервиса. На почту придёт письмо для подтверждения.</div>
+        </sc-if>
+        <sc-if value="{{ su3 }}" hint-placeholder-val="{{ false }}">
+          <div style="font-size:11.5px;color:#818cf8;font-weight:700;margin-bottom:6px">Компания · шаг {{ compN }} из 3</div>
+          <sc-if value="{{ c1 }}" hint-placeholder-val="{{ true }}">
+            <div style="font-weight:700;font-size:17px;margin-bottom:8px">Как называется компания?</div>
+            <div style="font-size:12.5px;color:#8b8f9a;margin-bottom:16px;line-height:1.55">Отдельное пространство: свои проекты, сотрудники и отчёты. Позже сможете создать ещё.</div>
+            <input value="{{ compName }}" onChange="{{ onField }}" data-f="compName" placeholder="Cherrypick Agency" style="width:100%;box-sizing:border-box;background:#22242b;border:1px solid #33363f;border-radius:8px;padding:10px 12px;font-size:13.5px;color:#e7e8ec;outline:none;margin-bottom:18px" style-focus="border-color:#6366f1"></input>
+          </sc-if>
+          <sc-if value="{{ c2 }}" hint-placeholder-val="{{ false }}">
+            <div style="font-weight:700;font-size:17px;margin-bottom:8px">Первый проект</div>
+            <div style="font-size:12.5px;color:#8b8f9a;margin-bottom:16px;line-height:1.55">Время всегда трекается в проект — создадим первый сразу. Ставку и бюджет добавите позже.</div>
+            <input value="{{ projName }}" onChange="{{ onField }}" data-f="projName" placeholder="Например: Разработка" style="width:100%;box-sizing:border-box;background:#22242b;border:1px solid #33363f;border-radius:8px;padding:10px 12px;font-size:13.5px;color:#e7e8ec;outline:none;margin-bottom:18px" style-focus="border-color:#6366f1"></input>
+          </sc-if>
+          <sc-if value="{{ c3 }}" hint-placeholder-val="{{ false }}">
+            <div style="font-weight:700;font-size:17px;margin-bottom:8px">Пригласите команду</div>
+            <div style="font-size:12.5px;color:#8b8f9a;margin-bottom:16px;line-height:1.55">Email через запятую — каждому уйдёт письмо. Роли назначите в «Команде». Можно пропустить.</div>
+            <input value="{{ invites }}" onChange="{{ onField }}" data-f="invites" placeholder="anna@team.ru, mark@team.ru" style="width:100%;box-sizing:border-box;background:#22242b;border:1px solid #33363f;border-radius:8px;padding:10px 12px;font-size:13.5px;color:#e7e8ec;outline:none;margin-bottom:18px" style-focus="border-color:#6366f1"></input>
+          </sc-if>
+          <div style="display:flex;gap:8px">
+            <sc-if value="{{ cHasBack }}" hint-placeholder-val="{{ false }}"><button onClick="{{ compBack }}" style="background:transparent;border:1px solid #33363f;border-radius:9px;padding:11px 16px;font-size:13px;color:#e7e8ec;cursor:pointer">Назад</button></sc-if>
+            <button onClick="{{ suNext }}" style="flex:1;background:#6366f1;color:#fff;border:none;border-radius:9px;padding:12px;font-size:14px;font-weight:600;cursor:pointer">{{ compNext }}</button>
+          </div>
+        </sc-if>
+        <sc-if value="{{ su4 }}" hint-placeholder-val="{{ false }}">
+          <div style="text-align:center;animation:fadeUp .35s ease">
+            <div style="width:52px;height:52px;border-radius:50%;background:rgba(52,211,153,.14);color:#34d399;display:flex;align-items:center;justify-content:center;font-size:24px;margin:6px auto 14px">✓</div>
+            <div style="font-weight:700;font-size:17px;margin-bottom:8px">{{ doneTitle }}</div>
+            <div style="font-size:13px;color:#8b8f9a;line-height:1.6;margin-bottom:18px">{{ doneText }}</div>
+            <a href="Time Tracker Redesign v2.dc.html" style="display:block;background:#6366f1;color:#fff;border-radius:9px;padding:12px;font-size:14px;font-weight:600">Войти в кабинет →</a>
+            <div style="font-size:12px;color:#6b6e78;margin-top:12px">В кабинете вас встретит интерактивный тур по разделам</div>
+          </div>
+        </sc-if>
+        <sc-if value="{{ suNotDone }}" hint-placeholder-val="{{ true }}">
+          <div style="text-align:center;font-size:12.5px;color:#8b8f9a;margin-top:18px">Уже есть аккаунт? <a href="#" onClick="{{ goLogin }}">Войти</a></div>
+        </sc-if>
+      </sc-if>
+
+      <sc-if value="{{ isInvite }}" hint-placeholder-val="{{ false }}">
+        <sc-if value="{{ inv1 }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+            <div style="width:44px;height:44px;border-radius:50%;background:rgba(99,102,241,.14);color:#818cf8;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700">АС</div>
+            <div>
+              <div style="font-size:14px;font-weight:600">Аня Соколова</div>
+              <div style="font-size:12px;color:#8b8f9a">anya@cherrypick.ru</div>
+            </div>
+          </div>
+          <div style="font-weight:700;font-size:17px;margin-bottom:8px">Вас пригласили в «Cherrypick Agency»</div>
+          <div style="display:inline-flex;align-items:center;gap:8px;background:#22242b;border-radius:8px;padding:7px 12px;font-size:12.5px;margin-bottom:16px">Роль: <span style="background:rgba(99,102,241,.14);color:#818cf8;border-radius:6px;padding:2px 10px;font-size:11.5px;font-weight:700">Участник</span></div>
+          <div style="font-size:12.5px;color:#8b8f9a;line-height:1.6;margin-bottom:18px">После принятия вы попадёте прямо в компанию Ани. Если у вас уже есть другие компании в Хроносе — эта добавится в переключатель, роль в каждой компании своя (где-то вы владелец, где-то участник).</div>
+          <button onClick="{{ invAccept }}" style="width:100%;background:#6366f1;color:#fff;border:none;border-radius:9px;padding:12px;font-size:14px;font-weight:600;cursor:pointer;margin-bottom:8px">{{ invBtn }}</button>
+          <button onClick="{{ invToggleUser }}" style="width:100%;background:transparent;border:1px solid #33363f;border-radius:9px;padding:10px;font-size:12.5px;color:#8b8f9a;cursor:pointer">{{ invToggleLabel }}</button>
+        </sc-if>
+        <sc-if value="{{ inv2 }}" hint-placeholder-val="{{ false }}">
+          <div style="font-weight:700;font-size:17px;margin-bottom:4px;text-align:center">Быстрая регистрация</div>
+          <div style="font-size:12.5px;color:#8b8f9a;text-align:center;margin-bottom:20px">Email уже подтверждён приглашением — останется имя и пароль</div>
+          <div style="font-size:11.5px;color:#8b8f9a;margin-bottom:4px">Email</div>
+          <input value="you@team.ru" disabled="{{ true }}" style="width:100%;box-sizing:border-box;background:#191a20;border:1px solid #23252c;border-radius:8px;padding:10px 12px;font-size:13.5px;color:#6b6e78;outline:none;margin-bottom:12px"></input>
+          <div style="font-size:11.5px;color:#8b8f9a;margin-bottom:4px">Имя</div>
+          <input value="{{ name }}" onChange="{{ onField }}" data-f="name" placeholder="Ваше имя" style="width:100%;box-sizing:border-box;background:#22242b;border:1px solid #33363f;border-radius:8px;padding:10px 12px;font-size:13.5px;color:#e7e8ec;outline:none;margin-bottom:12px" style-focus="border-color:#6366f1"></input>
+          <div style="font-size:11.5px;color:#8b8f9a;margin-bottom:4px">Пароль</div>
+          <input type="password" value="{{ pass }}" onChange="{{ onField }}" data-f="pass" placeholder="••••••••" style="width:100%;box-sizing:border-box;background:#22242b;border:1px solid #33363f;border-radius:8px;padding:10px 12px;font-size:13.5px;color:#e7e8ec;outline:none;margin-bottom:18px" style-focus="border-color:#6366f1"></input>
+          <button onClick="{{ invFinish }}" style="width:100%;background:#6366f1;color:#fff;border:none;border-radius:9px;padding:12px;font-size:14px;font-weight:600;cursor:pointer">Принять и войти</button>
+        </sc-if>
+        <sc-if value="{{ inv3 }}" hint-placeholder-val="{{ false }}">
+          <div style="text-align:center;animation:fadeUp .35s ease">
+            <div style="width:52px;height:52px;border-radius:50%;background:rgba(52,211,153,.14);color:#34d399;display:flex;align-items:center;justify-content:center;font-size:24px;margin:6px auto 14px">✓</div>
+            <div style="font-weight:700;font-size:17px;margin-bottom:8px">Вы в команде «Cherrypick Agency»</div>
+            <div style="font-size:13px;color:#8b8f9a;line-height:1.6;margin-bottom:18px">Сейчас откроется кабинет компании — короткий тур покажет ваши разделы: Трекер, Задачи и Таймшиты.</div>
+            <a href="Time Tracker Redesign v2.dc.html" style="display:block;background:#6366f1;color:#fff;border-radius:9px;padding:12px;font-size:14px;font-weight:600">Открыть кабинет →</a>
+          </div>
+        </sc-if>
+      </sc-if>
+
+      <sc-if value="{{ isReset }}" hint-placeholder-val="{{ false }}">
+        <sc-if value="{{ r1 }}" hint-placeholder-val="{{ true }}">
+          <div style="font-weight:700;font-size:17px;margin-bottom:4px;text-align:center">Сброс пароля</div>
+          <div style="font-size:12.5px;color:#8b8f9a;text-align:center;margin-bottom:20px">Пришлём письмо со ссылкой для смены пароля</div>
+          <div style="font-size:11.5px;color:#8b8f9a;margin-bottom:4px">Email</div>
+          <input value="{{ email }}" onChange="{{ onField }}" data-f="email" placeholder="you@company.ru" style="width:100%;box-sizing:border-box;background:#22242b;border:1px solid #33363f;border-radius:8px;padding:10px 12px;font-size:13.5px;color:#e7e8ec;outline:none;margin-bottom:18px" style-focus="border-color:#6366f1"></input>
+          <button onClick="{{ resetSend }}" style="width:100%;background:#6366f1;color:#fff;border:none;border-radius:9px;padding:12px;font-size:14px;font-weight:600;cursor:pointer">Отправить письмо</button>
+          <div style="text-align:center;font-size:12.5px;color:#8b8f9a;margin-top:18px"><a href="#" onClick="{{ goLogin }}">← Вернуться ко входу</a></div>
+        </sc-if>
+        <sc-if value="{{ r2 }}" hint-placeholder-val="{{ false }}">
+          <div style="text-align:center;animation:fadeUp .35s ease">
+            <div style="width:52px;height:52px;border-radius:50%;background:rgba(99,102,241,.14);color:#818cf8;display:flex;align-items:center;justify-content:center;font-size:22px;margin:6px auto 14px">✉</div>
+            <div style="font-weight:700;font-size:17px;margin-bottom:8px">Письмо отправлено</div>
+            <div style="font-size:13px;color:#8b8f9a;line-height:1.6;margin-bottom:18px">Проверьте почту {{ emailShown }} — ссылка действует 1 час. По ней откроется форма нового пароля.</div>
+            <button onClick="{{ resetGoNew }}" style="width:100%;background:transparent;border:1px solid #33363f;border-radius:9px;padding:11px;font-size:13px;color:#e7e8ec;cursor:pointer">Демо: открыть форму по ссылке</button>
+          </div>
+        </sc-if>
+        <sc-if value="{{ r3 }}" hint-placeholder-val="{{ false }}">
+          <div style="font-weight:700;font-size:17px;margin-bottom:4px;text-align:center">Новый пароль</div>
+          <div style="font-size:12.5px;color:#8b8f9a;text-align:center;margin-bottom:20px">Минимум 8 символов</div>
+          <input type="password" value="{{ pass }}" onChange="{{ onField }}" data-f="pass" placeholder="Новый пароль" style="width:100%;box-sizing:border-box;background:#22242b;border:1px solid #33363f;border-radius:8px;padding:10px 12px;font-size:13.5px;color:#e7e8ec;outline:none;margin-bottom:12px" style-focus="border-color:#6366f1"></input>
+          <input type="password" value="{{ pass2 }}" onChange="{{ onField }}" data-f="pass2" placeholder="Повторите пароль" style="width:100%;box-sizing:border-box;background:#22242b;border:1px solid #33363f;border-radius:8px;padding:10px 12px;font-size:13.5px;color:#e7e8ec;outline:none;margin-bottom:18px" style-focus="border-color:#6366f1"></input>
+          <button onClick="{{ resetFinish }}" style="width:100%;background:#6366f1;color:#fff;border:none;border-radius:9px;padding:12px;font-size:14px;font-weight:600;cursor:pointer">Сохранить и войти</button>
+        </sc-if>
+      </sc-if>
+
+      <sc-if value="{{ isVerify }}" hint-placeholder-val="{{ false }}">
+        <div style="text-align:center;animation:fadeUp .35s ease">
+          <div style="width:52px;height:52px;border-radius:50%;background:rgba(52,211,153,.14);color:#34d399;display:flex;align-items:center;justify-content:center;font-size:24px;margin:6px auto 14px">✓</div>
+          <div style="font-weight:700;font-size:17px;margin-bottom:8px">Почта подтверждена</div>
+          <div style="font-size:13px;color:#8b8f9a;line-height:1.6;margin-bottom:18px">Адрес you@company.ru привязан к аккаунту. Теперь доступны приглашения, уведомления и восстановление пароля.</div>
+          <a href="Time Tracker Redesign v2.dc.html" style="display:block;background:#6366f1;color:#fff;border-radius:9px;padding:12px;font-size:14px;font-weight:600">Продолжить в кабинет →</a>
+          <div style="font-size:11.5px;color:#6b6e78;margin-top:12px;line-height:1.5">Ссылка была одноразовой — если открыли по ошибке, просто закройте страницу.</div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isRevoked }}" hint-placeholder-val="{{ false }}">
+        <div style="text-align:center;animation:fadeUp .35s ease">
+          <div style="width:52px;height:52px;border-radius:50%;background:rgba(248,113,113,.12);color:#f87171;display:flex;align-items:center;justify-content:center;font-size:22px;margin:6px auto 14px">✕</div>
+          <div style="font-weight:700;font-size:17px;margin-bottom:8px">Ссылка недоступна</div>
+          <div style="font-size:13px;color:#8b8f9a;line-height:1.6;margin-bottom:6px">Публичный отчёт по этой ссылке отозван владельцем или срок действия истёк.</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:11.5px;color:#6b6e78;margin-bottom:18px">chronos.app/r/8fk2-x91m</div>
+          <button onClick="{{ requestNew }}" style="width:100%;background:#6366f1;color:#fff;border:none;border-radius:9px;padding:12px;font-size:14px;font-weight:600;cursor:pointer;margin-bottom:8px">Запросить новую ссылку</button>
+          <div style="font-size:11.5px;color:#6b6e78;line-height:1.5">Владелец отчёта получит уведомление с вашим запросом.</div>
+        </div>
+      </sc-if>
+
+    </div>
+    <div style="text-align:center;font-size:11.5px;color:#6b6e78;margin-top:16px">Демо-прототип · <a href="Time Tracker Redesign v2.dc.html">кабинет</a> · <a href="Knowledge Base.dc.html">база знаний</a> · <a href="Public Report.dc.html">публичный отчёт</a></div>
+  </div>
+  <sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;bottom:20px;right:20px;background:#191a20;border:1px solid #33363f;border-radius:10px;box-shadow:0 12px 32px rgba(0,0,0,.4);padding:11px 16px;font-size:13px;z-index:60;max-width:340px">{{ toast }}</div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { flow: 'login', email: '', pass: '', pass2: '', name: '', code2fa: '', show2fa: false,
+    loginFails: 0, captchaOk: false, magicSent: false,
+    suStep: 0, suKind: 'owner', compStep: 0, compName: '', projName: '', invites: '',
+    invStep: 0, invExisting: false, rStep: 0, toast: null };
+  toastMsg(m) { clearTimeout(this._t); this.setState({ toast: m }); this._t = setTimeout(() => this.setState({ toast: null }), 2800); }
+  renderVals() {
+    const s = this.state;
+    const seg = on => ({ bg: on ? '#6366f1' : 'transparent', c: on ? '#fff' : '#8b8f9a' });
+    const card = on => ({ bg: on ? 'rgba(99,102,241,.1)' : '#22242b', bd: on ? '#6366f1' : '#33363f' });
+    return {
+      rootClick: () => {},
+      onField: e => this.setState({ [e.currentTarget.dataset.f]: e.currentTarget.value }),
+      toast: s.toast,
+      flowTabs: [['login', 'Вход'], ['signup', 'Регистрация'], ['invite', 'По приглашению'], ['reset', 'Сброс пароля'], ['verify', 'Верификация'], ['revoked', 'Ссылка отозвана']].map(([k, label]) => ({ k, label, ...seg(s.flow === k) })),
+      pickFlow: e => this.setState({ flow: e.currentTarget.dataset.f, suStep: 0, compStep: 0, invStep: 0, rStep: 0, show2fa: false, pass: '', pass2: '' }),
+      isLogin: s.flow === 'login', isSignup: s.flow === 'signup', isInvite: s.flow === 'invite', isReset: s.flow === 'reset',
+      isVerify: s.flow === 'verify', isRevoked: s.flow === 'revoked',
+      requestNew: () => this.toastMsg('Запрос отправлен владельцу отчёта (демо)'),
+      email: s.email, pass: s.pass, pass2: s.pass2, name: s.name, code2fa: s.code2fa,
+      goReset: e => { e.preventDefault(); this.setState({ flow: 'reset', rStep: 0 }); },
+      goSignup: e => { e.preventDefault(); this.setState({ flow: 'signup', suStep: 0 }); },
+      goLogin: e => { e.preventDefault(); this.setState({ flow: 'login' }); },
+      doLogin: () => { if (!s.email.includes('@') || s.pass.length < 8) { const f = s.loginFails + 1; this.setState({ loginFails: f }); this.toastMsg(f >= 2 ? 'Слишком много попыток — подтвердите, что вы не робот' : (!s.email.includes('@') ? 'Введите email' : 'Пароль — минимум 8 символов')); return; } if (s.loginFails >= 2 && !s.captchaOk) { this.toastMsg('Отметьте «Я не робот»'); return; } this.setState({ show2fa: true }); this.toastMsg('У владельца включена 2FA — введите код'); },
+      showCaptcha: s.loginFails >= 2, captchaOk: s.captchaOk,
+      toggleCaptcha: () => this.setState({ captchaOk: !s.captchaOk }),
+      magicSent: s.magicSent,
+      magicSend: () => { if (!s.email.includes('@')) { this.toastMsg('Сначала введите email'); return; } this.setState({ magicSent: true }); },
+      ssoGoogle: () => this.toastMsg('OAuth Google → аккаунт создан/найден по почте (демо)'),
+      ssoMs: () => this.toastMsg('OAuth Microsoft → аккаунт создан/найден по почте (демо)'),
+      show2fa: s.show2fa,
+      do2fa: () => { if (s.code2fa.trim().length !== 6) { this.toastMsg('Введите 6-значный код'); return; } this.toastMsg('Вход выполнен — открываем кабинет (демо)'); },
+      su1: s.suStep === 0, su2: s.suStep === 1, su3: s.suStep === 2, su4: s.suStep === 3,
+      suNotDone: s.suStep < 3,
+      kOwner: card(s.suKind === 'owner'), kSolo: card(s.suKind === 'solo'),
+      pickKind: e => this.setState({ suKind: e.currentTarget.dataset.k }),
+      suKindLabel: s.suKind === 'owner' ? 'Владелец: после аккаунта создадим компанию' : 'Личное пространство — без команды',
+      su2Next: s.suKind === 'owner' ? 'Далее: компания' : 'Создать аккаунт',
+      suNext: () => {
+        if (s.suStep === 0) { this.setState({ suStep: 1 }); return; }
+        if (s.suStep === 1) {
+          if (!s.name.trim()) { this.toastMsg('Введите имя'); return; }
+          if (!s.email.includes('@')) { this.toastMsg('Введите email'); return; }
+          if (s.pass.length < 8) { this.toastMsg('Пароль — минимум 8 символов'); return; }
+          this.setState(s.suKind === 'owner' ? { suStep: 2, compStep: 0 } : { suStep: 3 }); return;
+        }
+        if (s.compStep === 0) { if (!s.compName.trim()) { this.toastMsg('Введите название компании'); return; } this.setState({ compStep: 1 }); return; }
+        if (s.compStep === 1) { if (!s.projName.trim()) { this.toastMsg('Введите название проекта'); return; } this.setState({ compStep: 2 }); return; }
+        this.setState({ suStep: 3 });
+      },
+      compN: s.compStep + 1, c1: s.compStep === 0, c2: s.compStep === 1, c3: s.compStep === 2,
+      cHasBack: s.compStep > 0, compBack: () => this.setState({ compStep: Math.max(0, s.compStep - 1) }),
+      compNext: s.compStep === 2 ? 'Создать компанию' : 'Далее',
+      compName: s.compName, projName: s.projName, invites: s.invites,
+      doneTitle: s.suKind === 'owner' ? 'Компания «' + (s.compName || 'Моя компания') + '» создана' : 'Аккаунт создан',
+      doneText: s.suKind === 'owner'
+        ? 'Проект «' + (s.projName || 'Первый проект') + '» готов' + (s.invites.trim() ? ', приглашения отправлены' : '') + '. Подтвердите почту по письму — и вперёд.'
+        : 'Личное пространство готово: создавайте проекты и трекайте время. Команду можно добавить в любой момент — «＋ Создать компанию» в сайдбаре.',
+      inv1: s.invStep === 0, inv2: s.invStep === 1, inv3: s.invStep === 2,
+      invExisting: s.invExisting,
+      invBtn: s.invExisting ? 'Войти и принять приглашение' : 'Принять приглашение',
+      invToggleLabel: s.invExisting ? 'Демо: я новый пользователь' : 'Демо: у меня уже есть аккаунт в Хроносе',
+      invToggleUser: () => this.setState({ invExisting: !s.invExisting }),
+      invAccept: () => this.setState({ invStep: s.invExisting ? 2 : 1 }),
+      invFinish: () => { if (!s.name.trim()) { this.toastMsg('Введите имя'); return; } if (s.pass.length < 8) { this.toastMsg('Пароль — минимум 8 символов'); return; } this.setState({ invStep: 2 }); },
+      r1: s.rStep === 0, r2: s.rStep === 1, r3: s.rStep === 2,
+      emailShown: s.email || 'you@company.ru',
+      resetSend: () => { if (!s.email.includes('@')) { this.toastMsg('Введите email'); return; } this.setState({ rStep: 1 }); },
+      resetGoNew: () => this.setState({ rStep: 2, pass: '', pass2: '' }),
+      resetFinish: () => { if (s.pass.length < 8) { this.toastMsg('Минимум 8 символов'); return; } if (s.pass !== s.pass2) { this.toastMsg('Пароли не совпадают'); return; } this.toastMsg('Пароль изменён — входим (демо)'); this.setState({ flow: 'login', rStep: 0, pass: '', pass2: '' }); },
+    };
+  }
+}
+</script>
+</body>
+</html>

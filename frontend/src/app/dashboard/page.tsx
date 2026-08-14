@@ -1,7 +1,9 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
 import { api, ApiError } from '@/lib/api';
+import { SkeletonRows, SkeletonStats } from '@/components/Skeleton';
 import {
   formatHM,
   formatTicker,
@@ -41,6 +43,7 @@ export default function TrackerPage() {
     active,
     elapsedSeconds,
     version,
+    bumpVersion,
     start,
     stop,
     setFocusMode,
@@ -58,7 +61,10 @@ export default function TrackerPage() {
   const [weekEntries, setWeekEntries] = useState<TimeEntry[]>([]);
   const [pomoStats, setPomoStats] = useState<PomodoroStats | null>(null);
   const [weekLocked, setWeekLocked] = useState(false);
+  // Возвращённый таймшит: красная плашка с причиной и кнопкой «Исправить».
+  const [returned, setReturned] = useState<{ comment: string | null } | null>(null);
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(true);
 
   // Чек-лист «Первые шаги» + баннер забытого таймера (>4ч).
   const [checklistDismissed, setChecklistDismissed] = useState(true);
@@ -105,13 +111,23 @@ export default function TrackerPage() {
       setTodayEntries(byDay[0]);
       setWeekEntries(byDay.flat());
       setError('');
+      setLoading(false);
       // Утверждённая неделя блокирует записи (бейдж + серверные 403).
       api
         .listTimesheets()
-        .then((ts) => setWeekLocked(ts.mine.status === 'approved'))
-        .catch(() => setWeekLocked(false));
+        .then((ts) => {
+          setWeekLocked(ts.mine.status === 'approved');
+          setReturned(
+            ts.mine.status === 'returned' ? { comment: ts.mine.comment } : null,
+          );
+        })
+        .catch(() => {
+          setWeekLocked(false);
+          setReturned(null);
+        });
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Не удалось загрузить данные');
+      setLoading(false);
     }
   }, []);
 
@@ -292,6 +308,35 @@ export default function TrackerPage() {
     setEeFrom(formatTime(e.started_at));
     setEeTo(e.ended_at ? formatTime(e.ended_at) : nowHHMM());
     setEeNote(e.note ?? '');
+  }
+
+  /** «✂» — режет запись пополам: первая половина + новая на вторую (ТЗ, п. 49). */
+  async function splitEntry(entry: TimeEntry) {
+    if (!entry.ended_at) {
+      toast('Идущий таймер разрезать нельзя — сначала остановите его');
+      return;
+    }
+    const startMs = new Date(entry.started_at).getTime();
+    const endMs = new Date(entry.ended_at).getTime();
+    if (endMs - startMs < 120_000) {
+      toast('Запись короче двух минут — делить нечего');
+      return;
+    }
+    const midMs = startMs + Math.round((endMs - startMs) / 2);
+    const mid = new Date(midMs).toISOString();
+    try {
+      await api.updateEntry(entry.id, { ended_at: mid });
+      await api.createManualEntry({
+        task_id: entry.task_id ?? undefined,
+        description: entry.task_id ? undefined : (entry.description ?? undefined),
+        started_at: mid,
+        ended_at: new Date(endMs).toISOString(),
+      });
+      bumpVersion();
+      toast('Запись разрезана пополам');
+    } catch (err) {
+      toast(err instanceof ApiError ? err.message : 'Не удалось разрезать запись');
+    }
   }
 
   async function saveEntryEdit(e: TimeEntry) {
@@ -477,9 +522,47 @@ export default function TrackerPage() {
     }
   }
 
+  if (loading) {
+    return (
+      <div>
+        <div className="sk" style={{ height: 60, borderRadius: 10, marginBottom: 14 }} />
+        <SkeletonStats />
+        <div className="sk" style={{ height: 74, borderRadius: 12, margin: '14px 0' }} />
+        <div className="card card-pad">
+          <SkeletonRows rows={4} height={44} />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div>
       {error && <p className="error">{error}</p>}
+
+      {/* Непринятые часы: таймшит вернули с причиной (ТЗ, «Оплата и возвраты») */}
+      {returned && (
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+            background: 'var(--rsoft)',
+            border: '1px solid var(--red)',
+            borderRadius: 10,
+            padding: '10px 14px',
+            marginBottom: 14,
+            flexWrap: 'wrap',
+          }}
+        >
+          <span style={{ fontSize: 13, flex: 1, minWidth: 200 }}>
+            <b>Часы за неделю не приняты.</b>{' '}
+            {returned.comment ?? 'Админ вернул таймшит на доработку.'}
+          </span>
+          <Link href="/dashboard/timesheets" className="btn btn-red">
+            Исправить
+          </Link>
+        </div>
+      )}
 
       {/* Idle-баннер */}
       {idle && active && (
@@ -613,7 +696,7 @@ export default function TrackerPage() {
       {/* Активный таймер / строка старта */}
       {active ? (
         <div
-          className="card"
+          className="card active-timer"
           style={{
             borderColor: 'var(--accent)',
             padding: '18px 20px',
@@ -628,7 +711,18 @@ export default function TrackerPage() {
             style={{ width: 10, height: 10, borderRadius: '50%', background: 'var(--accent)' }}
           />
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontWeight: 600, fontSize: 15 }}>{entryTitle(active)}</div>
+            <div
+              style={{
+                fontWeight: 600,
+                fontSize: 15,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
+              title={entryTitle(active)}
+            >
+              {entryTitle(active)}
+            </div>
             <div
               style={{
                 color: 'var(--muted)',
@@ -643,7 +737,10 @@ export default function TrackerPage() {
               {entryProjectName(active)}
             </div>
           </div>
-          <span className="mono" style={{ fontSize: 30, fontWeight: 600, letterSpacing: '0.01em' }}>
+          <span
+            className="mono timer-value"
+            style={{ fontSize: 30, fontWeight: 600, letterSpacing: '0.01em' }}
+          >
             {formatTicker(elapsedSeconds)}
           </span>
           <button
@@ -1188,6 +1285,15 @@ export default function TrackerPage() {
             >
               ₽
             </button>
+            {e.ended_at && (
+              <button
+                className="icon-x"
+                title="Разрезать запись пополам"
+                onClick={() => void splitEntry(e)}
+              >
+                ✂
+              </button>
+            )}
             <button className="icon-x" title="Удалить запись" onClick={() => void delEntry(e.id)}>
               ✕
             </button>

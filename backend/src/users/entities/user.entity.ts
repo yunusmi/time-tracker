@@ -25,7 +25,15 @@ import { PomodoroSettings } from '../../pomodoro/entities/pomodoro-settings.enti
   timestamps: true,
   updatedAt: false,
   defaultScope: {
-    attributes: { exclude: ['password_hash', 'verify_token', 'totp_secret'] },
+    attributes: {
+      exclude: [
+        'password_hash',
+        'verify_token',
+        'totp_secret',
+        'reset_token',
+        'magic_token',
+      ],
+    },
   },
 })
 export class User extends Model {
@@ -75,6 +83,48 @@ export class User extends Model {
   @Default(false)
   @Column({ type: DataType.BOOLEAN, allowNull: false, field: 'totp_enabled' })
   totp_enabled: boolean;
+
+  @ApiProperty({
+    required: false,
+    nullable: true,
+    description: 'Аватар (data-URL 128px после client-side crop) — иначе инициалы',
+  })
+  @Column({ type: DataType.TEXT, allowNull: true, field: 'avatar_url' })
+  avatar_url: string | null;
+
+  @ApiProperty({
+    required: false,
+    nullable: true,
+    format: 'uuid',
+    description: 'Выбранная компания (переключатель в сайдбаре)',
+  })
+  @Column({
+    type: DataType.UUID,
+    allowNull: true,
+    field: 'active_workspace_id',
+  })
+  active_workspace_id: string | null;
+
+  // Одноразовый токен сброса пароля / magic link (исключён из выдачи).
+  @Column({ type: DataType.STRING(64), allowNull: true, field: 'reset_token' })
+  reset_token: string | null;
+
+  @Column({
+    type: DataType.DATE,
+    allowNull: true,
+    field: 'reset_token_expires',
+  })
+  reset_token_expires: Date | null;
+
+  @Column({ type: DataType.STRING(64), allowNull: true, field: 'magic_token' })
+  magic_token: string | null;
+
+  @Column({
+    type: DataType.DATE,
+    allowNull: true,
+    field: 'magic_token_expires',
+  })
+  magic_token_expires: Date | null;
 
   @ApiProperty()
   @CreatedAt

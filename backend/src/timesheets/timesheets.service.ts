@@ -9,10 +9,14 @@ import { col, fn, Op } from 'sequelize';
 import { Timesheet, TimesheetStatus } from './entities/timesheet.entity';
 import { TimeEntry } from '../time-entries/entities/time-entry.entity';
 import { User } from '../users/entities/user.entity';
-import { WorkspacesService } from '../workspaces/workspaces.service';
+import {
+  entryScope,
+  WorkspacesService,
+} from '../workspaces/workspaces.service';
 import { AuditService } from '../audit/audit.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { StandupService } from '../reports/standup.service';
+import { MailService } from '../mail/mail.service';
 
 export interface TimesheetView {
   id: string | null;
@@ -38,6 +42,7 @@ export class TimesheetsService {
     private readonly auditService: AuditService,
     private readonly notificationsService: NotificationsService,
     private readonly standupService: StandupService,
+    private readonly mailService: MailService,
   ) {}
 
   /** Понедельник недели (UTC) для даты; по умолчанию — текущей. */
@@ -64,6 +69,7 @@ export class TimesheetsService {
   private async weekTotals(
     userIds: string[],
     weekStart: string,
+    workspaceId: string,
   ): Promise<Map<string, number>> {
     const { start, end } = TimesheetsService.weekRange(weekStart);
     const rows = await this.timeEntryModel.findAll({
@@ -74,6 +80,7 @@ export class TimesheetsService {
       where: {
         user_id: { [Op.in]: userIds },
         started_at: { [Op.between]: [start, end] },
+        ...(entryScope(workspaceId) as object),
       },
       group: ['user_id'],
       raw: true,
@@ -106,7 +113,11 @@ export class TimesheetsService {
     const users = await this.userModel.findAll({
       where: { id: { [Op.in]: ctx.memberIds } },
     });
-    const totals = await this.weekTotals(ctx.memberIds, weekStart);
+    const totals = await this.weekTotals(
+      ctx.memberIds,
+      weekStart,
+      ctx.workspace.id,
+    );
 
     const view = (uid: string): TimesheetView => {
       const sheet = sheets.find((s) => s.user_id === uid);
@@ -199,21 +210,50 @@ export class TimesheetsService {
         sheet.user_id,
         `Ваш таймшит за неделю ${weekLabel} утверждён`,
         'green',
+        { kind: 'timesheet', action: 'timesheets', event: 'timesheet_status' },
       );
     } else {
+      // Причина возврата обязательна (ТЗ: comment NOT NULL при status='returned').
+      const reason = (comment ?? '').trim();
+      if (!reason) {
+        throw new BadRequestException(
+          'Укажите причину возврата — без неё таймшит не возвращается',
+        );
+      }
       sheet.status = TimesheetStatus.RETURNED;
-      sheet.comment = comment ?? null;
+      sheet.comment = reason;
       this.auditService.log(
         ctx.workspace.id,
         adminId,
-        `вернул(а) таймшит ${owner?.name ?? ''} на доработку`,
+        `вернул(а) таймшит ${owner?.name ?? ''} на доработку: «${reason}»`,
         { type: 'timesheet', id: sheet.id },
       );
       this.notificationsService.notify(
         sheet.user_id,
-        `Таймшит за неделю ${weekLabel} возвращён на доработку${comment ? `: ${comment}` : ''}`,
+        `Таймшит за неделю ${weekLabel} возвращён на доработку: ${reason}`,
         'red',
+        { kind: 'timesheet', action: 'timesheets', event: 'timesheet_status' },
       );
+      // Письмо о возврате (дизайн Emails.dc.html); ошибка почты не ломает возврат.
+      const admin = await this.userModel.findByPk(adminId);
+      if (
+        owner &&
+        (await this.notificationsService.channelEnabled(
+          owner.id,
+          'timesheet_status',
+          'email',
+        ))
+      ) {
+        this.mailService
+          .sendTimesheetReturned(
+            owner.email,
+            owner.name,
+            weekLabel,
+            reason,
+            admin?.name ?? 'Администратор',
+          )
+          .catch(() => undefined);
+      }
     }
     await sheet.save();
     return sheet;
@@ -257,6 +297,7 @@ export class TimesheetsService {
         sheet.user_id,
         `Ваш таймшит за неделю ${weekStart} утверждён`,
         'green',
+        { kind: 'timesheet', action: 'timesheets', event: 'timesheet_status' },
       );
     }
     return { approved: count };

@@ -43,9 +43,26 @@ export class TimeEntriesService {
     }
   }
 
-  getActive(userId: string): Promise<TimeEntry | null> {
+  /**
+   * Условие изоляции записей по компании: записи текущей компании плюс
+   * «старые» без workspace_id (созданные до мультитенантности).
+   */
+  private async entriesScope(userId: string): Promise<Record<string, unknown>> {
+    const ctx = await this.workspacesService.getContext(userId);
+    return {
+      [Op.or]: [
+        { workspace_id: ctx.workspace.id },
+        { workspace_id: { [Op.is]: null } },
+      ],
+    };
+  }
+  async getActive(userId: string): Promise<TimeEntry | null> {
     return this.timeEntryModel.findOne({
-      where: { user_id: userId, ended_at: { [Op.is]: null } },
+      where: {
+        user_id: userId,
+        ended_at: { [Op.is]: null },
+        ...(await this.entriesScope(userId)),
+      },
       include: [{ model: Task, include: [Project] }],
     });
   }
@@ -59,8 +76,10 @@ export class TimeEntriesService {
       await this.finishEntry(running);
     }
 
+    const ctx = await this.workspacesService.getContext(userId);
     return this.timeEntryModel.create({
       user_id: userId,
+      workspace_id: ctx.workspace.id,
       task_id: dto.task_id ?? null,
       description: dto.description ?? null,
       started_at: new Date(),
@@ -158,6 +177,7 @@ export class TimeEntriesService {
       where: {
         user_id: scopeUserId,
         started_at: { [Op.between]: [start, end] },
+        ...(await this.entriesScope(userId)),
       },
       include: [{ model: Task, include: [Project] }],
       order: [['started_at', 'ASC']],
@@ -247,8 +267,10 @@ export class TimeEntriesService {
       (endedAt.getTime() - startedAt.getTime()) / 1000,
     );
 
+    const ctx = await this.workspacesService.getContext(userId);
     return this.timeEntryModel.create({
       user_id: userId,
+      workspace_id: ctx.workspace.id,
       task_id: dto.task_id ?? null,
       description: dto.description ?? null,
       started_at: startedAt,
@@ -276,7 +298,10 @@ export class TimeEntriesService {
       }
       scopeUserId = filters.user_id;
     }
-    const where: Record<string, unknown> = { user_id: scopeUserId };
+    const where: Record<string, unknown> = {
+      user_id: scopeUserId,
+      ...(await this.entriesScope(userId)),
+    };
     if (filters.task_id) {
       where.task_id = filters.task_id;
     }
@@ -292,21 +317,33 @@ export class TimeEntriesService {
   }
 
   /** Записи, начавшиеся в диапазоне UTC-дней [from..to] (для экспорта). */
-  findForRange(userId: string, from: string, to: string): Promise<TimeEntry[]> {
+  async findForRange(
+    userId: string,
+    from: string,
+    to: string,
+  ): Promise<TimeEntry[]> {
     const start = TimeEntriesService.dayRange(from).start;
     const end = TimeEntriesService.dayRange(to).end;
     return this.timeEntryModel.findAll({
-      where: { user_id: userId, started_at: { [Op.between]: [start, end] } },
+      where: {
+        user_id: userId,
+        started_at: { [Op.between]: [start, end] },
+        ...(await this.entriesScope(userId)),
+      },
       include: [{ model: Task, include: [Project] }],
       order: [['started_at', 'ASC']],
     });
   }
 
   /** Entries that started within the given day (default: today). */
-  findForDay(userId: string, date?: string): Promise<TimeEntry[]> {
+  async findForDay(userId: string, date?: string): Promise<TimeEntry[]> {
     const { start, end } = TimeEntriesService.dayRange(date);
     return this.timeEntryModel.findAll({
-      where: { user_id: userId, started_at: { [Op.between]: [start, end] } },
+      where: {
+        user_id: userId,
+        started_at: { [Op.between]: [start, end] },
+        ...(await this.entriesScope(userId)),
+      },
       include: [{ model: Task, include: [Project] }],
       order: [['started_at', 'ASC']],
     });

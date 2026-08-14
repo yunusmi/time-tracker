@@ -9,6 +9,7 @@ import {
   useState,
 } from 'react';
 import { api } from '@/lib/api';
+import { chime, notify } from '@/lib/notify';
 import { useToast } from '@/context/ToastContext';
 import { useTimer } from '@/context/TimerContext';
 import type { PomodoroPhase, PomodoroSettings } from '@/lib/types';
@@ -114,6 +115,15 @@ export function PomodoroProvider({ children }: { children: React.ReactNode }) {
         /* необязательная запись — не мешаем таймеру */
       }
     }
+
+    // Сигнал и браузерное уведомление о завершении фазы (ТЗ, polish-батч).
+    chime();
+    notify(
+      cur === 'work' ? 'Фокус-сессия завершена' : 'Перерыв закончился',
+      cur === 'work'
+        ? 'Время сделать перерыв — таймер переключён.'
+        : 'Возвращаемся к работе.',
+    );
 
     let next: PomodoroPhase;
     if (cur === 'work') {

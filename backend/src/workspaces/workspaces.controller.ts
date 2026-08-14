@@ -8,6 +8,7 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -20,14 +21,21 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { WorkspacesService } from './workspaces.service';
 import {
+  BulkInviteDto,
   ChangeRoleDto,
+  CreateAbsenceDto,
+  CreateDepartmentDto,
   CreateInviteDto,
   CreateWorkspaceDto,
   InviteLinkDto,
+  SwitchWorkspaceDto,
+  UpdateMemberDto,
+  UpdateWorkspaceDto,
   WorkspaceMemberViewDto,
 } from './dto/workspaces.dto';
 import { Workspace } from './entities/workspace.entity';
 import { WorkspaceInvite } from './entities/workspace-invite.entity';
+import { AbsenceKind } from './entities/absence.entity';
 
 @ApiTags('workspaces')
 @ApiBearerAuth()
@@ -37,13 +45,130 @@ export class WorkspacesController {
   constructor(private readonly workspacesService: WorkspacesService) {}
 
   @Post('workspaces')
-  @ApiOperation({ summary: 'Create a workspace (creator becomes owner)' })
+  @ApiOperation({
+    summary:
+      'Создать компанию (мастер: название → отделы → bulk-приглашения); создатель = владелец',
+  })
   @ApiResponse({ status: 201, type: Workspace })
   create(
     @CurrentUser('id') userId: string,
     @Body() dto: CreateWorkspaceDto,
   ): Promise<Workspace> {
-    return this.workspacesService.create(userId, dto.name);
+    return this.workspacesService.create(userId, dto.name, {
+      departments: dto.departments,
+      invites: dto.invites,
+    });
+  }
+
+  @Get('workspaces')
+  @ApiOperation({ summary: 'Мои компании для переключателя в сайдбаре' })
+  listMine(@CurrentUser('id') userId: string) {
+    return this.workspacesService.listMine(userId);
+  }
+
+  @Post('workspaces/switch')
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Переключить активную компанию' })
+  switchTo(
+    @CurrentUser('id') userId: string,
+    @Body() dto: SwitchWorkspaceDto,
+  ): Promise<Workspace> {
+    return this.workspacesService.switchTo(userId, dto.workspace_id);
+  }
+
+  @Patch('workspaces/current')
+  @ApiOperation({
+    summary: 'Настройки компании: название, валюта, цвет, логотип (admin+)',
+  })
+  updateWorkspace(
+    @CurrentUser('id') userId: string,
+    @Body() dto: UpdateWorkspaceDto,
+  ): Promise<Workspace> {
+    return this.workspacesService.updateWorkspace(userId, dto);
+  }
+
+  // --- Отделы ---
+
+  @Get('workspaces/current/departments')
+  @ApiOperation({ summary: 'Отделы компании' })
+  listDepartments(@CurrentUser('id') userId: string) {
+    return this.workspacesService.listDepartments(userId);
+  }
+
+  @Post('workspaces/current/departments')
+  @ApiOperation({ summary: 'Создать отдел (admin+)' })
+  createDepartment(
+    @CurrentUser('id') userId: string,
+    @Body() dto: CreateDepartmentDto,
+  ) {
+    return this.workspacesService.createDepartment(userId, dto.name);
+  }
+
+  @Delete('workspaces/current/departments/:id')
+  @HttpCode(204)
+  @ApiOperation({ summary: 'Удалить отдел (admin+)' })
+  removeDepartment(
+    @CurrentUser('id') userId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<void> {
+    return this.workspacesService.removeDepartment(userId, id);
+  }
+
+  // --- Профиль сотрудника: оплата, отдел, отсутствия ---
+
+  @Get('members/:id/summary')
+  @ApiOperation({
+    summary: 'Профиль сотрудника: роль, отдел, часы, задачи, ставка, отпуск',
+  })
+  memberSummary(
+    @CurrentUser('id') userId: string,
+    @Param('id', ParseUUIDPipe) targetUserId: string,
+  ) {
+    return this.workspacesService.memberSummary(userId, targetUserId);
+  }
+
+  @Patch('workspaces/current/members/:userId')
+  @ApiOperation({ summary: 'Отдел и оплата сотрудника (admin+)' })
+  updateMember(
+    @CurrentUser('id') userId: string,
+    @Param('userId', ParseUUIDPipe) targetUserId: string,
+    @Body() dto: UpdateMemberDto,
+  ) {
+    return this.workspacesService.updateMember(userId, targetUserId, dto);
+  }
+
+  @Get('absences')
+  @ApiOperation({ summary: 'Отсутствия (отпуск/больничный)' })
+  listAbsences(
+    @CurrentUser('id') userId: string,
+    @Query('user_id') targetUserId?: string,
+  ) {
+    return this.workspacesService.listAbsences(userId, targetUserId);
+  }
+
+  @Post('absences')
+  @ApiOperation({ summary: 'Отметить отпуск/больничный сотруднику (admin+)' })
+  createAbsence(
+    @CurrentUser('id') userId: string,
+    @Body() dto: CreateAbsenceDto,
+  ) {
+    return this.workspacesService.createAbsence(
+      userId,
+      dto.user_id,
+      dto.date_from,
+      dto.date_to,
+      dto.kind ?? AbsenceKind.VACATION,
+    );
+  }
+
+  @Delete('absences/:id')
+  @HttpCode(204)
+  @ApiOperation({ summary: 'Снять отсутствие (admin+)' })
+  removeAbsence(
+    @CurrentUser('id') userId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<void> {
+    return this.workspacesService.removeAbsence(userId, id);
   }
 
   @Get('workspaces/current')
@@ -66,6 +191,11 @@ export class WorkspacesController {
       workspace_name: ctx.workspace.name,
       role: ctx.role,
       project_id: ctx.project_id,
+      currency: ctx.workspace.currency,
+      brand_color: ctx.workspace.brand_color,
+      logo_url: ctx.workspace.logo_url,
+      day_norm_hours: ctx.workspace.day_norm_hours,
+      rounding_minutes: ctx.workspace.rounding_minutes,
     };
   }
 
@@ -110,6 +240,16 @@ export class WorkspacesController {
     @Body() dto: CreateInviteDto,
   ): Promise<WorkspaceInvite> {
     return this.workspacesService.createInvite(userId, dto);
+  }
+
+  @Post('workspaces/current/invites/bulk')
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Массовые приглашения (мастер компании, admin+)' })
+  bulkInvite(
+    @CurrentUser('id') userId: string,
+    @Body() dto: BulkInviteDto,
+  ): Promise<{ invited: number }> {
+    return this.workspacesService.bulkInvite(userId, dto.emails ?? [], dto.role);
   }
 
   @Delete('workspaces/current/invites/:id')

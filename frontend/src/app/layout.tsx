@@ -15,13 +15,32 @@ const jetbrainsMono = JetBrains_Mono({
   variable: '--font-mono',
 });
 
+const DESCRIPTION =
+  'Время, задачи и отчёты команды в одном месте: таймер с таймлайном дня, ' +
+  'таймшиты с утверждением, счета из billable-часов и стендапы, которые пишутся сами.';
+
 export const metadata: Metadata = {
-  title: 'Хронос — трекер времени',
-  description: 'Трекер времени с Pomodoro, проектами и отчётами',
+  title: 'Хронос — трекер времени для команд',
+  description: DESCRIPTION,
+  // Единый SVG-знак: favicon и иконка на домашнем экране.
+  icons: {
+    icon: '/icon.svg',
+    apple: '/apple-icon.svg',
+  },
+  openGraph: {
+    title: 'Хронос — трекер времени для команд',
+    description: DESCRIPTION,
+    type: 'website',
+    locale: 'ru_RU',
+    images: ['/icon.svg'],
+  },
 };
 
-// Applies the saved theme before hydration to avoid a flash of the wrong theme.
-const themeInit = `try{var t=localStorage.getItem('tt_theme');document.documentElement.setAttribute('data-theme',t==='light'?'light':'dark')}catch(e){}`;
+/**
+ * Тема применяется до гидратации, чтобы не мигала. Режим «как в системе»
+ * читает prefers-color-scheme.
+ */
+const themeInit = `try{var t=localStorage.getItem('tt_theme');var s=window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark';document.documentElement.setAttribute('data-theme',t==='light'?'light':t==='system'?s:t==='dark'?'dark':'dark')}catch(e){}`;
 
 export default function RootLayout({
   children,

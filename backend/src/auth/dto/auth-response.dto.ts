@@ -9,6 +9,15 @@ export class AuthUserDto {
 
   @ApiProperty({ example: 'John Doe' })
   name: string;
+
+  @ApiProperty({ required: false, nullable: true })
+  avatar_url?: string | null;
+
+  @ApiProperty({ required: false, nullable: true })
+  email_verified_at?: Date | null;
+
+  @ApiProperty({ required: false })
+  totp_enabled?: boolean;
 }
 
 export class AuthResponseDto {

@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { SequelizeModule } from '@nestjs/sequelize';
 import { Project } from './entities/project.entity';
+import { Milestone } from './entities/milestone.entity';
 import { Task } from '../tasks/entities/task.entity';
 import { TimeEntry } from '../time-entries/entities/time-entry.entity';
 import { WorkspacesModule } from '../workspaces/workspaces.module';
@@ -9,7 +10,7 @@ import { ProjectsService } from './projects.service';
 
 @Module({
   imports: [
-    SequelizeModule.forFeature([Project, Task, TimeEntry]),
+    SequelizeModule.forFeature([Project, Milestone, Task, TimeEntry]),
     WorkspacesModule,
   ],
   controllers: [ProjectsController],

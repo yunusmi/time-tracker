@@ -60,6 +60,14 @@ export class UserSettingsService {
     if (dto.monthly_hours_limit !== undefined) {
       settings.monthly_hours_limit = dto.monthly_hours_limit;
     }
+    if (dto.notification_prefs !== undefined) {
+      // Слияние по событиям: клиент шлёт только изменённые ячейки матрицы.
+      settings.notification_prefs = {
+        ...(settings.notification_prefs ?? {}),
+        ...dto.notification_prefs,
+      };
+      settings.changed('notification_prefs', true);
+    }
     return settings.save();
   }
 }

@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+html,body{margin:0;padding:0;background:#0e0f13;color:#e7e8ec}
+body{font-family:'Instrument Sans',system-ui,sans-serif}
+a{color:#818cf8;text-decoration:none}a:hover{color:#a5b4fc}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+</style>
+</helmet>
+<div style="min-height:100vh">
+  <header style="max-width:1020px;margin:0 auto;padding:22px 24px;display:flex;align-items:center;gap:10px">
+    <svg width="24" height="24" viewBox="0 0 24 24" style="flex-shrink:0"><rect width="24" height="24" rx="7" fill="#6366f1"></rect><circle cx="12" cy="12" r="6.3" stroke="#fff" stroke-width="1.8" fill="none"></circle><path d="M12 8.6V12l2.6 1.7" stroke="#fff" stroke-width="1.8" stroke-linecap="round" fill="none"></path></svg>
+    <span style="font-weight:700;font-size:15.5px">Хронос</span>
+    <div style="flex:1"></div>
+    <a href="Knowledge Base.dc.html" style="font-size:13px;padding:8px 14px">База знаний</a>
+    <a href="Auth Flows.dc.html" style="font-size:13px;padding:8px 14px;color:#e7e8ec">Войти</a>
+    <a href="Auth Flows.dc.html" style="font-size:13px;font-weight:600;background:#6366f1;color:#fff;border-radius:8px;padding:9px 18px">Начать бесплатно</a>
+  </header>
+  <section style="max-width:760px;margin:0 auto;padding:64px 24px 30px;text-align:center;animation:fadeUp .5s ease">
+    <div style="display:inline-block;font-size:11.5px;font-weight:700;background:rgba(52,211,153,.12);color:#34d399;border-radius:99px;padding:5px 14px;margin-bottom:20px">Полностью бесплатно — без лимитов на людей и проекты</div>
+    <h1 style="font-size:44px;font-weight:700;line-height:1.15;margin:0 0 18px;letter-spacing:-.015em;text-wrap:balance">Время, задачи и отчёты команды — в одном месте</h1>
+    <p style="font-size:16.5px;line-height:1.6;color:#9b9ea8;margin:0 0 28px;text-wrap:pretty">Трекер для агентств и команд: таймер с таймлайном дня, канбан задач, таймшиты с утверждением, счета из billable-часов и стендап-отчёты, которые пишутся сами.</p>
+    <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+      <a href="Auth Flows.dc.html" style="background:#6366f1;color:#fff;border-radius:10px;padding:14px 30px;font-size:15px;font-weight:600">Создать компанию →</a>
+      <a href="Time Tracker Redesign v2.dc.html" style="background:#1b1c23;border:1px solid #2a2c35;color:#e7e8ec;border-radius:10px;padding:14px 30px;font-size:15px;font-weight:600">Живое демо</a>
+    </div>
+  </section>
+  <section style="max-width:880px;margin:0 auto;padding:26px 24px 10px">
+    <div style="background:#15161c;border:1px solid #23252c;border-radius:16px;padding:10px;box-shadow:0 30px 80px rgba(0,0,0,.5)">
+      <div style="display:flex;gap:6px;padding:8px 10px"><span style="width:10px;height:10px;border-radius:50%;background:#f87171"></span><span style="width:10px;height:10px;border-radius:50%;background:#fbbf24"></span><span style="width:10px;height:10px;border-radius:50%;background:#34d399"></span></div>
+      <div style="display:flex;gap:10px;background:#111216;border-radius:10px;padding:14px;min-height:260px">
+        <div style="width:130px;flex-shrink:0;display:flex;flex-direction:column;gap:7px">
+          <div style="height:9px;width:70%;border-radius:4px;background:#2a2c35"></div>
+          <div style="height:22px;border-radius:6px;background:rgba(99,102,241,.25);margin-top:6px"></div>
+          <div style="height:9px;width:85%;border-radius:4px;background:#1e2027"></div>
+          <div style="height:9px;width:75%;border-radius:4px;background:#1e2027"></div>
+          <div style="height:9px;width:80%;border-radius:4px;background:#1e2027"></div>
+          <div style="height:9px;width:65%;border-radius:4px;background:#1e2027"></div>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;gap:10px">
+          <div style="display:flex;gap:10px">
+            <div style="flex:2;height:64px;border-radius:9px;background:#191a20;border:1px solid #23252c;display:flex;align-items:center;padding:0 16px;gap:12px">
+              <span style="width:34px;height:34px;border-radius:50%;background:rgba(99,102,241,.2);display:flex;align-items:center;justify-content:center;color:#818cf8;font-size:13px">▶</span>
+              <span style="font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:600;color:#e7e8ec">02:41:37</span>
+              <div style="flex:1"></div>
+              <div style="height:9px;width:90px;border-radius:4px;background:#2a2c35"></div>
+            </div>
+            <div style="flex:1;border-radius:9px;background:#191a20;border:1px solid #23252c;display:flex;flex-direction:column;justify-content:center;padding:0 16px;gap:7px">
+              <div style="height:8px;width:60%;border-radius:4px;background:#2a2c35"></div>
+              <div style="height:13px;width:45%;border-radius:4px;background:rgba(52,211,153,.4)"></div>
+            </div>
+          </div>
+          <div style="height:34px;border-radius:9px;background:#191a20;border:1px solid #23252c;position:relative;overflow:hidden">
+            <div style="position:absolute;top:6px;bottom:6px;left:8%;width:18%;border-radius:4px;background:#60a5fa;opacity:.8"></div>
+            <div style="position:absolute;top:6px;bottom:6px;left:30%;width:11%;border-radius:4px;background:#f472b6;opacity:.8"></div>
+            <div style="position:absolute;top:6px;bottom:6px;left:45%;width:23%;border-radius:4px;background:#60a5fa;opacity:.8"></div>
+            <div style="position:absolute;top:6px;bottom:6px;left:72%;width:9%;border-radius:4px;background:#fbbf24;opacity:.8"></div>
+          </div>
+          <div style="flex:1;display:flex;gap:10px">
+            <div style="flex:1;border-radius:9px;background:#191a20;border:1px solid #23252c;padding:12px;display:flex;flex-direction:column;gap:8px">
+              <div style="height:8px;width:50%;border-radius:4px;background:#2a2c35"></div>
+              <div style="flex:1;display:flex;align-items:flex-end;gap:6px">
+                <div style="flex:1;height:45%;border-radius:3px 3px 0 0;background:rgba(99,102,241,.5)"></div>
+                <div style="flex:1;height:70%;border-radius:3px 3px 0 0;background:rgba(99,102,241,.5)"></div>
+                <div style="flex:1;height:55%;border-radius:3px 3px 0 0;background:rgba(99,102,241,.5)"></div>
+                <div style="flex:1;height:85%;border-radius:3px 3px 0 0;background:#6366f1"></div>
+                <div style="flex:1;height:35%;border-radius:3px 3px 0 0;background:rgba(99,102,241,.5)"></div>
+                <div style="flex:1;height:20%;border-radius:3px 3px 0 0;background:rgba(99,102,241,.3)"></div>
+                <div style="flex:1;height:60%;border-radius:3px 3px 0 0;background:rgba(99,102,241,.5)"></div>
+              </div>
+            </div>
+            <div style="flex:1;border-radius:9px;background:#191a20;border:1px solid #23252c;padding:12px;display:flex;flex-direction:column;gap:9px">
+              <div style="height:8px;width:55%;border-radius:4px;background:#2a2c35"></div>
+              <div style="display:flex;align-items:center;gap:8px"><span style="width:7px;height:7px;border-radius:2px;background:#60a5fa"></span><div style="height:8px;flex:1;border-radius:4px;background:#1e2027"></div><div style="height:8px;width:34px;border-radius:4px;background:#2a2c35"></div></div>
+              <div style="display:flex;align-items:center;gap:8px"><span style="width:7px;height:7px;border-radius:2px;background:#f472b6"></span><div style="height:8px;flex:1;border-radius:4px;background:#1e2027"></div><div style="height:8px;width:26px;border-radius:4px;background:#2a2c35"></div></div>
+              <div style="display:flex;align-items:center;gap:8px"><span style="width:7px;height:7px;border-radius:2px;background:#fbbf24"></span><div style="height:8px;flex:1;border-radius:4px;background:#1e2027"></div><div style="height:8px;width:30px;border-radius:4px;background:#2a2c35"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <section style="max-width:1020px;margin:0 auto;padding:56px 24px 20px">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px">
+      <sc-for list="{{ feats }}" as="f" hint-placeholder-count="6">
+        <div style="background:#15161c;border:1px solid #23252c;border-radius:13px;padding:20px 22px">
+          <div style="width:34px;height:34px;border-radius:9px;background:rgba(99,102,241,.12);color:#818cf8;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;margin-bottom:12px">{{ f.ic }}</div>
+          <div style="font-weight:700;font-size:14.5px;margin-bottom:6px">{{ f.t }}</div>
+          <div style="font-size:13px;line-height:1.6;color:#9b9ea8">{{ f.x }}</div>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+  <section style="max-width:760px;margin:0 auto;padding:36px 24px;text-align:center">
+    <div style="font-size:12px;color:#6b6e78;font-weight:600;text-transform:uppercase;letter-spacing:.08em;margin-bottom:14px">Работает с вашими инструментами</div>
+    <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+      <sc-for list="{{ ints }}" as="i" hint-placeholder-count="6">
+        <span style="background:#15161c;border:1px solid #23252c;border-radius:99px;padding:8px 18px;font-size:13px;font-weight:600;color:#b6b9c2">{{ i }}</span>
+      </sc-for>
+    </div>
+  </section>
+  <section style="max-width:680px;margin:0 auto;padding:44px 24px 72px;text-align:center">
+    <h2 style="font-size:28px;font-weight:700;margin:0 0 12px;letter-spacing:-.01em">Начните за две минуты</h2>
+    <p style="font-size:14.5px;color:#9b9ea8;line-height:1.6;margin:0 0 24px">Компания → первый проект → приглашения. Переезжаете? Импорт из Toggl, Clockify и Harvest перенесёт всё автоматически.</p>
+    <a href="Auth Flows.dc.html" style="display:inline-block;background:#6366f1;color:#fff;border-radius:10px;padding:14px 34px;font-size:15px;font-weight:600">Начать бесплатно →</a>
+  </section>
+  <footer style="border-top:1px solid #1b1c23">
+    <div style="max-width:1020px;margin:0 auto;padding:22px 24px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;font-size:12.5px;color:#6b6e78">
+      <span>Хронос © 2026</span>
+      <div style="flex:1"></div>
+      <a href="Time Tracker Redesign v2.dc.html">Демо</a>
+      <a href="Knowledge Base.dc.html">База знаний</a>
+      <a href="Public Report.dc.html">Пример отчёта</a>
+      <a href="Emails.dc.html">Письма</a>
+    </div>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      feats: [
+        { ic: '▶', t: 'Трекер с таймлайном дня', x: 'Таймер по задаче или свободному описанию, записи тянутся мышью, idle-детект и «забытый таймер» подстрахуют вечером.' },
+        { ic: '☰', t: 'Задачи: список и канбан', x: 'Приоритеты, дедлайны, оценка против факта. Шаблоны для повторяющихся дел и палитра ⌘K.' },
+        { ic: '₽', t: 'Счета из billable-часов', x: 'Ставки на проект и на человека, недельные бюджеты, округление до 15/30 минут — счёт клиенту в один клик.' },
+        { ic: '✓', t: 'Таймшиты с утверждением', x: 'Сотрудник отправляет неделю, админ утверждает или возвращает с комментарием. Утверждённое — блокируется.' },
+        { ic: '⚡', t: 'Стендап пишется сам', x: '«Что делал вчера / план на сегодня» собирается из записей — отредактируйте и отправьте в Slack или Telegram.' },
+        { ic: '◫', t: 'Компании и роли', x: 'Несколько компаний на аккаунт, отделы, 5 ролей от владельца до клиента — каждый видит только своё.' },
+      ],
+      ints: ['Google Calendar', 'Slack', 'Telegram', 'Toggl (импорт)', 'Clockify (импорт)', 'API + вебхуки'],
+    };
+  }
+}
+</script>
+</body>
+</html>

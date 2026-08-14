@@ -7,6 +7,17 @@ import type { DaySummary, TimesheetStatus, TimesheetsResponse } from '@/lib/type
 import { useSettings } from '@/context/SettingsContext';
 import { useToast } from '@/context/ToastContext';
 import { useWorkspace } from '@/context/WorkspaceContext';
+import { Avatar } from '@/components/Logo';
+import { SkeletonRows } from '@/components/Skeleton';
+
+/** Частые причины возврата (чипы в форме «Вернуть…»). */
+const RETURN_REASONS = [
+  'Не хватает записей за один из дней',
+  'Задачи без описания — непонятно, что делалось',
+  'Слишком общие формулировки',
+  'Время не соответствует задачам',
+  'Есть лишние/дублирующие записи',
+];
 
 const STATUS_META: Record<TimesheetStatus, { label: string; bg: string; color: string }> = {
   draft: { label: 'Черновик', bg: 'var(--surface2)', color: 'var(--muted)' },
@@ -14,15 +25,6 @@ const STATUS_META: Record<TimesheetStatus, { label: string; bg: string; color: s
   approved: { label: 'Утверждён', bg: 'var(--gsoft)', color: 'var(--green)' },
   returned: { label: 'Возвращён', bg: 'var(--rsoft)', color: 'var(--red)' },
 };
-
-function initials(name: string): string {
-  return name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((w) => w[0].toUpperCase())
-    .join('');
-}
 
 function weekLabel(weekStart: string): string {
   const start = new Date(`${weekStart}T00:00:00`);
@@ -38,6 +40,9 @@ export default function TimesheetsPage() {
   const [data, setData] = useState<TimesheetsResponse | null>(null);
   const [summary, setSummary] = useState<DaySummary[]>([]);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  // Возврат таймшита: форма с чипами причин; без текста возврат не отправляется.
+  const [returnFor, setReturnFor] = useState<string | null>(null);
+  const [returnText, setReturnText] = useState('');
   const [error, setError] = useState('');
 
   const load = useCallback(async () => {
@@ -73,19 +78,24 @@ export default function TimesheetsPage() {
     }
   }
 
-  async function review(id: string | null, action: 'approve' | 'return') {
+  async function review(
+    id: string | null,
+    action: 'approve' | 'return',
+    comment?: string,
+  ) {
     if (!id) {
       toast('Сотрудник ещё не отправил таймшит');
       return;
     }
-    let comment: string | undefined;
-    if (action === 'return') {
-      comment = window.prompt('Комментарий для сотрудника (что доработать):') ?? undefined;
-      if (comment === undefined) return;
+    if (action === 'return' && !comment?.trim()) {
+      toast('Укажите причину возврата — без неё таймшит не возвращается');
+      return;
     }
     try {
       await api.reviewTimesheet(id, action, comment);
       toast(action === 'approve' ? 'Таймшит утверждён' : 'Таймшит возвращён на доработку');
+      setReturnFor(null);
+      setReturnText('');
       await load();
     } catch (err) {
       toast(err instanceof ApiError ? err.message : 'Не удалось обновить таймшит');
@@ -103,7 +113,13 @@ export default function TimesheetsPage() {
   }
 
   if (!data) {
-    return error ? <p className="error">{error}</p> : <p className="muted">Загрузка…</p>;
+    return error ? (
+      <p className="error">{error}</p>
+    ) : (
+      <div className="card card-pad">
+        <SkeletonRows rows={4} height={48} />
+      </div>
+    );
   }
 
   const mine = data.mine;
@@ -211,23 +227,7 @@ export default function TimesheetsPage() {
             return (
               <div key={ts.user_id}>
               <div className="list-row" style={{ padding: '11px 16px' }}>
-                <div
-                  style={{
-                    width: 28,
-                    height: 28,
-                    borderRadius: '50%',
-                    background: 'var(--asoft)',
-                    color: 'var(--accent)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: 11,
-                    fontWeight: 700,
-                    flexShrink: 0,
-                  }}
-                >
-                  {initials(ts.user_name)}
-                </div>
+                <Avatar name={ts.user_name} size={28} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 600 }}>{ts.user_name}</div>
                   <div style={{ fontSize: '11.5px', color: 'var(--muted)' }}>
@@ -270,13 +270,71 @@ export default function TimesheetsPage() {
                     <button
                       className="btn-outline"
                       style={{ padding: '6px 14px' }}
-                      onClick={() => void review(ts.id, 'return')}
+                      onClick={() => {
+                        setReturnFor(returnFor === ts.user_id ? null : ts.user_id);
+                        setReturnText('');
+                      }}
                     >
-                      Вернуть
+                      Вернуть…
                     </button>
                   </>
                 )}
               </div>
+              {returnFor === ts.user_id && (
+                <div
+                  style={{
+                    margin: '0 16px 12px',
+                    border: '1px solid var(--red)',
+                    background: 'var(--rsoft)',
+                    borderRadius: 9,
+                    padding: '12px 14px',
+                  }}
+                >
+                  <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 8 }}>
+                    Причина возврата — обязательна
+                  </div>
+                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
+                    {RETURN_REASONS.map((r) => (
+                      <button
+                        key={r}
+                        className="chip"
+                        onClick={() =>
+                          setReturnText((prev) => (prev ? `${prev}. ${r}` : r))
+                        }
+                      >
+                        {r}
+                      </button>
+                    ))}
+                  </div>
+                  <textarea
+                    className="input"
+                    rows={2}
+                    autoFocus
+                    value={returnText}
+                    placeholder="Что именно доработать — текст уйдёт сотруднику в письмо, уведомление и аудит"
+                    onChange={(e) => setReturnText(e.target.value)}
+                    style={{ width: '100%', resize: 'vertical', fontFamily: 'inherit', marginBottom: 10 }}
+                  />
+                  <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                    <button
+                      className="btn btn-ghost"
+                      onClick={() => {
+                        setReturnFor(null);
+                        setReturnText('');
+                      }}
+                    >
+                      Отмена
+                    </button>
+                    <button
+                      className="btn btn-red"
+                      disabled={!returnText.trim()}
+                      onClick={() => void review(ts.id, 'return', returnText)}
+                    >
+                      Вернуть на доработку
+                    </button>
+                  </div>
+                </div>
+              )}
               {expandedId === ts.user_id && ts.summary && (
                 <div
                   style={{

@@ -4,6 +4,7 @@ import {
   IsEnum,
   IsInt,
   IsISO8601,
+  IsObject,
   IsOptional,
   IsString,
   Max,
@@ -87,4 +88,16 @@ export class UpdateUserSettingsDto {
   @Min(1)
   @Max(400)
   monthly_hours_limit?: number;
+
+  @ApiProperty({
+    required: false,
+    description: 'Матрица уведомлений {event: {email,push,app}}',
+    example: { task_assigned: { email: true, push: false, app: true } },
+  })
+  @IsOptional()
+  @IsObject()
+  notification_prefs?: Record<
+    string,
+    Partial<Record<'email' | 'push' | 'app', boolean>>
+  >;
 }

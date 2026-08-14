@@ -1,10 +1,10 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { api } from '@/lib/api';
+import { useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useNotifications } from '@/context/NotificationsContext';
 import type { AppNotification } from '@/lib/types';
-
-const POLL_MS = 60_000;
 
 function timeLabel(iso: string): string {
   const d = new Date(iso);
@@ -15,28 +15,17 @@ function timeLabel(iso: string): string {
   return `${d.toLocaleDateString('ru-RU', { weekday: 'short' })}, ${time}`;
 }
 
-/** Колокольчик с центром уведомлений в шапке. */
+/** Экран действия уведомления: /dashboard/<action_screen>. */
+export function actionHref(n: AppNotification): string {
+  return n.action_screen ? `/dashboard/${n.action_screen}` : '/dashboard';
+}
+
+/** Колокольчик — быстрый доступ; «Все» ведёт на экран «Уведомления». */
 export function NotificationsBell() {
-  const [items, setItems] = useState<AppNotification[]>([]);
-  const [unread, setUnread] = useState(0);
+  const router = useRouter();
+  const { items, unread, markAllRead } = useNotifications();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-
-  const load = useCallback(async () => {
-    try {
-      const res = await api.listNotifications();
-      setItems(res.items);
-      setUnread(res.unread);
-    } catch {
-      /* не критично */
-    }
-  }, []);
-
-  useEffect(() => {
-    void load();
-    const id = setInterval(() => void load(), POLL_MS);
-    return () => clearInterval(id);
-  }, [load]);
 
   useEffect(() => {
     if (!open) return;
@@ -50,17 +39,7 @@ export function NotificationsBell() {
   function toggle() {
     const next = !open;
     setOpen(next);
-    if (next && unread > 0) {
-      setUnread(0);
-      api.readAllNotifications().catch(() => undefined);
-    }
-  }
-
-  async function clearAll() {
-    setItems([]);
-    setUnread(0);
-    setOpen(false);
-    api.clearNotifications().catch(() => undefined);
+    if (next && unread > 0) void markAllRead();
   }
 
   return (
@@ -126,32 +105,37 @@ export function NotificationsBell() {
           >
             Уведомления
             <div style={{ flex: 1 }} />
-            {items.length > 0 && (
-              <button
-                onClick={() => void clearAll()}
-                style={{
-                  background: 'transparent',
-                  border: 'none',
-                  color: 'var(--accent)',
-                  fontSize: 12,
-                  cursor: 'pointer',
-                  padding: 0,
-                }}
-              >
-                Очистить
-              </button>
-            )}
+            <Link
+              href="/dashboard/notifications"
+              onClick={() => setOpen(false)}
+              style={{ color: 'var(--accent)', fontSize: 12 }}
+            >
+              Все
+            </Link>
           </div>
           <div style={{ maxHeight: 320, overflowY: 'auto' }}>
-            {items.map((n) => (
-              <div
+            {items.slice(0, 10).map((n) => (
+              <button
                 key={n.id}
+                onClick={() => {
+                  setOpen(false);
+                  router.push(actionHref(n));
+                }}
                 style={{
                   display: 'flex',
                   gap: 9,
                   padding: '9px 14px',
                   borderBottom: '1px solid var(--border)',
                   fontSize: '12.5px',
+                  width: '100%',
+                  textAlign: 'left',
+                  background: 'transparent',
+                  border: 'none',
+                  borderBottomWidth: 1,
+                  borderBottomStyle: 'solid',
+                  borderBottomColor: 'var(--border)',
+                  color: 'var(--text)',
+                  cursor: 'pointer',
                 }}
               >
                 <span
@@ -164,13 +148,20 @@ export function NotificationsBell() {
                     marginTop: 5,
                   }}
                 />
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div>{n.text}</div>
-                  <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 1 }}>
+                <span style={{ flex: 1, minWidth: 0 }}>
+                  <span style={{ display: 'block' }}>{n.text}</span>
+                  <span
+                    style={{
+                      display: 'block',
+                      fontSize: 11,
+                      color: 'var(--muted)',
+                      marginTop: 1,
+                    }}
+                  >
                     {timeLabel(n.created_at)}
-                  </div>
-                </div>
-              </div>
+                  </span>
+                </span>
+              </button>
             ))}
             {items.length === 0 && (
               <div
