@@ -534,7 +534,6 @@ export class StandupService {
         list.push(e);
         byUser.set(e.user_id, list);
       }
-      const weekLabel = `${fmtDM(start)}–${fmtDM(new Date(start.getTime() + 6 * DAY_MS))}`;
 
       for (const [userId, list] of byUser) {
         try {
@@ -578,18 +577,31 @@ export class StandupService {
           });
 
           const byProject = new Map<string, number>();
+          const byTask = new Map<string, number>();
           for (const e of list) {
-            const name = e.task?.project?.name ?? 'Без проекта';
-            byProject.set(name, (byProject.get(name) ?? 0) + e.duration_seconds);
+            const pname = e.task?.project?.name ?? 'Без проекта';
+            byProject.set(pname, (byProject.get(pname) ?? 0) + e.duration_seconds);
+            const tname = e.task?.title;
+            if (tname) {
+              byTask.set(tname, (byTask.get(tname) ?? 0) + e.duration_seconds);
+            }
           }
-          const top = [...byProject.entries()].sort((a, b) => b[1] - a[1])[0];
+          const topP = [...byProject.entries()].sort((a, b) => b[1] - a[1])[0];
+          const topT = [...byTask.entries()].sort((a, b) => b[1] - a[1])[0];
 
           await this.mailService.sendWeeklyDigest(user.email, user.name, {
-            week_label: weekLabel,
+            week_start: start.toISOString().slice(0, 10),
             hours_label: fmtHM(total),
             tasks_done: tasksDone,
             streak_days: streak,
-            top_project: top ? top[0] : null,
+            top_project: topP
+              ? {
+                  name: topP[0],
+                  hours_label: fmtHM(topP[1]),
+                  percent: total ? Math.round((topP[1] / total) * 100) : 0,
+                }
+              : null,
+            top_task: topT ? { title: topT[0], hours_label: fmtHM(topT[1]) } : null,
           });
         } catch (err) {
           this.logger.warn(`weekly digest for ${userId} failed: ${err}`);

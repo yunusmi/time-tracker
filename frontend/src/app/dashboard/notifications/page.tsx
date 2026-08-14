@@ -101,11 +101,11 @@ export default function NotificationsPage() {
           <SkeletonRows rows={5} height={54} />
         ) : filtered.length === 0 ? (
           <div className="empty">
-            <div className="empty-title">Пока пусто</div>
+            <div className="empty-title">Здесь пусто</div>
             <div className="empty-sub">
               {filter === 'unread'
-                ? 'Все уведомления прочитаны'
-                : 'Здесь появятся назначенные задачи, статусы таймшитов и напоминания'}
+                ? 'Все уведомления прочитаны.'
+                : 'Новые события появятся тут — и по включённым каналам.'}
             </div>
           </div>
         ) : (

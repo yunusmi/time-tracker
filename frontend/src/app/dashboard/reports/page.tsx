@@ -421,7 +421,15 @@ export default function ReportsPage() {
                 </button>
               </div>
             </div>
-            {repView === 'chart' ? (
+            {weekSec === 0 ? (
+              <div className="empty">
+                <div className="empty-title">Пока нет данных за неделю</div>
+                <div className="empty-sub">
+                  Как только появятся первые записи времени, здесь будет график
+                  по дням, разбивка по проектам и топ задач.
+                </div>
+              </div>
+            ) : repView === 'chart' ? (
             <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10, height: 150 }}>
               {bars.map((b) => (
                 <button

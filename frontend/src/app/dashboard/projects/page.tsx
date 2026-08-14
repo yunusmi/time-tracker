@@ -315,9 +315,10 @@ export default function ProjectsPage() {
 
         {projects.length === 0 && (
           <div className="empty">
-            <div className="empty-title">Проектов нет</div>
+            <div className="empty-title">Ни одного проекта</div>
             <div className="empty-sub">
-              Создайте первый проект — цвет пригодится в таймлайне и отчётах.
+              Проект — это то, куда пишется время: клиент, продукт или
+              направление. Задайте цвет, ставку и недельный бюджет часов.
             </div>
           </div>
         )}

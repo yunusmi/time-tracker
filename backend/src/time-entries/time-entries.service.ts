@@ -70,8 +70,17 @@ export class TimeEntriesService {
   async start(userId: string, dto: StartTimerDto): Promise<TimeEntry> {
     await this.assertTaskOwnership(userId, dto.task_id);
 
-    // Clockify-style: starting a new timer stops the running one.
     const running = await this.getActive(userId);
+    // Идемпотентность: повторный старт той же работы возвращает текущий
+    // таймер, а не плодит записи (двойной клик, ретрай после таймаута).
+    if (
+      running &&
+      (running.task_id ?? null) === (dto.task_id ?? null) &&
+      (running.description ?? null) === (dto.description ?? null)
+    ) {
+      return running;
+    }
+    // Clockify-style: starting a new timer stops the running one.
     if (running) {
       await this.finishEntry(running);
     }
@@ -96,6 +105,18 @@ export class TimeEntriesService {
   async stop(userId: string, endedAt?: string): Promise<TimeEntry> {
     const running = await this.getActive(userId);
     if (!running) {
+      // Идемпотентность: повторный стоп сразу после первого возвращает ту же
+      // запись вместо ошибки (двойной клик, ретрай при потере сети).
+      const justStopped = await this.timeEntryModel.findOne({
+        where: {
+          user_id: userId,
+          ended_at: { [Op.gte]: new Date(Date.now() - 60_000) },
+          ...(await this.entriesScope(userId)),
+        },
+        order: [['ended_at', 'DESC']],
+        include: [{ model: Task, include: [Project] }],
+      });
+      if (justStopped) return justStopped;
       throw new BadRequestException('No timer is currently running');
     }
     let end: Date | undefined;
@@ -251,6 +272,44 @@ export class TimeEntriesService {
       }));
   }
 
+  /**
+   * Серверная валидация пересечений: у одного человека не может быть двух
+   * записей на одно и то же время (ТЗ, «обязательно при реализации»).
+   */
+  private async assertNoOverlap(
+    userId: string,
+    startedAt: Date,
+    endedAt: Date,
+    exceptId?: string,
+  ): Promise<void> {
+    // Через Op.and: условие «конец позже начала нового» и скоуп компании
+    // оба используют Op.or и при spread затёрли бы друг друга.
+    const where: Record<string, unknown> = {
+      user_id: userId,
+      started_at: { [Op.lt]: endedAt },
+      [Op.and]: [
+        {
+          [Op.or]: [
+            { ended_at: { [Op.gt]: startedAt } },
+            { ended_at: { [Op.is]: null } },
+          ],
+        },
+        await this.entriesScope(userId),
+      ],
+    };
+    if (exceptId) where.id = { [Op.ne]: exceptId };
+    const clash = await this.timeEntryModel.findOne({
+      where,
+      include: [{ model: Task }],
+    });
+    if (clash) {
+      const title = clash.task?.title || clash.description || 'другая запись';
+      throw new BadRequestException(
+        `Это время уже занято записью «${title}» — поправьте интервал`,
+      );
+    }
+  }
+
   async createManual(
     userId: string,
     dto: CreateManualEntryDto,
@@ -266,6 +325,7 @@ export class TimeEntriesService {
     const durationSeconds = Math.round(
       (endedAt.getTime() - startedAt.getTime()) / 1000,
     );
+    await this.assertNoOverlap(userId, startedAt, endedAt);
 
     const ctx = await this.workspacesService.getContext(userId);
     return this.timeEntryModel.create({
@@ -394,6 +454,18 @@ export class TimeEntriesService {
         Math.round(
           (entry.ended_at.getTime() - entry.started_at.getTime()) / 1000,
         ),
+      );
+    }
+    // Сдвиг границ не должен накладываться на соседние записи.
+    if ((dto.started_at || dto.ended_at) && entry.ended_at) {
+      if (entry.ended_at.getTime() <= entry.started_at.getTime()) {
+        throw new BadRequestException('ended_at must be after started_at');
+      }
+      await this.assertNoOverlap(
+        userId,
+        entry.started_at,
+        entry.ended_at,
+        entry.id,
       );
     }
     return entry.save();

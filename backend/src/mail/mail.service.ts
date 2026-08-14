@@ -29,6 +29,50 @@ function layout(content: string): string {
 </html>`;
 }
 
+/** Надзаголовок-бейдж над заголовком письма (как в Emails.dc.html). */
+const EYEBROW = (text: string, color = '#dc2626') =>
+  `<div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:${color};margin-bottom:8px">${text}</div>`;
+
+/** «4–10 августа» — период недели для темы и заголовков. */
+function weekLabelRu(weekStart: string): string {
+  const start = new Date(`${weekStart}T00:00:00.000Z`);
+  const end = new Date(start.getTime() + 6 * 86_400_000);
+  const month = end.toLocaleDateString('ru-RU', {
+    month: 'long',
+    timeZone: 'UTC',
+  });
+  return `${start.getUTCDate()}–${end.getUTCDate()} ${month}`;
+}
+
+/** «4–10 авг» — короткий период для темы письма. */
+function weekShortRu(weekStart: string): string {
+  const start = new Date(`${weekStart}T00:00:00.000Z`);
+  const end = new Date(start.getTime() + 6 * 86_400_000);
+  const month = end.toLocaleDateString('ru-RU', {
+    month: 'short',
+    timeZone: 'UTC',
+  });
+  return `${start.getUTCDate()}–${end.getUTCDate()} ${month}`;
+}
+
+/** «15 авг» — дата дедлайна в письме. */
+function fmtDateRu(iso: string): string {
+  const d = new Date(`${iso}T00:00:00.000Z`);
+  return d.toLocaleDateString('ru-RU', {
+    day: 'numeric',
+    month: 'short',
+    timeZone: 'UTC',
+  });
+}
+
+/** «2ч» / «90м» — оценка задачи в письме. */
+function fmtEstimate(minutes: number): string {
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  if (!h) return `${m}м`;
+  return m ? `${h}ч ${m}м` : `${h}ч`;
+}
+
 const BUTTON = (href: string, label: string) =>
   `<a href="${href}" style="display:inline-block;background:#6366f1;color:#ffffff;border-radius:9px;padding:13px 30px;font-size:14.5px;font-weight:600;text-decoration:none">${label}</a>`;
 
@@ -134,17 +178,19 @@ export class MailService {
     adminName: string,
   ): Promise<void> {
     const url = `${this.frontendUrl}/dashboard/timesheets`;
+    const week = weekLabelRu(weekLabel);
     const content = `
-      <div style="font-size:21px;font-weight:700;color:#191a1f;margin-bottom:12px">Таймшит возвращён на доработку</div>
-      <div style="font-size:14.5px;line-height:1.6;color:#3d3f47;margin-bottom:18px">Здравствуйте, ${name}! ${adminName} вернул(а) ваш таймшит за неделю <b>${weekLabel}</b>. Причина:</div>
+      ${EYEBROW('Таймшит возвращён')}
+      <div style="font-size:21px;font-weight:700;color:#191a1f;margin-bottom:12px">Неделя ${week} требует правок</div>
+      <div style="font-size:14.5px;line-height:1.6;color:#3d3f47;margin-bottom:14px">Здравствуйте, ${name}! ${adminName} вернул(а) ваш таймшит. Причина возврата:</div>
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px"><tr>
-        <td style="border-left:3px solid #f87171;background:#fef2f2;border-radius:0 8px 8px 0;padding:12px 16px;font-size:13.5px;line-height:1.55;color:#7f1d1d">${reason}</td>
+        <td style="border-left:3px solid #f87171;background:#fef2f2;border-radius:0 8px 8px 0;padding:12px 16px;font-size:13.5px;line-height:1.55;color:#7f1d1d">«${reason}»</td>
       </tr></table>
       ${BUTTON(url, 'Исправить и отправить снова')}
-      <div style="font-size:12.5px;line-height:1.6;color:#6b6e78;margin-top:24px">Поправьте записи недели и отправьте таймшит на проверку ещё раз.</div>`;
+      <div style="font-size:12.5px;line-height:1.6;color:#6b6e78;margin-top:24px">Записи недели разблокированы для редактирования до повторной отправки. То же уведомление ждёт вас в кабинете — красная плашка в Трекере и запись в колокольчике.<br>Уведомления о таймшитах можно настроить в Настройки → Уведомления.</div>`;
     await this.send(
       to,
-      `Таймшит за неделю ${weekLabel} возвращён — Хронос`,
+      `Таймшит возвращён на доработку — ${weekShortRu(weekLabel)}`,
       layout(content),
     );
   }
@@ -159,30 +205,36 @@ export class MailService {
       project_name: string | null;
       priority: 'high' | 'med' | 'low';
       due_date: string | null;
+      estimated_minutes?: number | null;
     },
   ): Promise<void> {
     const url = `${this.frontendUrl}/dashboard/tasks`;
-    const prio =
+    const prioLabel =
       task.priority === 'high'
-        ? '<span style="background:rgba(248,113,113,.12);color:#dc2626;border-radius:6px;padding:2px 10px;font-size:12px;font-weight:600">Высокий</span>'
+        ? { text: 'Высокий приоритет', bg: 'rgba(248,113,113,.12)', color: '#dc2626' }
         : task.priority === 'low'
-          ? '<span style="background:#f0f0f3;color:#6b6e78;border-radius:6px;padding:2px 10px;font-size:12px;font-weight:600">Низкий</span>'
-          : '<span style="background:rgba(251,191,36,.14);color:#b45309;border-radius:6px;padding:2px 10px;font-size:12px;font-weight:600">Средний</span>';
-    const due = task.due_date
-      ? `<div style="font-size:12.5px;color:#6b6e78;margin-top:8px">Дедлайн: <b style="color:#191a1f">${task.due_date}</b></div>`
-      : '';
+          ? { text: 'Низкий приоритет', bg: '#f0f0f3', color: '#6b6e78' }
+          : { text: 'Средний приоритет', bg: 'rgba(251,191,36,.14)', color: '#b45309' };
+    const meta = [
+      task.project_name ?? 'Без проекта',
+      task.due_date ? `Дедлайн: ${fmtDateRu(task.due_date)}` : null,
+      task.estimated_minutes ? `Оценка: ${fmtEstimate(task.estimated_minutes)}` : null,
+    ]
+      .filter(Boolean)
+      .join(' · ');
+    const firstName = assignerName.split(/\s+/)[0];
     const content = `
-      <div style="font-size:21px;font-weight:700;color:#191a1f;margin-bottom:12px">Вам назначена задача</div>
-      <div style="font-size:14.5px;line-height:1.6;color:#3d3f47;margin-bottom:18px">Здравствуйте, ${name}! ${assignerName} назначил(а) вам новую задачу:</div>
+      <div style="font-size:21px;font-weight:700;color:#191a1f;margin-bottom:14px">Новая задача от ${firstName}</div>
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px"><tr>
         <td style="border:1px solid #e4e5ea;border-radius:10px;padding:16px 18px">
-          <div style="font-size:15px;font-weight:600;color:#191a1f;margin-bottom:8px">${task.title}</div>
-          <div style="font-size:12.5px;color:#6b6e78">${task.project_name ?? 'Без проекта'} · ${prio}</div>
-          ${due}
+          <div style="font-size:15px;font-weight:600;color:#191a1f;margin-bottom:10px">${task.title}</div>
+          <div style="margin-bottom:8px"><span style="background:${prioLabel.bg};color:${prioLabel.color};border-radius:6px;padding:2px 10px;font-size:12px;font-weight:600">${prioLabel.text}</span></div>
+          <div style="font-size:12.5px;color:#6b6e78">${meta}</div>
         </td>
       </tr></table>
-      ${BUTTON(url, 'Открыть задачи')}`;
-    await this.send(to, `Вам назначена задача: «${task.title}» — Хронос`, layout(content));
+      ${BUTTON(url, 'Открыть задачу')}
+      <div style="font-size:12.5px;line-height:1.6;color:#6b6e78;margin-top:24px">Запустить таймер можно прямо из списка задач — кнопка ▶.<br>Отключить письма о назначении задач: Настройки → Уведомления.</div>`;
+    await this.send(to, `Вам назначена задача: «${task.title}»`, layout(content));
   }
 
   /** Дайджест недели: часы, задачи, стрик, топ проекта. */
@@ -190,25 +242,46 @@ export class MailService {
     to: string,
     name: string,
     stats: {
-      week_label: string;
+      /** Понедельник недели (YYYY-MM-DD). */
+      week_start: string;
       hours_label: string;
       tasks_done: number;
       streak_days: number;
-      top_project: string | null;
+      top_project: { name: string; hours_label: string; percent: number } | null;
+      top_task: { title: string; hours_label: string } | null;
     },
   ): Promise<void> {
     const url = `${this.frontendUrl}/dashboard/reports`;
     const cell = (label: string, value: string) =>
-      `<td width="50%" style="padding:6px"><div style="border:1px solid #e4e5ea;border-radius:10px;padding:14px 16px"><div style="font-size:11.5px;color:#6b6e78;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px">${label}</div><div style="font-family:monospace;font-size:19px;font-weight:700;color:#191a1f">${value}</div></div></td>`;
+      `<td width="33%" style="padding:5px"><div style="background:#f7f7fa;border-radius:11px;padding:14px 16px"><div style="font-size:11px;color:#8b8f9a;font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">${label}</div><div style="font-family:'JetBrains Mono',monospace;font-size:19px;font-weight:700;color:#191a1f">${value}</div></div></td>`;
+    const line = (label: string, value: string) =>
+      `<div style="font-size:13.5px;color:#3d3f47;margin-top:10px">${label}: <b style="color:#191a1f">${value}</b></div>`;
     const content = `
-      <div style="font-size:21px;font-weight:700;color:#191a1f;margin-bottom:12px">Ваша неделя в Хроносе</div>
-      <div style="font-size:14.5px;line-height:1.6;color:#3d3f47;margin-bottom:18px">Здравствуйте, ${name}! Короткая сводка за неделю ${stats.week_label}:</div>
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:8px">
-        <tr>${cell('Отработано', stats.hours_label)}${cell('Задач готово', String(stats.tasks_done))}</tr>
-        <tr>${cell('Серия целей', `${stats.streak_days} дн.`)}${cell('Топ проекта', stats.top_project ?? '—')}</tr>
+      <div style="font-size:21px;font-weight:700;color:#191a1f;margin-bottom:4px">Дайджест недели</div>
+      <div style="font-size:13px;color:#6b6e78;margin-bottom:18px">${weekLabelRu(stats.week_start)} · ${name}</div>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+        <tr>
+          ${cell('Часы', stats.hours_label)}
+          ${cell('Задач готово', String(stats.tasks_done))}
+          ${cell('Стрик цели', `${stats.streak_days} дн.`)}
+        </tr>
       </table>
-      <div style="margin-top:16px">${BUTTON(url, 'Открыть отчёты')}</div>`;
-    await this.send(to, `Дайджест недели ${stats.week_label} — Хронос`, layout(content));
+      ${
+        stats.top_project
+          ? line(
+              'Больше всего времени',
+              `${stats.top_project.name} — ${stats.top_project.hours_label} (${stats.top_project.percent}%)`,
+            )
+          : ''
+      }
+      ${stats.top_task ? line('Топ задача', `${stats.top_task.title} — ${stats.top_task.hours_label}`) : ''}
+      <div style="margin-top:22px">${BUTTON(url, 'Открыть отчёты')}</div>
+      <div style="font-size:12.5px;line-height:1.6;color:#6b6e78;margin-top:24px">Дайджест приходит по понедельникам. Отключить: Настройки → Уведомления.</div>`;
+    await this.send(
+      to,
+      `Ваша неделя в Хроносе: ${stats.hours_label}`,
+      layout(content),
+    );
   }
 
   /** Welcome-письмо после создания компании: 3 шага + кнопки. */
