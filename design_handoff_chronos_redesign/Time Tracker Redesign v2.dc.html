@@ -27,11 +27,38 @@ input,select,button{font-family:inherit}
   <sc-if value="{{ narrowBackdrop }}" hint-placeholder-val="{{ false }}"><div onClick="{{ closeSidebar }}" style="position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:59"></div></sc-if>
   <aside style="width:214px;flex-shrink:0;border-right:1px solid var(--border);display:flex;flex-direction:column;padding:14px 10px 12px;gap:2px;{{ asideExtra }}">
     <div style="display:flex;align-items:center;gap:9px;padding:2px 10px 14px">
-      <div style="width:22px;height:22px;border-radius:6px;background:var(--accent);display:flex;align-items:center;justify-content:center">
-        <div style="width:8px;height:8px;border-radius:50%;border:2px solid #fff"></div>
-      </div>
+<svg width="22" height="22" viewBox="0 0 24 24" style="flex-shrink:0"><rect width="24" height="24" rx="7" fill="var(--accent)"></rect><circle cx="12" cy="12" r="6.3" stroke="#fff" stroke-width="1.8" fill="none"></circle><path d="M12 8.6V12l2.6 1.7" stroke="#fff" stroke-width="1.8" stroke-linecap="round" fill="none"></path></svg>
       <span style="font-weight:700;font-size:14.5px;letter-spacing:.01em">Хронос</span>
     </div>
+    <div style="position:relative;margin:0 2px 10px">
+      <button onClick="{{ toggleWsMenu }}" style="width:100%;display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:7px 10px;cursor:pointer;color:var(--text)" style-hover="border-color:var(--border2)">
+        {{ wsLogoImg }}
+        <sc-if value="{{ wsNoLogo }}" hint-placeholder-val="{{ true }}"><span style="width:20px;height:20px;border-radius:5px;background:{{ wsColor }};color:#fff;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0">{{ wsIni }}</span></sc-if>
+        <span style="flex:1;min-width:0;text-align:left;font-size:12.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ wsName }}</span>
+        <span style="color:var(--muted);font-size:9px">▾</span>
+      </button>
+      <sc-if value="{{ wsMenuOpen }}" hint-placeholder-val="{{ false }}">
+        <div style="position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--surface);border:1px solid var(--border2);border-radius:9px;box-shadow:var(--shadow);padding:4px;z-index:65">
+          <sc-for list="{{ wsRows }}" as="w" hint-placeholder-count="2">
+            <div onClick="{{ pickWs }}" data-i="{{ w.i }}" style="display:flex;align-items:center;gap:8px;padding:7px 9px;border-radius:6px;cursor:pointer;background:{{ w.bg }}" style-hover="background:var(--surface2)">
+              <span style="width:18px;height:18px;border-radius:5px;background:{{ w.color }};color:#fff;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0">{{ w.ini }}</span>
+              <span style="flex:1;min-width:0;font-size:12.5px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ w.name }}</span>
+              <span style="font-size:10.5px;color:var(--muted)">{{ w.role }}</span>
+            </div>
+          </sc-for>
+          <div style="border-top:1px solid var(--border);margin:4px 0"></div>
+          <div onClick="{{ openNewWs }}" style="padding:7px 9px;border-radius:6px;cursor:pointer;font-size:12.5px;color:var(--accent);font-weight:600" style-hover="background:var(--surface2)">＋ Создать компанию</div>
+        </div>
+      </sc-if>
+    </div>
+    <sc-if value="{{ inSettingsNav }}" hint-placeholder-val="{{ false }}">
+      <button onClick="{{ backToCabinet }}" style="display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:7px;border:1px solid var(--border);cursor:pointer;font-size:13px;font-weight:600;text-align:left;background:var(--surface);color:var(--text);margin-bottom:10px" style-hover="border-color:var(--border2)">← Вернуться в кабинет</button>
+      <div style="font-size:10.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;padding:2px 10px 6px">Настройки</div>
+      <sc-for list="{{ setTabs }}" as="st" hint-placeholder-count="4">
+        <button onClick="{{ pickSetTab }}" data-t="{{ st.k }}" style="display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:7px;border:none;cursor:pointer;font-size:13.5px;font-weight:500;text-align:left;background:{{ st.bg }};color:{{ st.c }}" style-hover="background:var(--surface2)">{{ st.label }}</button>
+      </sc-for>
+    </sc-if>
+    <sc-if value="{{ mainNav }}" hint-placeholder-val="{{ true }}">
     <sc-if value="{{ canWork }}" hint-placeholder-val="{{ true }}">
     <button onClick="{{ goScreen }}" data-s="tracker" style="display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:7px;border:none;cursor:pointer;font-size:13.5px;font-weight:500;text-align:left;background:{{ nav.tracker.bg }};color:{{ nav.tracker.c }}" style-hover="background:var(--surface2)">
       <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6.2"></circle><path d="M8 5v3.2l2 1.4"></path></svg>Трекер
@@ -50,6 +77,11 @@ input,select,button{font-family:inherit}
     <button onClick="{{ goScreen }}" data-s="reports" style="display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:7px;border:none;cursor:pointer;font-size:13.5px;font-weight:500;text-align:left;background:{{ nav.reports.bg }};color:{{ nav.reports.c }}" style-hover="background:var(--surface2)">
       <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M3.5 13.5V9.5"></path><path d="M8 13.5V3.5"></path><path d="M12.5 13.5V7"></path></svg>Отчёты
     </button>
+    <button onClick="{{ goScreen }}" data-s="notif" style="display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:7px;border:none;cursor:pointer;font-size:13.5px;font-weight:500;text-align:left;background:{{ nav.notif.bg }};color:{{ nav.notif.c }}" style-hover="background:var(--surface2)">
+      <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2a4 4 0 00-4 4v2.5L2.8 11h10.4L12 8.5V6a4 4 0 00-4-4z"></path><path d="M6.5 13a1.5 1.5 0 003 0"></path></svg>Уведомления
+      <div style="flex:1"></div>
+      <sc-if value="{{ hasUnread }}" hint-placeholder-val="{{ true }}"><span style="background:var(--red);color:#fff;border-radius:99px;padding:1px 7px;font-size:10.5px;font-weight:700">{{ unreadN }}</span></sc-if>
+    </button>
     <sc-if value="{{ canWork }}" hint-placeholder-val="{{ true }}">
     <button onClick="{{ goScreen }}" data-s="sheets" style="display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:7px;border:none;cursor:pointer;font-size:13.5px;font-weight:500;text-align:left;background:{{ nav.sheets.bg }};color:{{ nav.sheets.c }}" style-hover="background:var(--surface2)">
       <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="2" width="10" height="12" rx="2"></rect><path d="M5.5 8.2l1.7 1.7 3.3-3.5"></path></svg>Таймшиты
@@ -65,9 +97,7 @@ input,select,button{font-family:inherit}
         <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="5.6" cy="6" r="2.6"></circle><circle cx="11.2" cy="7.2" r="2"></circle><path d="M2 13.4c.6-2.3 2-3.4 3.6-3.4s3 1.1 3.6 3.4"></path></svg>Команда
       </button>
     </sc-if>
-    <button onClick="{{ goScreen }}" data-s="settings" style="display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:7px;border:none;cursor:pointer;font-size:13.5px;font-weight:500;text-align:left;background:{{ nav.settings.bg }};color:{{ nav.settings.c }}" style-hover="background:var(--surface2)">
-      <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="2.3"></circle><circle cx="8" cy="8" r="5.9"></circle></svg>Настройки
-    </button>
+    </sc-if>
     <div style="flex:1"></div>
     <sc-if value="{{ miniPomo }}" hint-placeholder-val="{{ false }}">
       <button onClick="{{ goScreen }}" data-s="pomo" style="display:flex;align-items:center;gap:10px;margin:0 2px 10px;padding:9px 11px;border-radius:9px;border:1px solid var(--border2);background:var(--surface2);cursor:pointer;color:var(--text);text-align:left">
@@ -79,8 +109,15 @@ input,select,button{font-family:inherit}
     <button onClick="{{ toggleTheme }}" style="display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:7px;border:none;background:transparent;color:var(--muted);cursor:pointer;font-size:13px;text-align:left" style-hover="background:var(--surface2);color:var(--text)">
       <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="3.4"></circle><path d="M8 1.5v1.8M8 12.7v1.8M1.5 8h1.8M12.7 8h1.8"></path></svg>{{ themeLabel }}
     </button>
+    <a href="Knowledge Base.dc.html" style="display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:7px;font-size:13px;font-weight:500;color:var(--muted)" style-hover="background:var(--surface2);color:var(--text)">
+      <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2.5 3.2C4 2.4 5.6 2.4 8 3.6c2.4-1.2 4-1.2 5.5-.4v9.2c-1.5-.8-3.1-.8-5.5.4-2.4-1.2-4-1.2-5.5-.4z"></path><path d="M8 3.6v9.2"></path></svg>База знаний
+    </a>
+    <button onClick="{{ goScreen }}" data-s="settings" style="display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:7px;border:none;cursor:pointer;font-size:13px;font-weight:500;text-align:left;background:{{ nav.settings.bg }};color:{{ nav.settings.c }}" style-hover="background:var(--surface2)">
+      <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="2.3"></circle><circle cx="8" cy="8" r="5.9"></circle></svg>Настройки
+    </button>
     <div style="display:flex;align-items:center;gap:9px;padding:9px 10px 2px;border-top:1px solid var(--border);margin-top:8px">
-      <div style="width:26px;height:26px;border-radius:50%;background:var(--asoft);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700">ЮМ</div>
+      {{ avatarImg }}
+      <sc-if value="{{ noAva }}" hint-placeholder-val="{{ true }}"><div style="width:26px;height:26px;border-radius:50%;background:var(--asoft);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0">ЮМ</div></sc-if>
       <div style="flex:1;min-width:0">
         <div style="font-size:12.5px;font-weight:600">{{ accName }}</div>
         <div style="font-size:11px;color:var(--muted)">{{ roleLabel }} · Выйти</div>
@@ -101,7 +138,7 @@ input,select,button{font-family:inherit}
         </button>
         <sc-if value="{{ notifOpen }}" hint-placeholder-val="{{ false }}">
           <div style="position:absolute;top:calc(100% + 6px);right:0;width:320px;background:var(--surface);border:1px solid var(--border2);border-radius:10px;box-shadow:var(--shadow);z-index:50;overflow:hidden">
-            <div style="display:flex;align-items:center;padding:10px 14px;border-bottom:1px solid var(--border);font-weight:600;font-size:13px">Уведомления<div style="flex:1"></div><button onClick="{{ readAllNotif }}" style="background:transparent;border:none;color:var(--accent);font-size:12px;cursor:pointer;padding:0">Очистить</button></div>
+            <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--border);font-weight:600;font-size:13px">Уведомления<div style="flex:1"></div><button onClick="{{ openNotifPage }}" style="background:transparent;border:none;color:var(--accent);font-size:12px;cursor:pointer;padding:0;font-weight:600">Все</button><button onClick="{{ readAllNotif }}" style="background:transparent;border:none;color:var(--muted);font-size:12px;cursor:pointer;padding:0">Прочитано</button></div>
             <sc-for list="{{ notices }}" as="nt" hint-placeholder-count="3">
               <div style="display:flex;gap:9px;padding:9px 14px;border-bottom:1px solid var(--border);font-size:12.5px">
                 <span style="width:7px;height:7px;border-radius:50%;background:{{ nt.dot }};flex-shrink:0;margin-top:5px"></span>
@@ -135,6 +172,12 @@ input,select,button{font-family:inherit}
               <button onClick="{{ idleStop }}" style="background:var(--amber);border:none;border-radius:7px;padding:5px 12px;font-size:12.5px;font-weight:600;color:#1a1206;cursor:pointer">Стоп и вычесть простой</button>
             </div>
           </sc-if>
+          <sc-if value="{{ tsReturned }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;align-items:flex-start;gap:12px;background:var(--rsoft);border:1px solid var(--red);border-radius:10px;padding:11px 14px;margin-bottom:14px;flex-wrap:wrap">
+              <div style="flex:1;min-width:200px;font-size:13px;line-height:1.5"><b>Таймшит за неделю не принят.</b> Причина: {{ tsComment }}</div>
+              <button onClick="{{ goSheets }}" style="background:var(--red);color:#fff;border:none;border-radius:7px;padding:6px 14px;font-size:12.5px;font-weight:600;cursor:pointer">Исправить</button>
+            </div>
+          </sc-if>
           <sc-if value="{{ showChecklist }}" hint-placeholder-val="{{ false }}">
             <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:14px">
               <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
@@ -147,6 +190,11 @@ input,select,button{font-family:inherit}
                 <sc-for list="{{ checklist }}" as="ck" hint-placeholder-count="3">
                   <span style="display:flex;align-items:center;gap:7px;font-size:12.5px;color:{{ ck.c }}"><span style="font-weight:700">{{ ck.mark }}</span>{{ ck.label }}</span>
                 </sc-for>
+              </div>
+              <div style="display:flex;align-items:center;gap:12px;margin-top:12px">
+                <div style="flex:1;height:4px;border-radius:99px;background:var(--surface2);overflow:hidden"><div style="height:100%;border-radius:99px;background:var(--green);width:{{ ckPct }}%;transition:width .4s ease"></div></div>
+                <span style="font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace">{{ ckPct }}%</span>
+                <button onClick="{{ demoFill }}" style="background:transparent;border:1px solid var(--border2);border-radius:7px;padding:4px 12px;font-size:12px;font-weight:500;color:var(--text);cursor:pointer" style-hover="border-color:var(--accent);color:var(--accent)">Заполнить примером</button>
               </div>
             </div>
           </sc-if>
@@ -285,6 +333,13 @@ input,select,button{font-family:inherit}
                 <div style="font-size:12.5px">Запустите таймер или добавьте время вручную — записи появятся здесь.</div>
               </div>
             </sc-if>
+            <sc-if value="{{ noEntriesToday }}" hint-placeholder-val="{{ false }}">
+              <div style="padding:34px 20px;text-align:center">
+                <div style="font-size:14px;font-weight:600;margin-bottom:4px">Сегодня ещё ничего не записано</div>
+                <div style="font-size:12.5px;color:var(--muted);margin-bottom:14px;line-height:1.55">Запустите таймер сверху или добавьте запись за прошедшее время вручную.</div>
+                <button onClick="{{ toggleManual }}" style="background:var(--asoft);border:1px solid var(--accent);border-radius:8px;padding:7px 16px;font-size:12.5px;font-weight:600;color:var(--accent);cursor:pointer">+ Добавить вручную</button>
+              </div>
+            </sc-if>
             <sc-for list="{{ todayEntries }}" as="e" hint-placeholder-count="4">
               <div style="display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid var(--border)" style-hover="background:var(--surface2)">
                 <sc-if value="{{ e.editing }}" hint-placeholder-val="{{ false }}">
@@ -293,6 +348,7 @@ input,select,button{font-family:inherit}
                     <input type="time" value="{{ eeTo }}" onChange="{{ onField }}" data-f="eeTo" style="background:var(--surface2);border:1px solid var(--accent);border-radius:5px;padding:2px 4px;font-size:11.5px;color:var(--text);outline:none;font-family:'JetBrains Mono',monospace"></input>
                     <input value="{{ eeNote }}" onChange="{{ onField }}" data-f="eeNote" placeholder="Комментарий к записи" style="width:150px;background:var(--surface2);border:1px solid var(--accent);border-radius:5px;padding:2px 6px;font-size:11.5px;color:var(--text);outline:none"></input>
                     <button onClick="{{ saveEntryEdit }}" data-id="{{ e.id }}" style="background:var(--accent);color:#fff;border:none;border-radius:5px;padding:3px 8px;font-size:11px;font-weight:600;cursor:pointer">✓</button>
+                    <button onClick="{{ splitEntry }}" data-id="{{ e.id }}" title="Разрезать запись пополам" style="background:transparent;border:1px solid var(--border2);border-radius:5px;padding:3px 8px;font-size:11px;color:var(--muted);cursor:pointer" style-hover="color:var(--text)">✂</button>
                   </span>
                 </sc-if>
                 <sc-if value="{{ e.notEditing }}" hint-placeholder-val="{{ true }}">
@@ -306,7 +362,7 @@ input,select,button{font-family:inherit}
                 <sc-if value="{{ e.manual }}" hint-placeholder-val="{{ false }}"><span style="font-size:10.5px;color:var(--muted);border:1px solid var(--border2);border-radius:5px;padding:1px 6px">вручную</span></sc-if>
                 <sc-if value="{{ e.live }}" hint-placeholder-val="{{ false }}"><span style="font-size:10.5px;color:var(--accent);border:1px solid var(--accent);border-radius:5px;padding:1px 6px;animation:ttpulse 1.6s infinite">идёт</span></sc-if>
                 <span style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;width:70px;text-align:right">{{ e.dur }}</span>
-                <button onClick="{{ toggleBillable }}" data-id="{{ e.id }}" title="Оплачиваемое время (вкл/выкл)" style="background:{{ e.billBg }};color:{{ e.billC }};border:none;border-radius:5px;padding:2px 7px;font-size:11px;font-weight:700;cursor:pointer">₽</button>
+                <button onClick="{{ toggleBillable }}" data-id="{{ e.id }}" title="Оплачиваемое время (вкл/выкл)" style="background:{{ e.billBg }};color:{{ e.billC }};border:none;border-radius:5px;padding:2px 7px;font-size:11px;font-weight:700;cursor:pointer">{{ curSym }}</button>
                 <button onClick="{{ delEntry }}" data-id="{{ e.id }}" title="Удалить запись" style="background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:2px 4px;border-radius:5px" style-hover="color:var(--red);background:var(--rsoft)">✕</button>
               </div>
             </sc-for>
@@ -317,7 +373,7 @@ input,select,button{font-family:inherit}
 
         <sc-if value="{{ isTasks }}" hint-placeholder-val="{{ false }}">
         <div data-screen-label="Задачи">
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+          <div style="display:flex;align-items:center;gap:10px;row-gap:8px;margin-bottom:14px;flex-wrap:wrap">
             <div style="display:flex;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:2px">
               <button onClick="{{ setFilter }}" data-fl="all" style="border:none;border-radius:6px;padding:5px 14px;font-size:12.5px;font-weight:500;cursor:pointer;background:{{ filt.all.bg }};color:{{ filt.all.c }}">Все</button>
               <button onClick="{{ setFilter }}" data-fl="active" style="border:none;border-radius:6px;padding:5px 14px;font-size:12.5px;font-weight:500;cursor:pointer;background:{{ filt.active.bg }};color:{{ filt.active.c }}">Активные</button>
@@ -329,6 +385,10 @@ input,select,button{font-family:inherit}
                 <button onClick="{{ setWho }}" data-w="mine" style="border:none;border-radius:6px;padding:5px 14px;font-size:12.5px;font-weight:500;cursor:pointer;background:{{ who.mine.bg }};color:{{ who.mine.c }}">Мои</button>
               </div>
             </sc-if>
+            <div style="display:flex;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:2px">
+              <button onClick="{{ setTaskView }}" data-v="list" style="border:none;border-radius:6px;padding:5px 14px;font-size:12.5px;font-weight:500;cursor:pointer;background:{{ tvSeg.l.bg }};color:{{ tvSeg.l.c }}">Список</button>
+              <button onClick="{{ setTaskView }}" data-v="kanban" style="border:none;border-radius:6px;padding:5px 14px;font-size:12.5px;font-weight:500;cursor:pointer;background:{{ tvSeg.k.bg }};color:{{ tvSeg.k.c }}">Канбан</button>
+            </div>
             <div style="flex:1"></div>
             <sc-if value="{{ canAdmin }}" hint-placeholder-val="{{ true }}">
               <button onClick="{{ openReleaseNotes }}" style="background:transparent;border:1px solid var(--border2);border-radius:8px;padding:8px 14px;font-size:13px;font-weight:600;color:var(--text);cursor:pointer" style-hover="border-color:var(--accent);color:var(--accent)">Release notes</button>
@@ -391,9 +451,21 @@ input,select,button{font-family:inherit}
               </sc-for>
             </div>
           </sc-if>
+          <sc-if value="{{ isListView }}" hint-placeholder-val="{{ true }}">
+          <sc-if value="{{ hasSel }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;align-items:center;gap:8px;background:var(--asoft);border:1px solid var(--accent);border-radius:10px;padding:8px 14px;margin-bottom:12px;flex-wrap:wrap">
+              <span style="font-size:12.5px;font-weight:600">Выбрано: {{ selN }}</span>
+              <div style="flex:1"></div>
+              <button onClick="{{ bulkStatus }}" data-st="in_progress" style="background:var(--surface);border:1px solid var(--border2);border-radius:7px;padding:5px 12px;font-size:12px;font-weight:600;color:var(--text);cursor:pointer">В работу</button>
+              <button onClick="{{ bulkStatus }}" data-st="done" style="background:var(--gsoft);color:var(--green);border:none;border-radius:7px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer">Готово</button>
+              <button onClick="{{ bulkDel }}" style="background:var(--rsoft);color:var(--red);border:none;border-radius:7px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer">Удалить</button>
+              <button onClick="{{ clearSel }}" style="background:transparent;border:none;color:var(--muted);font-size:12px;cursor:pointer;padding:2px 4px">Снять</button>
+            </div>
+          </sc-if>
           <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px">
             <sc-for list="{{ taskRows }}" as="t" hint-placeholder-count="5">
               <div style="display:flex;align-items:center;gap:12px;padding:11px 16px;border-bottom:1px solid var(--border)" style-hover="background:var(--surface2)">
+                <input type="checkbox" checked="{{ t.sel }}" onChange="{{ toggleSel }}" data-id="{{ t.id }}" title="Выбрать для группового действия" style="accent-color:var(--accent);flex-shrink:0"></input>
                 <div style="position:relative;flex-shrink:0">
                   <button onClick="{{ toggleMenu }}" data-m="{{ t.statusMenu }}" style="display:flex;align-items:center;gap:6px;background:{{ t.stBg }};color:{{ t.stColor }};border:none;border-radius:6px;padding:3px 10px;font-size:11.5px;font-weight:600;cursor:pointer;white-space:nowrap">{{ t.stLabel }} ▾</button>
                   <sc-if value="{{ t.statusOpen }}" hint-placeholder-val="{{ false }}">
@@ -417,6 +489,7 @@ input,select,button{font-family:inherit}
                     <span style="color:{{ t.prioC }};font-weight:600;white-space:nowrap">· {{ t.prioLabel }}</span>
                     <sc-if value="{{ t.hasDue }}" hint-placeholder-val="{{ false }}"><span style="color:{{ t.dueC }};white-space:nowrap">· {{ t.dueLabel }}</span></sc-if>
                     <sc-if value="{{ t.hasPomos }}" hint-placeholder-val="{{ false }}"><span style="white-space:nowrap">· {{ t.pomos }} pomodoro</span></sc-if>
+                    <sc-if value="{{ t.hasEF }}" hint-placeholder-val="{{ false }}"><span style="color:{{ t.efC }};font-weight:600;white-space:nowrap">· {{ t.efLabel }}</span></sc-if>
                   </div>
                 </div>
                 <div style="width:150px;flex-shrink:0">
@@ -432,12 +505,39 @@ input,select,button{font-family:inherit}
               </div>
             </sc-for>
             <sc-if value="{{ noTasks }}" hint-placeholder-val="{{ false }}">
-              <div style="padding:36px 16px;text-align:center;color:var(--muted)">
-                <div style="font-size:14px;font-weight:600;margin-bottom:4px">Задач нет</div>
-                <div style="font-size:12.5px">Создайте первую — и запускайте таймер прямо из списка.</div>
+              <div style="padding:40px 20px;text-align:center">
+                <div style="font-size:14px;font-weight:600;margin-bottom:4px">{{ emptyTasksTitle }}</div>
+                <div style="font-size:12.5px;color:var(--muted);margin-bottom:14px;line-height:1.55">{{ emptyTasksText }}</div>
+                <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+                  <button onClick="{{ toggleNewTask }}" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:12.5px;font-weight:600;cursor:pointer">+ Новая задача</button>
+                  <sc-if value="{{ hasTemplates }}" hint-placeholder-val="{{ false }}">
+                    <button onClick="{{ applyTemplate }}" data-i="0" style="background:transparent;border:1px solid var(--border2);border-radius:8px;padding:8px 16px;font-size:12.5px;font-weight:600;color:var(--text);cursor:pointer">Из шаблона</button>
+                  </sc-if>
+                </div>
               </div>
             </sc-if>
           </div>
+          </sc-if>
+          <sc-if value="{{ isKanban }}" hint-placeholder-val="{{ false }}">
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;align-items:start">
+              <sc-for list="{{ kanbanCols }}" as="kc" hint-placeholder-count="3">
+                <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:8px">
+                  <div style="display:flex;justify-content:space-between;padding:2px 4px;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em"><span>{{ kc.title }}</span><span style="font-family:'JetBrains Mono',monospace">{{ kc.n }}</span></div>
+                  <sc-for list="{{ kc.cards }}" as="c" hint-placeholder-count="2">
+                    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:10px 12px">
+                      <div style="font-weight:600;font-size:13px;margin-bottom:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ c.title }}</div>
+                      <div style="display:flex;align-items:center;gap:8px">
+                        <span style="display:flex;align-items:center;gap:5px;font-size:11.5px;color:var(--muted);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><span style="width:6px;height:6px;border-radius:2px;background:{{ c.color }};flex-shrink:0"></span>{{ c.projName }}</span>
+                        <div style="flex:1"></div>
+                        <sc-if value="{{ c.canL }}" hint-placeholder-val="{{ false }}"><button onClick="{{ moveTask }}" data-id="{{ c.id }}" data-d="-1" title="Влево" style="background:transparent;border:1px solid var(--border2);border-radius:5px;padding:2px 8px;font-size:12px;color:var(--muted);cursor:pointer" style-hover="color:var(--text)">‹</button></sc-if>
+                        <sc-if value="{{ c.canR }}" hint-placeholder-val="{{ true }}"><button onClick="{{ moveTask }}" data-id="{{ c.id }}" data-d="1" title="Вправо" style="background:transparent;border:1px solid var(--border2);border-radius:5px;padding:2px 8px;font-size:12px;color:var(--muted);cursor:pointer" style-hover="color:var(--text)">›</button></sc-if>
+                      </div>
+                    </div>
+                  </sc-for>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
         </div>
         </sc-if>
 
@@ -455,6 +555,50 @@ input,select,button{font-family:inherit}
           <sc-if value="{{ repLimited }}" hint-placeholder-val="{{ false }}">
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;font-size:12.5px;color:var(--muted)">Отчёт по вашему проекту:<span style="display:inline-flex;align-items:center;gap:6px;color:var(--text);font-weight:600"><span style="width:7px;height:7px;border-radius:2px;background:#60a5fa"></span>Разработка</span></div>
           </sc-if>
+          <sc-if value="{{ isClient }}" hint-placeholder-val="{{ false }}">
+            <div style="display:grid;grid-template-columns:{{ repCols }};gap:14px;margin-bottom:14px;align-items:start">
+              <div style="display:flex;flex-direction:column;gap:14px">
+                <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px">
+                  <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px">
+                    <span style="font-weight:600;font-size:14px">Бюджет этапа</span>
+                    <span style="font-family:'JetBrains Mono',monospace;font-size:12.5px;color:var(--amber)">28ч 45м из 40ч</span>
+                  </div>
+                  <div style="height:6px;border-radius:99px;background:var(--surface2);overflow:hidden;margin-bottom:8px"><div style="height:100%;border-radius:99px;background:var(--amber);width:72%"></div></div>
+                  <div style="font-size:12px;color:var(--muted)">72% бюджета · осталось 11ч 15м · при текущем темпе этап закроется к 19 авг</div>
+                </div>
+                <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px">
+                  <div style="padding:12px 16px;border-bottom:1px solid var(--border);font-weight:600;font-size:14px">Лента недели</div>
+                  <div style="display:flex;align-items:baseline;gap:10px;padding:9px 16px;border-bottom:1px solid var(--border);font-size:12.5px"><span style="font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--muted);width:38px;flex-shrink:0">чт</span><span>Завершено: <b>API интеграции платежей</b> — 9ч 40м суммарно</span></div>
+                  <div style="display:flex;align-items:baseline;gap:10px;padding:9px 16px;border-bottom:1px solid var(--border);font-size:12.5px"><span style="font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--muted);width:38px;flex-shrink:0">ср</span><span>Начато: <b>Нагрузочное тестирование API</b></span></div>
+                  <div style="display:flex;align-items:baseline;gap:10px;padding:9px 16px;border-bottom:1px solid var(--border);font-size:12.5px"><span style="font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--muted);width:38px;flex-shrink:0">ср</span><span>Завершено: <b>Фикс бага с таймзонами</b> — 3ч 15м</span></div>
+                  <div style="display:flex;align-items:baseline;gap:10px;padding:9px 16px;font-size:12.5px"><span style="font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--muted);width:38px;flex-shrink:0">пн</span><span>Этап «MVP API» переведён в активную фазу</span></div>
+                </div>
+                <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px">
+                  <div style="font-weight:600;font-size:14px;margin-bottom:10px">Вопросы по отчёту</div>
+                  <sc-for list="{{ clientQs }}" as="cq" hint-placeholder-count="2">
+                    <div style="margin-bottom:10px">
+                      <div style="font-size:11.5px;color:var(--muted);margin-bottom:3px"><b style="color:var(--text)">{{ cq.who }}</b> · {{ cq.time }}</div>
+                      <div style="font-size:12.5px;line-height:1.5;background:var(--surface2);border-radius:0 9px 9px 9px;padding:8px 11px">{{ cq.txt }}</div>
+                    </div>
+                  </sc-for>
+                  <div style="display:flex;gap:8px">
+                    <input value="{{ cqText }}" onChange="{{ onField }}" data-f="cqText" placeholder="Спросить менеджера…" style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:8px 11px;font-size:12.5px;color:var(--text);outline:none" style-focus="border-color:var(--accent)"></input>
+                    <button onClick="{{ cqSend }}" style="background:var(--accent);color:#fff;border:none;border-radius:7px;padding:8px 14px;font-size:12.5px;font-weight:600;cursor:pointer">Отправить</button>
+                  </div>
+                </div>
+              </div>
+              <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px">
+                <div style="font-weight:600;font-size:14px;margin-bottom:12px">Вехи проекта</div>
+                <sc-for list="{{ miles }}" as="mi" hint-placeholder-count="3">
+                  <div style="display:flex;gap:11px;margin-bottom:14px">
+                    <span style="width:16px;height:16px;border-radius:50%;background:{{ mi.dotBg }};border:2px solid {{ mi.dotBd }};box-sizing:border-box;color:var(--green);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;flex-shrink:0">{{ mi.mark }}</span>
+                    <div style="min-width:0"><div style="font-weight:600;font-size:13px">{{ mi.t }}</div><div style="font-size:11.5px;color:{{ mi.subC }};font-weight:{{ mi.subW }}">{{ mi.sub }}</div></div>
+                  </div>
+                </sc-for>
+                <div style="font-size:11.5px;color:var(--muted);margin-top:2px;padding-top:10px;border-top:1px solid var(--border)">Вехи и сроки задаёт менеджер проекта.</div>
+              </div>
+            </div>
+          </sc-if>
         <div style="display:grid;grid-template-columns:{{ repCols }};gap:14px;align-items:start">
           <div style="display:flex;flex-direction:column;gap:14px">
             <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px">
@@ -467,6 +611,12 @@ input,select,button{font-family:inherit}
                   <button onClick="{{ setRepView }}" data-v="cal" style="border:none;border-radius:5px;padding:4px 12px;font-size:11.5px;font-weight:500;cursor:pointer;background:{{ rv.k.bg }};color:{{ rv.k.c }}">Календарь</button>
                 </div>
               </div>
+              <sc-if value="{{ noWeekData }}" hint-placeholder-val="{{ false }}">
+                <div style="padding:30px 20px;text-align:center">
+                  <div style="font-size:14px;font-weight:600;margin-bottom:4px">Пока нет данных за неделю</div>
+                  <div style="font-size:12.5px;color:var(--muted);line-height:1.55">Как только появятся первые записи времени, здесь будет график по дням, разбивка по проектам и топ задач.</div>
+                </div>
+              </sc-if>
               <sc-if value="{{ repChart }}" hint-placeholder-val="{{ true }}">
               <div style="display:flex;align-items:flex-end;gap:10px;height:150px">
                 <sc-for list="{{ weekBars }}" as="d" hint-placeholder-count="7">
@@ -585,6 +735,44 @@ input,select,button{font-family:inherit}
         </div>
         </sc-if>
 
+        <sc-if value="{{ isNotif }}" hint-placeholder-val="{{ false }}">
+        <div data-screen-label="Уведомления" style="max-width:760px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap;row-gap:8px">
+            <sc-for list="{{ nfTabs }}" as="nt" hint-placeholder-count="4">
+              <button onClick="{{ pickNfTab }}" data-t="{{ nt.k }}" style="border:1px solid {{ nt.bd }};background:{{ nt.bg }};color:{{ nt.c }};border-radius:99px;padding:5px 14px;font-size:12.5px;font-weight:500;cursor:pointer">{{ nt.label }}</button>
+            </sc-for>
+            <div style="flex:1"></div>
+            <button onClick="{{ markAllRead }}" style="background:transparent;border:1px solid var(--border2);border-radius:7px;padding:5px 12px;font-size:12.5px;font-weight:500;color:var(--text);cursor:pointer">Отметить всё прочитанным</button>
+            <button onClick="{{ goScreen }}" data-s="settings" style="background:transparent;border:1px solid var(--border2);border-radius:7px;padding:5px 12px;font-size:12.5px;font-weight:500;color:var(--text);cursor:pointer">Настройки каналов</button>
+          </div>
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px">
+            <sc-for list="{{ nfList }}" as="nf" hint-placeholder-count="4">
+              <div style="display:flex;gap:12px;padding:12px 16px;border-bottom:1px solid var(--border);background:{{ nf.rowBg }}" style-hover="background:var(--surface2)">
+                <span style="width:8px;height:8px;border-radius:50%;background:{{ nf.dot }};flex-shrink:0;margin-top:6px"></span>
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:13.5px;line-height:1.5;font-weight:{{ nf.w }}">{{ nf.txt }}</div>
+                  <div style="display:flex;align-items:center;gap:8px;margin-top:4px;font-size:11.5px;color:var(--muted);flex-wrap:wrap">
+                    <span>{{ nf.time }}</span>
+                    <span style="border:1px solid var(--border2);border-radius:5px;padding:1px 7px">{{ nf.kindLabel }}</span>
+                    <span>каналы: {{ nf.chans }}</span>
+                  </div>
+                </div>
+                <sc-if value="{{ nf.hasAct }}" hint-placeholder-val="{{ false }}">
+                  <button onClick="{{ goScreen }}" data-s="{{ nf.actScreen }}" style="background:transparent;border:1px solid var(--border2);border-radius:7px;padding:5px 12px;font-size:12px;font-weight:600;color:var(--text);cursor:pointer;flex-shrink:0;align-self:center" style-hover="border-color:var(--accent);color:var(--accent)">{{ nf.actLabel }}</button>
+                </sc-if>
+                <button onClick="{{ nfDel }}" data-i="{{ nf.i }}" title="Удалить" style="background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:13px;padding:2px 4px;border-radius:5px;align-self:center;flex-shrink:0" style-hover="color:var(--red);background:var(--rsoft)">✕</button>
+              </div>
+            </sc-for>
+            <sc-if value="{{ nfEmpty }}" hint-placeholder-val="{{ false }}">
+              <div style="padding:40px 16px;text-align:center;color:var(--muted)">
+                <div style="font-size:14px;font-weight:600;margin-bottom:4px">Здесь пусто</div>
+                <div style="font-size:12.5px">Новые события появятся тут — и по включённым каналам.</div>
+              </div>
+            </sc-if>
+          </div>
+        </div>
+        </sc-if>
+
         <sc-if value="{{ isSheets }}" hint-placeholder-val="{{ false }}">
         <div data-screen-label="Таймшиты">
           <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:14px">
@@ -627,9 +815,24 @@ input,select,button{font-family:inherit}
                   <span style="font-size:11px;font-weight:600;border-radius:6px;padding:3px 10px;background:{{ ts.bg }};color:{{ ts.c }}">{{ ts.label }}</span>
                   <sc-if value="{{ ts.pending }}" hint-placeholder-val="{{ true }}">
                     <button onClick="{{ tsApprove }}" data-i="{{ ts.i }}" style="background:var(--gsoft);color:var(--green);border:none;border-radius:7px;padding:6px 14px;font-size:12.5px;font-weight:600;cursor:pointer">Утвердить</button>
-                    <button onClick="{{ tsReturn }}" data-i="{{ ts.i }}" style="background:transparent;border:1px solid var(--border2);border-radius:7px;padding:6px 14px;font-size:12.5px;font-weight:500;color:var(--text);cursor:pointer">Вернуть</button>
+                    <button onClick="{{ tsReturnOpen }}" data-i="{{ ts.i }}" style="background:transparent;border:1px solid var(--border2);border-radius:7px;padding:6px 14px;font-size:12.5px;font-weight:500;color:var(--text);cursor:pointer">Вернуть…</button>
                   </sc-if>
                 </div>
+                <sc-if value="{{ ts.returnOpen }}" hint-placeholder-val="{{ false }}">
+                  <div style="padding:12px 16px;background:var(--surface2);border-bottom:1px solid var(--border)">
+                    <div style="font-size:12.5px;font-weight:600;margin-bottom:8px">Причина возврата — уйдёт сотруднику письмом и в уведомления</div>
+                    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
+                      <sc-for list="{{ tsReasons }}" as="rr" hint-placeholder-count="3">
+                        <button onClick="{{ pickTsReason }}" data-t="{{ rr }}" style="background:var(--surface);border:1px solid var(--border);border-radius:99px;padding:4px 11px;font-size:11.5px;color:var(--text);cursor:pointer" style-hover="border-color:var(--accent);color:var(--accent)">{{ rr }}</button>
+                      </sc-for>
+                    </div>
+                    <div style="display:flex;gap:8px">
+                      <input value="{{ tsReturnText }}" onChange="{{ onField }}" data-f="tsReturnText" placeholder="Что нужно поправить" style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:8px 11px;font-size:12.5px;color:var(--text);outline:none" style-focus="border-color:var(--accent)"></input>
+                      <button onClick="{{ tsReturnCancel }}" style="background:transparent;border:1px solid var(--border2);border-radius:7px;padding:8px 12px;font-size:12.5px;color:var(--text);cursor:pointer">Отмена</button>
+                      <button onClick="{{ tsReturnSend }}" style="background:var(--accent);color:#fff;border:none;border-radius:7px;padding:8px 14px;font-size:12.5px;font-weight:600;cursor:pointer">Вернуть</button>
+                    </div>
+                  </div>
+                </sc-if>
               </sc-for>
               <div style="padding:12px 16px;font-size:12px;color:var(--muted)">Демо: серверные таймшиты — этап workspaces.</div>
             </div>
@@ -725,6 +928,27 @@ input,select,button{font-family:inherit}
             </div>
             <button onClick="{{ addProj }}" style="background:var(--accent);color:#fff;border:none;border-radius:7px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer">+ Создать</button>
           </div>
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;margin-bottom:14px">
+            <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--border)">
+              <span style="font-weight:600;font-size:14px">Вехи проекта</span>
+              <span style="display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)"><span style="width:7px;height:7px;border-radius:2px;background:#60a5fa"></span>Разработка · видны клиенту</span>
+              <div style="flex:1"></div>
+              <span style="font-size:11px;color:var(--muted)">клик по кружку меняет статус</span>
+            </div>
+            <sc-for list="{{ miEdit }}" as="mi" hint-placeholder-count="3">
+              <div style="display:flex;align-items:center;gap:11px;padding:10px 16px;border-bottom:1px solid var(--border)" style-hover="background:var(--surface2)">
+                <button onClick="{{ miCycle }}" data-i="{{ mi.i }}" title="Сменить статус" style="width:16px;height:16px;border-radius:50%;background:{{ mi.dotBg }};border:2px solid {{ mi.dotBd }};box-sizing:border-box;color:var(--green);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;cursor:pointer;padding:0;flex-shrink:0">{{ mi.mark }}</button>
+                <span style="flex:1;font-weight:600;font-size:13px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ mi.t }}</span>
+                <span style="font-size:11.5px;color:var(--muted);white-space:nowrap">{{ mi.stL }} · {{ mi.due }}</span>
+                <button onClick="{{ miDel }}" data-i="{{ mi.i }}" title="Удалить веху" style="background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:13px;padding:2px 4px;border-radius:5px" style-hover="color:var(--red);background:var(--rsoft)">✕</button>
+              </div>
+            </sc-for>
+            <div style="display:flex;gap:8px;padding:12px 16px;flex-wrap:wrap">
+              <input value="{{ miAddT }}" onChange="{{ onField }}" data-f="miAddT" placeholder="Новая веха" style="flex:2;min-width:150px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:8px 11px;font-size:12.5px;color:var(--text);outline:none"></input>
+              <input value="{{ miAddD }}" onChange="{{ onField }}" data-f="miAddD" placeholder="срок, напр. 2 сен" style="flex:1;min-width:110px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:8px 11px;font-size:12.5px;color:var(--text);outline:none"></input>
+              <button onClick="{{ miAdd }}" style="background:var(--accent);color:#fff;border:none;border-radius:7px;padding:8px 16px;font-size:12.5px;font-weight:600;cursor:pointer">Добавить</button>
+            </div>
+          </div>
           <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px">
             <sc-for list="{{ projRows }}" as="p" hint-placeholder-count="3">
               <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--border)" style-hover="background:var(--surface2)">
@@ -741,7 +965,7 @@ input,select,button{font-family:inherit}
                 <sc-if value="{{ canAdmin }}" hint-placeholder-val="{{ true }}">
                   <div style="flex-shrink:0;display:flex;align-items:center;gap:6px">
                     <input type="number" min="0" value="{{ p.rate }}" onChange="{{ onProjRate }}" data-id="{{ p.id }}" title="Часовая ставка" style="width:70px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:6px 8px;font-size:12.5px;color:var(--text);outline:none;font-family:'JetBrains Mono',monospace"></input>
-                    <span style="font-size:11.5px;color:var(--muted)">₽/ч</span>
+                    <span style="font-size:11.5px;color:var(--muted)">{{ curSym }}/ч</span>
                     <input type="number" min="0" value="{{ p.budget }}" onChange="{{ onProjBudget }}" data-id="{{ p.id }}" title="Бюджет часов в неделю" style="width:54px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:6px 8px;font-size:12.5px;color:var(--text);outline:none;font-family:'JetBrains Mono',monospace"></input>
                     <span style="font-size:11.5px;color:var(--muted)">ч</span>
                   </div>
@@ -753,6 +977,13 @@ input,select,button{font-family:inherit}
                 <button onClick="{{ archiveProj }}" data-id="{{ p.id }}" title="Архивировать проект" style="background:transparent;border:1px solid var(--border2);border-radius:7px;padding:5px 12px;font-size:12px;color:var(--muted);cursor:pointer;flex-shrink:0" style-hover="color:var(--text)">В архив</button>
               </div>
             </sc-for>
+            <sc-if value="{{ noProjects }}" hint-placeholder-val="{{ false }}">
+              <div style="padding:40px 20px;text-align:center">
+                <div style="font-size:14px;font-weight:600;margin-bottom:4px">Ни одного проекта</div>
+                <div style="font-size:12.5px;color:var(--muted);margin-bottom:14px;line-height:1.55">Проект — это то, куда пишется время: клиент, продукт или направление. Задайте цвет, ставку и недельный бюджет часов.</div>
+                <button onClick="{{ toggleNewProj }}" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:12.5px;font-weight:600;cursor:pointer">+ Новый проект</button>
+              </div>
+            </sc-if>
             <div style="padding:12px 16px;font-size:12px;color:var(--muted)">Архив скрывает проект из списков, записи времени остаются в отчётах.</div>
           </div>
         </div>
@@ -760,8 +991,11 @@ input,select,button{font-family:inherit}
 
         <sc-if value="{{ isTeam }}" hint-placeholder-val="{{ false }}">
         <div data-screen-label="Команда">
-          <div style="display:flex;align-items:center;margin-bottom:14px">
-            <span style="font-size:12.5px;color:var(--muted)">4 участника</span>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap;row-gap:8px">
+            <span style="font-size:12.5px;color:var(--muted)">{{ membersCount }}</span>
+            <sc-for list="{{ deptChips }}" as="dc" hint-placeholder-count="3">
+              <button onClick="{{ pickDept }}" data-n="{{ dc.n }}" style="border:1px solid {{ dc.bd }};background:{{ dc.bg }};color:{{ dc.c }};border-radius:99px;padding:4px 12px;font-size:12px;font-weight:500;cursor:pointer">{{ dc.n }}</button>
+            </sc-for>
             <div style="flex:1"></div>
             <sc-if value="{{ canAdmin }}" hint-placeholder-val="{{ true }}">
               <button onClick="{{ openTeamSummary }}" style="background:transparent;border:1px solid var(--border2);border-radius:8px;padding:8px 14px;font-size:13px;font-weight:600;color:var(--text);cursor:pointer;margin-right:10px" style-hover="border-color:var(--accent);color:var(--accent)">⚡ Сводка за вчера</button>
@@ -786,6 +1020,17 @@ input,select,button{font-family:inherit}
                 <div style="font-size:11.5px;color:var(--muted)">{{ tmOverNames }}</div>
               </div>
             </div>
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:13px 16px;margin-bottom:14px">
+              <div style="font-size:11.5px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">Загрузка на неделю · открытые задачи vs норма</div>
+              <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px">
+                <sc-for list="{{ wkLoad }}" as="w" hint-placeholder-count="4">
+                  <div style="min-width:0">
+                    <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:12px;margin-bottom:4px"><span style="font-weight:600;flex-shrink:0">{{ w.n }}</span><span style="color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:11px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:right">{{ w.txt }}</span></div>
+                    <div style="height:4px;border-radius:99px;background:var(--surface2);overflow:hidden"><div style="height:100%;border-radius:99px;background:{{ w.barC }};width:{{ w.pct }}%"></div></div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
           </sc-if>
           <sc-if value="{{ inviteOpen }}" hint-placeholder-val="{{ false }}">
             <div style="display:flex;gap:10px;align-items:center;background:var(--surface);border:1px solid var(--accent);border-radius:10px;padding:12px 14px;margin-bottom:14px">
@@ -799,22 +1044,26 @@ input,select,button{font-family:inherit}
             </div>
           </sc-if>
           <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px">
-          <div style="display:flex;align-items:center;padding:12px 16px;border-bottom:1px solid var(--border);font-size:11.5px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em">
-            <span style="flex:1.6">Участник</span><span style="width:80px">Роль</span><span style="flex:2">Сейчас</span><span style="width:90px;text-align:right">Сегодня</span><span style="width:90px;text-align:right">Неделя</span>
+          <div style="display:grid;grid-template-columns:{{ teamCols }};gap:12px;align-items:center;padding:12px 16px;border-bottom:1px solid var(--border);font-size:11.5px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em">
+            <span>Участник</span><span>Роль · отдел</span><span>Сейчас</span><span style="text-align:right">Сегодня</span><span style="text-align:right">Неделя</span><sc-if value="{{ canAdmin }}" hint-placeholder-val="{{ true }}"><span style="text-align:right">Ставка</span></sc-if>
           </div>
           <sc-for list="{{ members }}" as="m" hint-placeholder-count="4">
-            <div style="display:flex;align-items:center;padding:12px 16px;border-bottom:1px solid var(--border)" style-hover="background:var(--surface2)">
-              <div style="flex:1.6;display:flex;align-items:center;gap:10px">
-                <div style="width:28px;height:28px;border-radius:50%;background:var(--asoft);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700">{{ m.ini }}</div>
-                <span style="font-weight:600">{{ m.n }}</span>
+            <div style="display:grid;grid-template-columns:{{ teamCols }};gap:12px;align-items:center;padding:12px 16px;border-bottom:1px solid var(--border)" style-hover="background:var(--surface2)">
+              <div style="display:flex;align-items:center;gap:10px;min-width:0">
+                {{ m.avaImg }}
+                <sc-if value="{{ m.noAva }}" hint-placeholder-val="{{ true }}"><div style="width:28px;height:28px;border-radius:50%;background:var(--asoft);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0">{{ m.ini }}</div></sc-if>
+                <span onClick="{{ openMember }}" data-n="{{ m.n }}" title="Открыть профиль" style="font-weight:600;cursor:pointer;border-bottom:1px dashed var(--border2);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" style-hover="color:var(--accent)">{{ m.n }}</span>
                 <sc-if value="{{ m.me }}" hint-placeholder-val="{{ false }}"><span style="font-size:10.5px;color:var(--muted);border:1px solid var(--border2);border-radius:5px;padding:1px 6px">вы</span></sc-if>
               </div>
-              <span style="width:80px;font-size:11.5px;color:var(--muted)">{{ m.role }}</span>
-              <div style="flex:2;display:flex;align-items:center;gap:8px;font-size:12.5px;color:{{ m.stC }}">
-                <span style="width:7px;height:7px;border-radius:50%;background:{{ m.dot }}"></span>{{ m.st }}
+              <span style="font-size:11.5px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ m.roleDept }}</span>
+              <div style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:{{ m.stC }};min-width:0">
+                <span style="width:7px;height:7px;border-radius:50%;background:{{ m.dot }};flex-shrink:0"></span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ m.st }}</span>
               </div>
-              <span style="width:90px;text-align:right;font-family:'JetBrains Mono',monospace;font-size:12.5px">{{ m.today }}</span>
-              <span style="width:90px;text-align:right;font-family:'JetBrains Mono',monospace;font-size:12.5px;color:var(--muted)">{{ m.week }}</span>
+              <span style="text-align:right;font-family:'JetBrains Mono',monospace;font-size:12.5px">{{ m.today }}</span>
+              <span style="text-align:right;font-family:'JetBrains Mono',monospace;font-size:12.5px;color:var(--muted)">{{ m.week }}</span>
+              <sc-if value="{{ canAdmin }}" hint-placeholder-val="{{ true }}">
+                <button onClick="{{ openMember }}" data-n="{{ m.n }}" title="Оплата и настройки в профиле" style="justify-self:end;background:transparent;border:1px solid var(--border2);border-radius:6px;padding:4px 10px;font-size:11.5px;font-weight:600;color:var(--muted);cursor:pointer;font-family:'JetBrains Mono',monospace;white-space:nowrap" style-hover="border-color:var(--accent);color:var(--accent)">{{ m.rateTxt }}</button>
+              </sc-if>
             </div>
           </sc-for>
           <sc-for list="{{ inviteRows }}" as="iv" hint-placeholder-count="1">
@@ -846,8 +1095,51 @@ input,select,button{font-family:inherit}
 
         <sc-if value="{{ isSettings }}" hint-placeholder-val="{{ false }}">
         <div data-screen-label="Настройки" style="max-width:560px;display:flex;flex-direction:column;gap:14px">
+          <sc-if value="{{ setTab.company }}" hint-placeholder-val="{{ false }}">
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px">
+              <div style="font-weight:600;font-size:14px;margin-bottom:12px">Компания</div>
+              <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px">
+                {{ wsLogoImgLg }}
+                <sc-if value="{{ wsNoLogo }}" hint-placeholder-val="{{ true }}"><div style="width:52px;height:52px;border-radius:12px;background:{{ wsColor }};color:#fff;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:700;flex-shrink:0">{{ wsIni }}</div></sc-if>
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:13px;font-weight:600;margin-bottom:6px">Логотип компании</div>
+                  <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+                    <input type="file" accept="image/*" onChange="{{ onWsLogo }}" id="ws-logo-in" style="display:none"></input>
+                    <label for="ws-logo-in" style="border:1px solid var(--border2);border-radius:7px;padding:5px 12px;font-size:12.5px;font-weight:500;color:var(--text);cursor:pointer" style-hover="border-color:var(--accent)">Загрузить логотип</label>
+                    <sc-if value="{{ wsHasLogo }}" hint-placeholder-val="{{ false }}"><button onClick="{{ delWsLogo }}" style="background:transparent;border:none;color:var(--muted);font-size:12.5px;cursor:pointer;padding:0" style-hover="color:var(--red)">Удалить</button></sc-if>
+                    <span style="font-size:11.5px;color:var(--muted)">PNG или SVG, квадратный, от 128px</span>
+                  </div>
+                </div>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr auto;gap:10px;align-items:end">
+                <div><div style="font-size:11.5px;color:var(--muted);margin-bottom:4px">Название</div>
+                  <input value="{{ wsName }}" onChange="{{ onWsName }}" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:8px 11px;font-size:13px;color:var(--text);outline:none"></input></div>
+                <div><div style="font-size:11.5px;color:var(--muted);margin-bottom:4px">Цвет</div>
+                  <div style="display:flex;gap:6px">
+                    <sc-for list="{{ wsColors }}" as="wc" hint-placeholder-count="5">
+                      <button onClick="{{ setWsColor }}" data-c="{{ wc.c }}" title="Цвет компании" style="width:26px;height:26px;border-radius:7px;background:{{ wc.c }};border:2px solid {{ wc.bd }};cursor:pointer;padding:0"></button>
+                    </sc-for>
+                  </div>
+                </div>
+              </div>
+              <div style="font-size:11.5px;color:var(--muted);margin-top:12px">Логотип и цвет видны в сайдбаре, в письмах компании и в публичных отчётах для клиентов.</div>
+            </div>
+          </sc-if>
+          <sc-if value="{{ setTab.account }}" hint-placeholder-val="{{ true }}">
           <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px">
             <div style="font-weight:600;font-size:14px;margin-bottom:12px">Аккаунт</div>
+            <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px">
+              {{ avatarImgLg }}
+              <sc-if value="{{ noAva }}" hint-placeholder-val="{{ true }}"><div style="width:52px;height:52px;border-radius:50%;background:var(--asoft);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:700;flex-shrink:0">ЮМ</div></sc-if>
+              <div style="flex:1">
+                <div style="font-size:13px;font-weight:600;margin-bottom:6px">Фото профиля</div>
+                <div style="display:flex;gap:10px;align-items:center">
+                  <input type="file" accept="image/*" onChange="{{ onAvatar }}" id="ava-in" style="display:none"></input>
+                  <label for="ava-in" style="border:1px solid var(--border2);border-radius:7px;padding:5px 12px;font-size:12.5px;font-weight:500;color:var(--text);cursor:pointer" style-hover="border-color:var(--accent)">Загрузить фото</label>
+                  <sc-if value="{{ hasAva }}" hint-placeholder-val="{{ false }}"><button onClick="{{ delAvatar }}" style="background:transparent;border:none;color:var(--muted);font-size:12.5px;cursor:pointer;padding:0" style-hover="color:var(--red)">Удалить</button></sc-if>
+                </div>
+              </div>
+            </div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
               <div><div style="font-size:11.5px;color:var(--muted);margin-bottom:4px">Имя</div>
                 <input value="{{ accName }}" onChange="{{ onField }}" data-f="accName" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:8px 11px;font-size:13px;color:var(--text);outline:none"></input></div>
@@ -886,9 +1178,30 @@ input,select,button{font-family:inherit}
             </sc-if>
           </div>
           <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px">
-            <div style="font-weight:600;font-size:14px;margin-bottom:4px">Роль в команде</div>
-            <div style="font-size:12.5px;color:var(--muted);margin-bottom:12px">Демо-переключатель: посмотрите интерфейс глазами роли. Участник — только свои задачи и отчёты. Менеджер — задачи и отчёты только проекта «Разработка», без денег. Клиент — только отчёт своего проекта, read-only.</div>
-            <div style="display:inline-flex;background:var(--surface2);border-radius:8px;padding:2px">
+            <div style="display:flex;align-items:center;margin-bottom:12px">
+              <span style="font-weight:600;font-size:14px">Сессии и устройства</span>
+              <div style="flex:1"></div>
+              <button onClick="{{ endAllSessions }}" style="background:transparent;border:1px solid var(--border2);border-radius:7px;padding:5px 12px;font-size:12px;font-weight:500;color:var(--red);cursor:pointer" style-hover="background:var(--rsoft)">Выйти везде</button>
+            </div>
+            <sc-for list="{{ sessions }}" as="ss" hint-placeholder-count="3">
+              <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);font-size:12.5px">
+                <span style="width:7px;height:7px;border-radius:50%;background:{{ ss.dot }};flex-shrink:0"></span>
+                <div style="flex:1;min-width:0">
+                  <div style="font-weight:600">{{ ss.dev }}<sc-if value="{{ ss.cur }}" hint-placeholder-val="{{ false }}"><span style="font-size:10.5px;color:var(--green);font-weight:600"> · текущая</span></sc-if></div>
+                  <div style="font-size:11.5px;color:var(--muted)">{{ ss.meta }}</div>
+                </div>
+                <sc-if value="{{ ss.notCur }}" hint-placeholder-val="{{ true }}">
+                  <button onClick="{{ endSession }}" data-i="{{ ss.i }}" style="background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:12px;padding:2px 6px;border-radius:5px" style-hover="color:var(--red);background:var(--rsoft)">Выйти</button>
+                </sc-if>
+              </div>
+            </sc-for>
+          </div>
+          <div style="background:transparent;border:1px dashed var(--border2);border-radius:12px;padding:12px 14px">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+              <span style="font-size:10.5px;font-weight:700;background:var(--surface2);color:var(--muted);border-radius:5px;padding:2px 8px;text-transform:uppercase;letter-spacing:.05em">только в прототипе</span>
+              <span style="font-size:12px;color:var(--muted)">В продукте роль назначает админ в «Команде» — этого блока там нет.</span>
+            </div>
+            <div style="display:inline-flex;background:var(--surface2);border-radius:8px;padding:2px;flex-wrap:wrap">
               <button onClick="{{ setRole }}" data-r="owner" style="border:none;border-radius:6px;padding:6px 16px;font-size:12.5px;font-weight:500;cursor:pointer;background:{{ roleSeg.o.bg }};color:{{ roleSeg.o.c }}">Владелец</button>
               <button onClick="{{ setRole }}" data-r="admin" style="border:none;border-radius:6px;padding:6px 16px;font-size:12.5px;font-weight:500;cursor:pointer;background:{{ roleSeg.a.bg }};color:{{ roleSeg.a.c }}">Админ</button>
               <button onClick="{{ setRole }}" data-r="pm" style="border:none;border-radius:6px;padding:6px 16px;font-size:12.5px;font-weight:500;cursor:pointer;background:{{ roleSeg.p.bg }};color:{{ roleSeg.p.c }}">Менеджер</button>
@@ -903,6 +1216,8 @@ input,select,button{font-family:inherit}
               <button onClick="{{ openHelp }}" style="background:transparent;border:1px solid var(--border2);border-radius:7px;padding:7px 14px;font-size:12.5px;font-weight:500;color:var(--text);cursor:pointer">Горячие клавиши (?)</button>
             </div>
           </div>
+          </sc-if>
+          <sc-if value="{{ setTab.tracking }}" hint-placeholder-val="{{ false }}">
           <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px">
             <div style="font-weight:600;font-size:14px;margin-bottom:4px">Цель дня</div>
             <div style="font-size:12.5px;color:var(--muted);margin-bottom:12px">Сколько часов в день хотите трекать. Прогресс виден на главном экране.</div>
@@ -922,6 +1237,9 @@ input,select,button{font-family:inherit}
               <input type="checkbox" checked="{{ autoStop }}" onChange="{{ toggleAutoStop }}" style="accent-color:var(--accent)"></input>Авто-стоп таймера в 19:00 при отсутствии активности
             </label>
           </div>
+          </sc-if>
+          <sc-if value="{{ setTab.notify }}" hint-placeholder-val="{{ false }}">
+          <sc-if value="{{ canWork }}" hint-placeholder-val="{{ true }}">
           <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px">
             <div style="font-weight:600;font-size:14px;margin-bottom:4px">Напоминания</div>
             <div style="font-size:12.5px;color:var(--muted);margin-bottom:12px">Браузерные уведомления (в прототипе — демо).</div>
@@ -932,6 +1250,34 @@ input,select,button{font-family:inherit}
               <input type="checkbox" checked="{{ notifGoal }}" onChange="{{ toggleNotifGoal }}" style="accent-color:var(--accent)"></input>Сообщить, когда цель дня достигнута
             </label>
           </div>
+          </sc-if>
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px">
+            <div style="font-weight:600;font-size:14px;margin-bottom:4px">Уведомления</div>
+            <div style="font-size:12.5px;color:var(--muted);margin-bottom:12px">Отдельно для каждого канала: письмо, пуш в браузере и уведомление в кабинете.</div>
+            <div style="display:flex;align-items:center;gap:10px;background:var(--surface2);border-radius:9px;padding:10px 12px;margin-bottom:12px;flex-wrap:wrap">
+              <div style="flex:1;min-width:180px">
+                <div style="font-size:12.5px;font-weight:600">Веб-пуш в браузере</div>
+                <div style="font-size:11.5px;color:var(--muted)">{{ pushHint }}</div>
+              </div>
+              <span style="font-size:11px;font-weight:600;border-radius:6px;padding:3px 10px;background:{{ pushBg }};color:{{ pushC }}">{{ pushState }}</span>
+              <sc-if value="{{ pushAskable }}" hint-placeholder-val="{{ true }}">
+                <button onClick="{{ askPush }}" style="background:var(--accent);color:#fff;border:none;border-radius:7px;padding:6px 14px;font-size:12.5px;font-weight:600;cursor:pointer">Разрешить пуши</button>
+              </sc-if>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;padding-bottom:6px;font-size:10.5px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.05em">
+              <span style="flex:1">Событие</span><span style="width:44px;text-align:center">Email</span><span style="width:44px;text-align:center">Пуш</span><span style="width:52px;text-align:center">В кабинете</span>
+            </div>
+            <sc-for list="{{ notifRows }}" as="np" hint-placeholder-count="5">
+              <div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px">
+                <span style="flex:1;min-width:0">{{ np.label }}</span>
+                <span style="width:44px;display:flex;justify-content:center"><input type="checkbox" checked="{{ np.email }}" onChange="{{ toggleChan }}" data-k="{{ np.k }}" data-c="email" style="accent-color:var(--accent)"></input></span>
+                <span style="width:44px;display:flex;justify-content:center"><input type="checkbox" checked="{{ np.push }}" onChange="{{ toggleChan }}" data-k="{{ np.k }}" data-c="push" style="accent-color:var(--accent)"></input></span>
+                <span style="width:52px;display:flex;justify-content:center"><input type="checkbox" checked="{{ np.app }}" onChange="{{ toggleChan }}" data-k="{{ np.k }}" data-c="app" style="accent-color:var(--accent)"></input></span>
+              </div>
+            </sc-for>
+          </div>
+          </sc-if>
+          <sc-if value="{{ setTab.tracking }}" hint-placeholder-val="{{ false }}">
           <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px">
             <div style="font-weight:600;font-size:14px;margin-bottom:4px">Стендап-отчёт</div>
             <div style="font-size:12.5px;color:var(--muted);margin-bottom:12px">Свой шаблон текста; авто-отправка использует подключённые интеграции.</div>
@@ -947,6 +1293,18 @@ input,select,button{font-family:inherit}
               <input type="checkbox" checked="{{ suAuto }}" onChange="{{ toggleSuAuto }}" style="accent-color:var(--accent)"></input>Отправлять автоматически в 10:00 (Slack/Telegram)
             </label>
           </div>
+          </sc-if>
+          <sc-if value="{{ setTab.data }}" hint-placeholder-val="{{ false }}">
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px">
+            <div style="font-weight:600;font-size:14px;margin-bottom:4px">Импорт данных</div>
+            <div style="font-size:12.5px;color:var(--muted);margin-bottom:12px">Переезжаете из другого трекера? Проекты, задачи и записи времени перенесутся автоматически.</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button onClick="{{ doImport }}" data-n="Toggl" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 16px;font-size:12.5px;font-weight:600;color:var(--text);cursor:pointer" style-hover="border-color:var(--accent)">Toggl Track</button>
+              <button onClick="{{ doImport }}" data-n="Clockify" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 16px;font-size:12.5px;font-weight:600;color:var(--text);cursor:pointer" style-hover="border-color:var(--accent)">Clockify</button>
+              <button onClick="{{ doImport }}" data-n="Harvest" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 16px;font-size:12.5px;font-weight:600;color:var(--text);cursor:pointer" style-hover="border-color:var(--accent)">Harvest</button>
+              <button onClick="{{ doImport }}" data-n="CSV" style="background:var(--surface2);border:1px dashed var(--border2);border-radius:8px;padding:8px 16px;font-size:12.5px;font-weight:500;color:var(--muted);cursor:pointer" style-hover="color:var(--text)">Файл CSV…</button>
+            </div>
+          </div>
           <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px">
             <div style="font-weight:600;font-size:14px;margin-bottom:4px">Интеграции</div>
             <div style="font-size:12.5px;color:var(--muted);margin-bottom:8px">Синхронизация и уведомления (в прототипе — демо).</div>
@@ -961,19 +1319,151 @@ input,select,button{font-family:inherit}
               </div>
             </sc-for>
           </div>
+          </sc-if>
+          <sc-if value="{{ setTab.tracking }}" hint-placeholder-val="{{ false }}">
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px">
+            <div style="font-weight:600;font-size:14px;margin-bottom:4px">Валюта и точность</div>
+            <div style="font-size:12.5px;color:var(--muted);margin-bottom:12px">Округление вверх — применяется в клиентских отчётах и счетах.</div>
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border)">
+              <span style="font-size:12.5px;color:var(--muted)">Валюта компании</span>
+              <sc-for list="{{ curOpts }}" as="cu" hint-placeholder-count="4">
+                <button onClick="{{ setCurrency }}" data-c="{{ cu.k }}" style="border:1px solid {{ cu.bd }};background:{{ cu.bg }};color:{{ cu.c }};border-radius:7px;padding:6px 13px;font-size:12.5px;font-weight:600;cursor:pointer">{{ cu.label }}</button>
+              </sc-for>
+              <span style="font-size:11.5px;color:var(--muted);flex:1;min-width:160px">Ставки, бюджеты и счёта считаются в ней. У каждой компании своя.</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+              <div style="display:inline-flex;background:var(--surface2);border-radius:8px;padding:2px">
+                <button onClick="{{ setRound }}" data-r="0" style="border:none;border-radius:6px;padding:6px 14px;font-size:12.5px;font-weight:500;cursor:pointer;background:{{ roundSeg.p.bg }};color:{{ roundSeg.p.c }}">Точно</button>
+                <button onClick="{{ setRound }}" data-r="15" style="border:none;border-radius:6px;padding:6px 14px;font-size:12.5px;font-weight:500;cursor:pointer;background:{{ roundSeg.f.bg }};color:{{ roundSeg.f.c }}">До 15 мин</button>
+                <button onClick="{{ setRound }}" data-r="30" style="border:none;border-radius:6px;padding:6px 14px;font-size:12.5px;font-weight:500;cursor:pointer;background:{{ roundSeg.t.bg }};color:{{ roundSeg.t.c }}">До 30 мин</button>
+              </div>
+              <div style="flex:1"></div>
+              <span style="font-size:12.5px;color:var(--muted)">Норма, ч/день</span>
+              <input type="number" min="1" max="12" value="{{ dayNorm }}" onChange="{{ onDayNorm }}" style="width:56px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:6px 8px;font-size:12.5px;color:var(--text);outline:none;font-family:'JetBrains Mono',monospace"></input>
+            </div>
+          </div>
+          </sc-if>
+          <sc-if value="{{ setTab.data }}" hint-placeholder-val="{{ false }}">
+          <sc-if value="{{ canAdmin }}" hint-placeholder-val="{{ true }}">
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px">
+            <div style="font-weight:600;font-size:14px;margin-bottom:12px">API и данные</div>
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+              <span style="flex:1;min-width:0;background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:8px 10px;font-size:12px;font-family:'JetBrains Mono',monospace;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ apiKey }}</span>
+              <button onClick="{{ copyApiKey }}" style="background:transparent;border:1px solid var(--border2);border-radius:7px;padding:7px 12px;font-size:12.5px;font-weight:500;color:var(--text);cursor:pointer">Копировать</button>
+              <button onClick="{{ regenApiKey }}" style="background:transparent;border:1px solid var(--border2);border-radius:7px;padding:7px 12px;font-size:12.5px;font-weight:500;color:var(--text);cursor:pointer">Перевыпустить</button>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+              <span style="font-size:12.5px;color:var(--muted);white-space:nowrap">Webhook URL</span>
+              <input value="{{ webhookUrl }}" onChange="{{ onField }}" data-f="webhookUrl" placeholder="https://example.com/hooks/chronos" style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:8px 11px;font-size:12.5px;color:var(--text);outline:none;font-family:'JetBrains Mono',monospace"></input>
+            </div>
+            <div style="display:flex;gap:10px;border-top:1px solid var(--border);padding-top:12px">
+              <button onClick="{{ exportData }}" style="background:transparent;border:1px solid var(--border2);border-radius:7px;padding:7px 14px;font-size:12.5px;font-weight:500;color:var(--text);cursor:pointer">Экспортировать все данные</button>
+              <div style="flex:1"></div>
+              <button onClick="{{ deleteAcc }}" style="background:transparent;border:1px solid var(--red);border-radius:7px;padding:7px 14px;font-size:12.5px;font-weight:600;color:var(--red);cursor:pointer" style-hover="background:var(--rsoft)">Удалить аккаунт</button>
+            </div>
+          </div>
+          </sc-if>
+          </sc-if>
+          <sc-if value="{{ setTab.account }}" hint-placeholder-val="{{ true }}">
           <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px">
             <div style="font-weight:600;font-size:14px;margin-bottom:12px">Тема</div>
             <div style="display:inline-flex;background:var(--surface2);border-radius:8px;padding:2px">
               <button onClick="{{ setDark }}" style="border:none;border-radius:6px;padding:6px 18px;font-size:12.5px;font-weight:500;cursor:pointer;background:{{ thseg.dark.bg }};color:{{ thseg.dark.c }}">Тёмная</button>
               <button onClick="{{ setLight }}" style="border:none;border-radius:6px;padding:6px 18px;font-size:12.5px;font-weight:500;cursor:pointer;background:{{ thseg.light.bg }};color:{{ thseg.light.c }}">Светлая</button>
+              <button onClick="{{ setSystem }}" style="border:none;border-radius:6px;padding:6px 18px;font-size:12.5px;font-weight:500;cursor:pointer;background:{{ thseg.sys.bg }};color:{{ thseg.sys.c }}">Как в системе</button>
             </div>
           </div>
+          </sc-if>
         </div>
         </sc-if>
 
       </div>
     </main>
   </div>
+  <sc-if value="{{ profileOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeProfile }}" style="position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:72;display:flex;align-items:center;justify-content:center;padding:20px">
+      <div onClick="{{ stopProp }}" style="width:440px;background:var(--surface);border:1px solid var(--border2);border-radius:12px;box-shadow:var(--shadow);padding:22px 24px">
+        <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px">
+          {{ pf.avaImg }}
+          <sc-if value="{{ pf.noAva }}" hint-placeholder-val="{{ true }}"><div style="width:46px;height:46px;border-radius:50%;background:var(--asoft);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;flex-shrink:0">{{ pf.ini }}</div></sc-if>
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:700;font-size:16px">{{ pf.n }}</div>
+            <div style="font-size:12.5px;color:var(--muted)">{{ pf.role }} · {{ pf.dept }}</div>
+          </div>
+          <span style="font-size:11px;font-weight:600;border-radius:6px;padding:3px 10px;background:{{ pf.stBg }};color:{{ pf.stC }}">{{ pf.st }}</span>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px">
+          <div style="background:var(--surface2);border-radius:9px;padding:11px 13px"><div style="font-size:10.5px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em">Сегодня</div><div style="font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:600;margin-top:2px">{{ pf.today }}</div></div>
+          <div style="background:var(--surface2);border-radius:9px;padding:11px 13px"><div style="font-size:10.5px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em">Неделя</div><div style="font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:600;margin-top:2px">{{ pf.week }}</div></div>
+          <div style="background:var(--surface2);border-radius:9px;padding:11px 13px"><div style="font-size:10.5px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em">Открыто задач</div><div style="font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:600;margin-top:2px">{{ pf.openN }}</div></div>
+        </div>
+        <sc-if value="{{ pf.hasTasks }}" hint-placeholder-val="{{ true }}">
+          <div style="font-size:11.5px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Задачи в работе</div>
+          <sc-for list="{{ pf.tasks }}" as="pt" hint-placeholder-count="2">
+            <div style="display:flex;align-items:center;gap:9px;padding:7px 0;border-bottom:1px solid var(--border);font-size:12.5px">
+              <span style="width:6px;height:6px;border-radius:2px;background:{{ pt.c }};flex-shrink:0"></span>
+              <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ pt.t }}</span>
+              <span style="color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:11.5px">{{ pt.h }}</span>
+            </div>
+          </sc-for>
+        </sc-if>
+        <sc-if value="{{ canAdmin }}" hint-placeholder-val="{{ true }}">
+          <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border)">
+            <div style="font-size:11.5px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Оплата</div>
+            <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
+              <div>
+                <div style="font-size:11.5px;color:var(--muted);margin-bottom:4px">Тип</div>
+                <div style="display:flex;background:var(--surface2);border-radius:7px;padding:2px">
+                  <button onClick="{{ setPayKind }}" data-k="hourly" style="border:none;border-radius:5px;padding:6px 12px;font-size:12px;font-weight:500;cursor:pointer;background:{{ paySeg.h.bg }};color:{{ paySeg.h.c }}">Почасовая</button>
+                  <button onClick="{{ setPayKind }}" data-k="salary" style="border:none;border-radius:5px;padding:6px 12px;font-size:12px;font-weight:500;cursor:pointer;background:{{ paySeg.s.bg }};color:{{ paySeg.s.c }}">Оклад</button>
+                </div>
+              </div>
+              <div style="flex:1;min-width:130px">
+                <div style="font-size:11.5px;color:var(--muted);margin-bottom:4px">{{ pf.payLabel }}</div>
+                <input type="number" min="0" value="{{ pf.payVal }}" onChange="{{ onPayVal }}" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:7px 10px;font-size:12.5px;color:var(--text);outline:none;font-family:'JetBrains Mono',monospace"></input>
+              </div>
+              <div style="flex:1;min-width:120px;font-size:11.5px;color:var(--muted);line-height:1.5;padding-bottom:6px">{{ pf.payHint }}</div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;margin-top:12px;padding-top:12px;border-top:1px solid var(--border);font-size:12.5px">
+            <span style="color:var(--muted)">Отсутствия</span>
+            <div style="flex:1"></div>
+            <sc-if value="{{ pf.onVac }}" hint-placeholder-val="{{ false }}">
+              <button onClick="{{ pfVacEnd }}" style="background:transparent;border:1px solid var(--border2);border-radius:7px;padding:5px 12px;font-size:12px;font-weight:500;color:var(--text);cursor:pointer">Завершить отпуск</button>
+            </sc-if>
+            <sc-if value="{{ pf.notVac }}" hint-placeholder-val="{{ true }}">
+              <button onClick="{{ pfVacOpen }}" style="background:transparent;border:1px solid var(--border2);border-radius:7px;padding:5px 12px;font-size:12px;font-weight:500;color:var(--text);cursor:pointer">Отметить отпуск</button>
+            </sc-if>
+          </div>
+          <sc-if value="{{ vacFormOpen }}" hint-placeholder-val="{{ false }}">
+            <div style="margin-top:12px;background:var(--surface2);border-radius:9px;padding:12px">
+              <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
+                <div style="flex:1;min-width:120px"><div style="font-size:11.5px;color:var(--muted);margin-bottom:4px">С какого числа</div>
+                  <input type="date" value="{{ vacFrom }}" onChange="{{ onField }}" data-f="vacFrom" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:7px 9px;font-size:12.5px;color:var(--text);outline:none;font-family:'JetBrains Mono',monospace"></input></div>
+                <div style="flex:1;min-width:120px"><div style="font-size:11.5px;color:var(--muted);margin-bottom:4px">По какое (включительно)</div>
+                  <input type="date" value="{{ vacTo }}" onChange="{{ onField }}" data-f="vacTo" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:7px 9px;font-size:12.5px;color:var(--text);outline:none;font-family:'JetBrains Mono',monospace"></input></div>
+                <div style="min-width:110px"><div style="font-size:11.5px;color:var(--muted);margin-bottom:4px">Тип</div>
+                  <div style="display:flex;background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:2px">
+                    <button onClick="{{ setVacKind }}" data-k="Отпуск" style="border:none;border-radius:5px;padding:5px 10px;font-size:11.5px;font-weight:500;cursor:pointer;background:{{ vacSeg.v.bg }};color:{{ vacSeg.v.c }}">Отпуск</button>
+                    <button onClick="{{ setVacKind }}" data-k="Больничный" style="border:none;border-radius:5px;padding:5px 10px;font-size:11.5px;font-weight:500;cursor:pointer;background:{{ vacSeg.s.bg }};color:{{ vacSeg.s.c }}">Больничный</button>
+                  </div>
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;margin-top:12px">
+                <span style="font-size:11.5px;color:var(--muted)">{{ vacHint }}</span>
+                <div style="flex:1"></div>
+                <button onClick="{{ pfVacCancel }}" style="background:transparent;border:none;color:var(--muted);font-size:12px;cursor:pointer;padding:2px 4px">Отмена</button>
+                <button onClick="{{ pfVacSave }}" style="background:var(--accent);color:#fff;border:none;border-radius:7px;padding:7px 14px;font-size:12.5px;font-weight:600;cursor:pointer">Сохранить</button>
+              </div>
+            </div>
+          </sc-if>
+        </sc-if>
+        <div style="display:flex;justify-content:flex-end;margin-top:16px">
+          <button onClick="{{ closeProfile }}" style="background:transparent;border:1px solid var(--border2);border-radius:7px;padding:8px 16px;font-size:12.5px;color:var(--text);cursor:pointer">Закрыть</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
   <sc-if value="{{ standupOpen }}" hint-placeholder-val="{{ false }}">
     <div onClick="{{ closeStandup }}" style="position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:72;display:flex;align-items:center;justify-content:center;padding:20px">
       <div onClick="{{ stopProp }}" style="width:560px;max-height:84vh;display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--border2);border-radius:12px;box-shadow:var(--shadow);padding:20px 22px">
@@ -1011,16 +1501,55 @@ input,select,button{font-family:inherit}
     <div style="position:fixed;top:0;left:0;right:0;background:var(--amber);color:#1a1206;font-size:12px;font-weight:600;text-align:center;padding:4px;z-index:80">Оффлайн — записи сохраняются локально и синхронизируются при подключении</div>
   </sc-if>
   <sc-if value="{{ onbOpen }}" hint-placeholder-val="{{ false }}">
-    <div style="position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:75;display:flex;align-items:center;justify-content:center;padding:20px">
-      <div onClick="{{ stopProp }}" style="width:420px;background:var(--surface);border:1px solid var(--border2);border-radius:12px;box-shadow:var(--shadow);padding:22px 24px">
-        <div style="font-size:11.5px;color:var(--accent);font-weight:700;margin-bottom:6px">Шаг {{ onbN }} из 3</div>
+    <div style="position:fixed;bottom:24px;right:24px;z-index:75;width:400px;max-width:calc(100vw - 48px);transition:all .3s ease">
+      <div onClick="{{ stopProp }}" style="background:var(--surface);border:1px solid var(--accent);border-radius:12px;box-shadow:var(--shadow);padding:20px 22px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+          <span style="width:8px;height:8px;border-radius:50%;background:var(--accent);animation:ttpulse 1.6s infinite"></span>
+          <span style="font-size:11.5px;color:var(--accent);font-weight:700">Интерактивный тур · шаг {{ onbN }} из {{ onbTotal }}</span>
+        </div>
         <div style="font-weight:700;font-size:16px;margin-bottom:8px">{{ onbTitle }}</div>
-        <div style="font-size:13px;color:var(--muted);line-height:1.55;margin-bottom:18px">{{ onbText }}</div>
+        <div style="font-size:13px;color:var(--muted);line-height:1.55;margin-bottom:12px">{{ onbText }}</div>
+        <div style="display:flex;gap:4px;margin-bottom:14px">
+          <sc-for list="{{ onbDots }}" as="d" hint-placeholder-count="5">
+            <span style="flex:1;height:3px;border-radius:99px;background:{{ d.c }};transition:background .3s"></span>
+          </sc-for>
+        </div>
+        <sc-if value="{{ onbLast }}" hint-placeholder-val="{{ false }}">
+          <div style="font-size:12.5px;line-height:1.55;margin-bottom:14px;background:var(--surface2);border-radius:8px;padding:10px 12px">Если что-то забудется — <a href="Knowledge Base.dc.html">база знаний</a>. Перезапустить этот тур можно в любой момент: Настройки → Помощь.</div>
+        </sc-if>
         <div style="display:flex;gap:8px;align-items:center">
           <button onClick="{{ onbSkip }}" style="background:transparent;border:none;color:var(--muted);font-size:12.5px;cursor:pointer;padding:0">Пропустить</button>
           <div style="flex:1"></div>
           <sc-if value="{{ onbHasBack }}" hint-placeholder-val="{{ false }}"><button onClick="{{ onbBack }}" style="background:transparent;border:1px solid var(--border2);border-radius:7px;padding:7px 14px;font-size:12.5px;color:var(--text);cursor:pointer">Назад</button></sc-if>
           <button onClick="{{ onbNext }}" style="background:var(--accent);color:#fff;border:none;border-radius:7px;padding:7px 18px;font-size:12.5px;font-weight:600;cursor:pointer">{{ onbNextLabel }}</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+  <sc-if value="{{ newWsOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeNewWs }}" style="position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:75;display:flex;align-items:center;justify-content:center;padding:20px">
+      <div onClick="{{ stopProp }}" style="width:440px;background:var(--surface);border:1px solid var(--border2);border-radius:12px;box-shadow:var(--shadow);padding:22px 24px">
+        <div style="font-size:11.5px;color:var(--accent);font-weight:700;margin-bottom:6px">Новая компания · шаг {{ nwN }} из 3</div>
+        <sc-if value="{{ nw1 }}" hint-placeholder-val="{{ true }}">
+          <div style="font-weight:700;font-size:16px;margin-bottom:8px">Как называется компания?</div>
+          <div style="font-size:12.5px;color:var(--muted);margin-bottom:14px">Отдельное рабочее пространство: свои проекты, сотрудники, отчёты и настройки. Данные компаний изолированы.</div>
+          <input value="{{ nwName }}" onChange="{{ onField }}" data-f="nwName" placeholder="Например: Cherrypick Agency" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:13.5px;color:var(--text);outline:none;margin-bottom:14px" style-focus="border-color:var(--accent)"></input>
+        </sc-if>
+        <sc-if value="{{ nw2 }}" hint-placeholder-val="{{ false }}">
+          <div style="font-weight:700;font-size:16px;margin-bottom:8px">Отделы (необязательно)</div>
+          <div style="font-size:12.5px;color:var(--muted);margin-bottom:14px">Помогают группировать сотрудников и проекты. Можно добавить позже.</div>
+          <input value="{{ nwDepts }}" onChange="{{ onField }}" data-f="nwDepts" placeholder="Разработка, Дизайн, Маркетинг" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:13.5px;color:var(--text);outline:none;margin-bottom:14px" style-focus="border-color:var(--accent)"></input>
+        </sc-if>
+        <sc-if value="{{ nw3 }}" hint-placeholder-val="{{ false }}">
+          <div style="font-weight:700;font-size:16px;margin-bottom:8px">Пригласите сотрудников</div>
+          <div style="font-size:12.5px;color:var(--muted);margin-bottom:14px">Email через запятую — каждому уйдёт письмо-приглашение. Роли настроите в «Команде».</div>
+          <input value="{{ nwInvites }}" onChange="{{ onField }}" data-f="nwInvites" placeholder="anna@team.ru, mark@team.ru" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:13.5px;color:var(--text);outline:none;margin-bottom:14px" style-focus="border-color:var(--accent)"></input>
+        </sc-if>
+        <div style="display:flex;gap:8px;align-items:center">
+          <button onClick="{{ closeNewWs }}" style="background:transparent;border:none;color:var(--muted);font-size:12.5px;cursor:pointer;padding:0">Отмена</button>
+          <div style="flex:1"></div>
+          <sc-if value="{{ nwHasBack }}" hint-placeholder-val="{{ false }}"><button onClick="{{ nwBack }}" style="background:transparent;border:1px solid var(--border2);border-radius:7px;padding:7px 14px;font-size:12.5px;color:var(--text);cursor:pointer">Назад</button></sc-if>
+          <button onClick="{{ nwNext }}" style="background:var(--accent);color:#fff;border:none;border-radius:7px;padding:7px 18px;font-size:12.5px;font-weight:600;cursor:pointer">{{ nwNextLabel }}</button>
         </div>
       </div>
     </div>
@@ -1169,7 +1698,7 @@ class Component extends DCLogic {
       role: 'owner', accName: 'Юнус М.', accEmail: 'yunus@example.com', emailVerified: false,
       passOpen: false, passCur: '', passNew: '', passRep: '',
       newAssignee: 'Вы', taskWho: 'all', repMember: 'Все',
-      tsMyStatus: 'draft', tsComment: 'Пт: запись 16:00–17:30 без задачи — уточните проект.',
+      tsMyStatus: 'returned', tsComment: 'Пт: запись 16:00–17:30 без задачи — уточните проект и добавьте комментарий.',
       teamSheets: [
         { who: 'Аня Соколова', ini: 'АС', week: '4–10 авг', total: '21ч 30м', status: 'pending' },
         { who: 'Марк Ефимов', ini: 'МЕ', week: '4–10 авг', total: '18ч 45м', status: 'pending' },
@@ -1184,10 +1713,11 @@ class Component extends DCLogic {
       newPrio: 'med', newDue: '',
       notifOpen: false, unread: true,
       notices: [
-        { txt: 'Не забудьте стендап-отчёт — кнопка ⚡ в Трекере соберёт его за вас', time: 'сегодня, 09:30', dot: 'var(--amber)' },
-        { txt: 'Админ изменил вашу запись пн 12:30–13:00 → 12:30–13:15', time: 'вчера, 18:20', dot: 'var(--accent)' },
-        { txt: 'Ваш таймшит за 28 июл – 3 авг утверждён', time: 'пн, 09:12', dot: 'var(--green)' },
-        { txt: 'Новая задача от админа: «Фикс бага с таймзонами»', time: 'пн, 08:40', dot: 'var(--accent)' },
+        { txt: 'Таймшит за 4–10 авг не принят: «Пт: запись 16:00–17:30 без задачи — уточните проект и добавьте комментарий»', time: 'сегодня, 10:05', dot: 'var(--red)', kind: 'ts', act: 'sheets', actLabel: 'Исправить' },
+        { txt: 'Не забудьте стендап-отчёт — кнопка ⚡ в Трекере соберёт его за вас', time: 'сегодня, 09:30', dot: 'var(--amber)', kind: 'standup', act: 'tracker', actLabel: 'Открыть' },
+        { txt: 'Админ изменил вашу запись пн 12:30–13:00 → 12:30–13:15', time: 'вчера, 18:20', dot: 'var(--accent)', kind: 'adminEdit', act: 'tracker', actLabel: 'Посмотреть' },
+        { txt: 'Ваш таймшит за 28 июл – 3 авг утверждён', time: 'пн, 09:12', dot: 'var(--green)', kind: 'ts', read: true },
+        { txt: 'Новая задача от админа: «Фикс бага с таймзонами»', time: 'пн, 08:40', dot: 'var(--accent)', kind: 'assign', act: 'tasks', actLabel: 'К задаче', read: true },
       ],
       longDismissed: false, autoStop: true, eeNote: '',
       expPeriod: 'День', expProj: 'Все проекты', pmProject: 'p1',
@@ -1202,6 +1732,48 @@ class Component extends DCLogic {
       standupMode: 'standup', standupDraft: null, aiSum: false,
       suGreet: 'Всем привет!', suMiscText: 'код-ревью и созвоны', suSign: '', suAuto: false,
       tsSummary: '',
+      taskView: 'list', roundMin: 0, dayNorm: 8,
+      memberRates: { 'Юнус М.': 2500, 'Аня Соколова': 2200, 'Марк Ефимов': 1800, 'Света Ким': 1500 },
+      absences: { 'Света': { to: '2026-08-18', kind: 'Отпуск' }, 'Света Ким': { to: '2026-08-18', kind: 'Отпуск' } },
+      agentDismissed: false, apiKey: 'chr_live_9f2kq81mz4x7c0vb', webhookUrl: '',
+      profileN: null, settingsTab: 'account', avatar: null,
+      selTasks: {},
+      milestones: [
+        { t: 'Проектирование схемы БД', due: '28 июл', st: 'done' },
+        { t: 'MVP API + платежи', due: '19 авг', st: 'cur' },
+        { t: 'Запуск в прод', due: '2 сен', st: 'plan' },
+      ],
+      miAddT: '', miAddD: '',
+      clientQs: [
+        { who: 'Вы', txt: 'Что за 4 часа во вторник по «Миграции БД»?', time: 'вт, 14:20' },
+        { who: 'Аня (менеджер)', txt: 'Готовили тестовый стенд под нагрузочное тестирование — детали в комментарии записи.', time: 'вт, 15:02' },
+      ],
+      cqText: '',
+      vacFormOpen: false, vacFrom: '', vacTo: '', vacKind: 'Отпуск',
+      notifP: {
+        assign: { email: true, push: true, app: true },
+        adminEdit: { email: true, push: false, app: true },
+        ts: { email: true, push: true, app: true },
+        standup: { email: false, push: true, app: true },
+        digest: { email: true, push: false, app: false },
+      },
+      pushPerm: 'default',
+      payKinds: {}, tsReturnIdx: null, tsReturnText: '',
+      currency: 'RUB', nfTab: 'all', nfRead: {}, wsLogo: null,
+      notifKinds: { assign: 'Задача', ts: 'Таймшит', adminEdit: 'Запись', standup: 'Стендап', digest: 'Дайджест' },
+      sessions: [
+        { dev: 'Chrome · macOS', meta: 'Ташкент · сейчас' },
+        { dev: 'Safari · iPhone 15', meta: 'Ташкент · 2 часа назад' },
+        { dev: 'Firefox · Windows', meta: 'Самарканд · вчера, 21:40' },
+      ],
+      workspaces: [
+        { name: 'Cherrypick Agency', color: '#6366f1', role: 'Владелец', depts: ['Разработка', 'Дизайн', 'Маркетинг'] },
+        { name: 'Фриланс (личное)', color: '#0ea5e9', role: 'Владелец', depts: [] },
+      ],
+      wsIdx: 0, wsMenuOpen: false,
+      newWsOpen: false, nwStep: 0, nwName: '', nwDepts: '', nwInvites: '',
+      deptFilter: 'Все отделы',
+      memberDepts: { 'Юнус М.': 'Разработка', 'Аня Соколова': 'Дизайн', 'Марк Ефимов': 'Маркетинг', 'Света Ким': 'Разработка' },
     };
     this.lastAct = Date.now();
     this.pomoDeadline = 0;
@@ -1222,7 +1794,7 @@ class Component extends DCLogic {
       else if (k === 'f' || k === 'а') { if (s.activeTimer) this.setState({ focusMode: true }); }
       else if (k === 'n' || k === 'т') this.setState({ screen: 'tasks', newTaskOpen: true });
       else if (k === 's' || k === 'ы') { if (s.activeTimer) { this.stopActive(); this.toastMsg('Таймер остановлен (S)'); } else this.resumeLast(); }
-      else { const scr = ['tracker', 'tasks', 'projects', 'reports', 'sheets', 'pomo', 'team', 'settings'][Number(e.key) - 1]; if (scr) this.setState({ screen: scr, openMenu: null }); }
+      else { const scr = ['tracker', 'tasks', 'projects', 'reports', 'notif', 'sheets', 'pomo', 'team', 'settings'][Number(e.key) - 1]; if (scr) this.setState({ screen: scr, openMenu: null }); }
     };
     window.addEventListener('keydown', this._onKey);
     this._onRes = () => this.setState({ isNarrow: window.innerWidth < 760 });
@@ -1241,6 +1813,7 @@ class Component extends DCLogic {
         st.pomo = { ...s.pomo, left };
       }
       if (s.activeTimer && !s.idle && Date.now() - this.lastAct > s.idleThresholdMin * 60000) st.idle = true;
+      document.title = s.activeTimer ? '▶ ' + this.fmtDur((Date.now() - s.activeTimer.startedAt) / 1000) + ' · Хронос' : 'Хронос — тайм-трекер';
       this.setState(st);
     }, 1000);
   }
@@ -1259,6 +1832,30 @@ class Component extends DCLogic {
     const pr = t ? this.projOf(t) : { color: 'var(--border2)' };
     return { id: e.id, title: (t && t.title) || e.desc || 'Без названия', projColor: pr.color, range: this.fmtT(e.start) + '–' + this.fmtT(e.end), dur: this.fmtDur((e.end - e.start) / 1000), manual: !!e.manual, live: false, note: e.note || '', hasNote: !!e.note, editing: this.state.editEntryId === e.id, notEditing: this.state.editEntryId !== e.id, billBg: e.billable === false ? 'var(--surface2)' : 'var(--gsoft)', billC: e.billable === false ? 'var(--muted)' : 'var(--green)' };
   }
+  tourSteps() {
+    const r = this.state.role;
+    const base = [
+      { s: 'tracker', t: 'Трекер — ваш день', x: 'Запускайте таймер на каждый блок работы: задача из списка или свободное описание + Enter. Ниже — «Мои задачи на сегодня», таймлайн дня (края записей можно тянуть мышью) и записи с комментариями.' },
+      { s: 'tasks', t: 'Задачи', x: 'Список или канбан. Приоритет, дедлайн, оценка — и цветной «% от оценки», когда накапливается факт. Быстрый поиск и создание — палитра ⌘K.' },
+    ];
+    if (r === 'owner' || r === 'admin') return [...base,
+      { s: 'projects', t: 'Проекты', x: 'Цвет, часовая ставка и недельный бюджет часов. Полоска подсветится жёлтым после 80% бюджета и красным при превышении.' },
+      { s: 'team', t: 'Команда', x: 'Приглашения с ролями, отделы, дашборд «кто трекает / недобор / перегруз», загрузка на неделю, персональные ставки и журнал действий.' },
+      { s: 'reports', t: 'Отчёты', x: 'Неделя графиком или календарём, отчёты по любому участнику, экспорт .xlsx, счёт из billable-часов и публичная ссылка для клиента.' },
+      { s: 'sheets', t: 'Таймшиты', x: 'Сотрудники отправляют неделю на проверку — вы утверждаете (можно все разом) или возвращаете с комментарием. Утверждённая неделя блокируется.' }];
+    if (r === 'pm') return [...base,
+      { s: 'projects', t: 'Ваш проект', x: 'Задачи и прогресс вашего проекта. Ставки и бюджеты в деньгах видят только владелец и админ.' },
+      { s: 'reports', t: 'Отчёты', x: 'Часы вашего проекта по дням и задачам, экспорт .xlsx.' }];
+    if (r === 'client') return [
+      { s: 'reports', t: 'Отчёт по вашему проекту', x: 'Часы по дням и задачам — обновляются в реальном времени. Больше ничего настраивать не нужно.' }];
+    return [...base,
+      { s: 'sheets', t: 'Таймшиты', x: 'В конце недели нажмите «Отправить на проверку» — сводка по дням приложится автоматически. После утверждения неделя фиксируется.' },
+      { s: 'reports', t: 'Отчёты и стендап', x: 'Ваша неделя: график или календарь, топ задач. А ежедневный стендап-отчёт соберётся сам — кнопка ⚡ в Трекере.' }];
+  }
+  fmtVac(v) { if (!v) return ''; const d = new Date(v.to + 'T00:00:00'); return isNaN(d) ? v.to : d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' }); }
+  logoEl(px, r) { const l = this.state.wsLogo; return l ? React.createElement('img', { src: l, style: { width: px, height: px, borderRadius: r, objectFit: 'cover', flexShrink: 0 } }) : null; }
+  avaEl(px) { const a = this.state.avatar; return a ? React.createElement('img', { src: a, style: { width: px, height: px, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 } }) : null; }
+  roundUp(sec) { const m = this.state.roundMin; return m ? Math.ceil(sec / (m * 60)) * (m * 60) : sec; }
   toastMsg(m, undo) { clearTimeout(this._tt); this.setState({ toast: m, toastUndo: !!undo }); this._tt = setTimeout(() => this.setState({ toast: null, toastUndo: false }), undo ? 5000 : 2600); }
   buildStandup() {
     const s = this.state;
@@ -1321,7 +1918,7 @@ class Component extends DCLogic {
       const ents = this.dayEntries(off).filter(e => { if (!ip) return true; const t = e.taskId && this.taskById(e.taskId); return !!t && t.proj === ip.id; });
       if (!ents.length) continue;
       const d = new Date(Date.now() - off * 864e5);
-      const sec = ents.reduce((a, e) => a + (e.end - e.start) / 1000, 0); total += sec;
+      const sec = this.roundUp(ents.reduce((a, e) => a + (e.end - e.start) / 1000, 0)); total += sec;
       ents.forEach(e => { if (e.billable !== false) { const t = e.taskId && this.taskById(e.taskId); const r = t ? ((s.projects.find(p => p.id === t.proj) || {}).rate || 0) : 0; money += (e.end - e.start) / 1000 / 3600 * r; } });
       const names = []; const seen = {};
       ents.forEach(e => { const t = e.taskId ? this.taskById(e.taskId) : null; const n = (t && t.title) || e.desc; if (n && !seen[n]) { seen[n] = 1; names.push(n); } });
@@ -1403,9 +2000,12 @@ class Component extends DCLogic {
     if (run) this.pomoDeadline = Date.now() + left * 1000;
     this.setState({ pomo: { ...s.pomo, phase: next, left, running: run, done, cycle } });
     this.toastMsg(ph === 'work' ? 'Фокус-сессия завершена — перерыв!' : 'Перерыв окончен — за работу.');
+    try { const C = window.AudioContext || window.webkitAudioContext; if (!this._ac) this._ac = new C(); const o = this._ac.createOscillator(), g = this._ac.createGain(); o.connect(g); g.connect(this._ac.destination); o.frequency.value = ph === 'work' ? 660 : 880; g.gain.setValueAtTime(.12, this._ac.currentTime); g.gain.exponentialRampToValueAtTime(.001, this._ac.currentTime + .5); o.start(); o.stop(this._ac.currentTime + .5); } catch (e) {}
+    if (window.Notification && Notification.permission === 'granted') { try { new Notification('Хронос', { body: ph === 'work' ? 'Фокус-сессия завершена — перерыв!' : 'Перерыв окончен — за работу.' }); } catch (e) {} }
   }
   logA(txt) { const t = new Date(), p = n => String(n).padStart(2, '0'); this.setState({ audit: [{ time: p(t.getHours()) + ':' + p(t.getMinutes()), who: 'Вы', txt }, ...this.state.audit].slice(0, 8) }); }
-  fmtMoney(v) { return Math.round(v).toLocaleString('ru-RU') + ' ₽'; }
+  curInfo() { const c = this.state.currency || 'RUB'; return ({ RUB: { s: '₽', loc: 'ru-RU', pre: false }, USD: { s: '$', loc: 'en-US', pre: true }, EUR: { s: '€', loc: 'de-DE', pre: false }, KZT: { s: '₸', loc: 'ru-RU', pre: false }, UZS: { s: 'сум', loc: 'ru-RU', pre: false } })[c]; }
+  fmtMoney(v) { const i = this.curInfo(), n = Math.round(v).toLocaleString(i.loc); return i.pre ? i.s + n : n + ' ' + i.s; }
   openPalette() { this.setState({ paletteOpen: true, palQ: '', palSel: 0 }); setTimeout(() => { const el = document.getElementById('tt-palette-input'); if (el) el.focus(); }, 60); }
   recentList() {
     const seen = {}, out = [];
@@ -1424,7 +2024,12 @@ class Component extends DCLogic {
     s.tasks.filter(t => t.status !== 'done' && (!q || t.title.toLowerCase().includes(q))).slice(0, 4).forEach(t => items.push({ icon: '●', label: 'Таймер: ' + t.title, hint: this.projOf(t).name, act: () => { this.lastAct = Date.now(); this.setState({ activeTimer: { taskId: t.id, desc: '', startedAt: Date.now() }, screen: 'tracker', paletteOpen: false }); } }));
     if (q) { const seen = {}; [...s.entries].sort((a, b) => b.end - a.end).forEach(en => { if (items.length > 8) return; const t = en.taskId ? this.taskById(en.taskId) : null; const title = (t && t.title) || en.desc; if (!title || seen[title] || !title.toLowerCase().includes(q)) return; seen[title] = 1; items.push({ icon: '↺', label: 'Из истории: ' + title, hint: new Date(en.start).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' }), act: () => { this.lastAct = Date.now(); this.setState({ activeTimer: { taskId: en.taskId || null, desc: en.desc || '', startedAt: Date.now() }, screen: 'tracker', paletteOpen: false }); } }); }); }
     if (q) items.push({ icon: '＋', label: 'Создать задачу: «' + s.palQ.trim() + '»', hint: '', act: () => { this.setState({ tasks: [{ id: 't' + (this.tid++), title: s.palQ.trim(), proj: 'p1', status: 'todo', est: 0, pomos: 0, assignee: 'Вы' }, ...s.tasks], screen: 'tasks', paletteOpen: false }); this.toastMsg('Задача создана'); } });
-    [['Трекер', 'tracker'], ['Задачи', 'tasks'], ['Проекты', 'projects'], ['Отчёты', 'reports'], ['Таймшиты', 'sheets'], ['Pomodoro', 'pomo'], ['Команда', 'team'], ['Настройки', 'settings']].forEach((p, i) => { if (!q || p[0].toLowerCase().includes(q)) items.push({ icon: '→', label: 'Перейти: ' + p[0], hint: String(i + 1), act: () => this.setState({ screen: p[1], paletteOpen: false }) }); });
+    [['Трекер', 'tracker'], ['Задачи', 'tasks'], ['Проекты', 'projects'], ['Отчёты', 'reports'], ['Уведомления', 'notif'], ['Таймшиты', 'sheets'], ['Pomodoro', 'pomo'], ['Команда', 'team'], ['Настройки', 'settings']].forEach((p, i) => { if (!q || p[0].toLowerCase().includes(q)) items.push({ icon: '→', label: 'Перейти: ' + p[0], hint: String(i + 1), act: () => this.setState({ screen: p[1], paletteOpen: false }) }); });
+    if (q) {
+      ['Аня Соколова', 'Марк Ефимов', 'Света Ким', 'Юнус М.'].forEach(n => { if (n.toLowerCase().includes(q)) items.push({ icon: '@', label: 'Профиль: ' + n, hint: 'Команда', act: () => this.setState({ profileN: n, paletteOpen: false }) }); });
+      this.state.projects.filter(p => !p.archived && p.name.toLowerCase().includes(q)).forEach(p => items.push({ icon: '▣', label: 'Проект: ' + p.name, hint: 'Проекты', act: () => this.setState({ screen: 'projects', paletteOpen: false }) }));
+      [['Аккаунт', 'account'], ['Уведомления', 'notify'], ['Трекинг и отчёты', 'tracking'], ['Данные и интеграции', 'data']].forEach(([l, k]) => { if (('настройки ' + l).toLowerCase().includes(q)) items.push({ icon: '⚙', label: 'Настройки: ' + l, hint: '', act: () => this.setState({ screen: 'settings', settingsTab: k, paletteOpen: false }) }); });
+    }
     if (!q || 'отчёт стендап статус'.includes(q)) items.push({ icon: '⚡', label: 'Стендап-отчёт для руководства', hint: '', act: () => this.setState({ standupOpen: true, paletteOpen: false }) });
     if (!q || 'тема'.includes(q)) items.push({ icon: '◐', label: 'Переключить тему', hint: 'T', act: () => this.setState({ theme: s.theme === 'dark' ? 'light' : 'dark', paletteOpen: false }) });
     return items;
@@ -1439,7 +2044,7 @@ class Component extends DCLogic {
     const limited = isPM || isClient;
     const seg = on => on ? { bg: 'var(--asoft)', c: 'var(--accent)' } : { bg: 'transparent', c: 'var(--muted)' };
     const navS = id => s.screen === id ? { bg: 'var(--asoft)', c: 'var(--accent)' } : { bg: 'transparent', c: 'var(--muted)' };
-    const titles = { tracker: 'Трекер', tasks: 'Задачи', projects: 'Проекты', reports: 'Отчёты', sheets: 'Таймшиты', pomo: 'Pomodoro', team: 'Команда', settings: 'Настройки' };
+    const titles = { tracker: 'Трекер', tasks: 'Задачи', projects: 'Проекты', reports: 'Отчёты', notif: 'Уведомления', sheets: 'Таймшиты', pomo: 'Pomodoro', team: 'Команда', settings: 'Настройки' };
     const openTasks = s.tasks.filter(t => t.status !== 'done').map(t => ({ id: t.id, title: t.title, projColor: this.projOf(t).color }));
     const todayEntries = this.dayEntries(0).map(e => this.entryView(e)).reverse();
     if (active) {
@@ -1480,7 +2085,9 @@ class Component extends DCLogic {
       const [stLabel, stBg, stColor] = stMap[t.status];
       const dueDate = dueOf(t);
       const overdue = !!dueDate && t.status !== 'done' && dueDate.getTime() < today0.getTime();
-      return { id: t.id, title: t.title, assignee: t.assignee || 'Вы', prioLabel: prioMap[t.prio || 'med'][0], prioC: prioMap[t.prio || 'med'][1], hasDue: !!dueDate, dueLabel: dueDate ? (overdue ? 'просрочено · ' : 'до ') + dueDate.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' }) : '', dueC: overdue ? 'var(--red)' : 'var(--muted)', stLabel, stBg, stColor, statusMenu: 'st-' + t.id, statusOpen: s.openMenu === 'st-' + t.id, projName: this.projOf(t).name, projColor: this.projOf(t).color, trackedTxt: this.fmtHM(tracked), estTxt: t.est ? 'из ' + this.fmtHM(estSec) : 'без оценки', pct, barColor: pct >= 100 ? 'var(--amber)' : 'var(--accent)', pomos: t.pomos, hasPomos: t.pomos > 0, editing: s.editingId === t.id, notEditing: s.editingId !== t.id, strike: t.status === 'done' ? 'line-through' : 'none' };
+      const factSec = s.entries.filter(en => en.taskId === t.id).reduce((a, en) => a + (en.end - en.start) / 1000, 0);
+      const efPct = t.est > 0 && factSec > 0 ? Math.round(factSec / (t.est * 60) * 100) : 0;
+      return { id: t.id, sel: !!s.selTasks[t.id], title: t.title, assignee: t.assignee || 'Вы', hasEF: efPct > 0, efLabel: efPct + '% от оценки', efC: efPct <= 100 ? 'var(--green)' : efPct <= 130 ? 'var(--amber)' : 'var(--red)', prioLabel: prioMap[t.prio || 'med'][0], prioC: prioMap[t.prio || 'med'][1], hasDue: !!dueDate, dueLabel: dueDate ? (overdue ? 'просрочено · ' : 'до ') + dueDate.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' }) : '', dueC: overdue ? 'var(--red)' : 'var(--muted)', stLabel, stBg, stColor, statusMenu: 'st-' + t.id, statusOpen: s.openMenu === 'st-' + t.id, projName: this.projOf(t).name, projColor: this.projOf(t).color, trackedTxt: this.fmtHM(tracked), estTxt: t.est ? 'из ' + this.fmtHM(estSec) : 'без оценки', pct, barColor: pct >= 100 ? 'var(--amber)' : 'var(--accent)', pomos: t.pomos, hasPomos: t.pomos > 0, editing: s.editingId === t.id, notEditing: s.editingId !== t.id, strike: t.status === 'done' ? 'line-through' : 'none' };
     });
     const myToday = s.tasks.map(t => { if ((t.assignee || 'Вы') !== 'Вы' || t.status === 'done') return null; const dd = dueOf(t); const od = !!dd && dd.getTime() < today0.getTime(); const dt = !!dd && dd.getTime() === today0.getTime(); if (!(od || dt || t.status === 'in_progress')) return null; return { id: t.id, title: t.title, prioC: prioMap[t.prio || 'med'][1], dueLabel: od ? 'просрочено' : dt ? 'дедлайн сегодня' : 'в работе', dueC: od ? 'var(--red)' : dt ? 'var(--amber)' : 'var(--muted)' }; }).filter(Boolean);
     const activeTask = active && active.taskId ? this.taskById(active.taskId) : null;
@@ -1494,7 +2101,7 @@ class Component extends DCLogic {
       { n: 'Марк Ефимов', ini: 'МЕ', role: 'Участник', st: 'Трекает «API интеграции платежей»', on: true, today: '3ч 05м', week: '18ч 45м', me: false },
       { n: 'Юнус М.', ini: 'ЮМ', role: 'Владелец', st: s.pomo.running && s.pomo.phase === 'work' ? 'Не беспокоить · фокус-сессия' : active ? 'Трекает сейчас' : 'Не трекает', on: !!active, dnd: s.pomo.running && s.pomo.phase === 'work', today: this.fmtHM(todaySec), week: this.fmtHM(weekSec), me: true },
       { n: 'Света Ким', ini: 'СК', role: 'Участник', st: 'Не в сети', on: false, today: '—', week: '12ч 20м', me: false },
-    ].map(m => ({ ...m, dot: m.dnd ? 'var(--red)' : m.on ? 'var(--green)' : 'var(--border2)', stC: m.on || m.dnd ? 'var(--text)' : 'var(--muted)' }));
+    ].map(m => { const vac = s.absences[m.n]; return { ...m, avaImg: m.me ? this.avaEl(28) : null, noAva: !(m.me && s.avatar), dept: s.memberDepts[m.n] || '—', roleDept: m.role + ' · ' + (s.memberDepts[m.n] || '—'), rateTxt: (s.memberRates[m.n] || 0).toLocaleString(this.curInfo().loc), st: vac ? (vac.kind === 'Больничный' ? 'На больничном до ' : 'В отпуске до ') + this.fmtVac(vac) : m.st, dot: vac ? 'var(--amber)' : m.dnd ? 'var(--red)' : m.on ? 'var(--green)' : 'var(--border2)', stC: vac || m.on || m.dnd ? 'var(--text)' : 'var(--muted)', rate: s.memberRates[m.n] || 0 }; }).filter(m => s.deptFilter === 'Все отделы' || s.memberDepts[m.n] === s.deptFilter);
     const newProjObj = s.projects.find(p => p.id === s.newProj);
     const stopField = e => e.stopPropagation();
     const recentArr = this.recentList().map((r, i) => ({ ...r, i }));
@@ -1513,12 +2120,19 @@ class Component extends DCLogic {
     const weekLabel = wd1.getDate() + '–' + wd2.getDate() + ' ' + wd2.toLocaleDateString('ru-RU', { month: 'short' });
     const tsMap = { draft: ['Черновик', 'var(--surface2)', 'var(--muted)'], pending: ['На проверке', 'var(--ysoft)', 'var(--amber)'], approved: ['Утверждён', 'var(--gsoft)', 'var(--green)'], returned: ['Возвращён', 'var(--rsoft)', 'var(--red)'] };
     const overdueCnt = s.tasks.filter(t => { if (t.status === 'done') return false; const dd = dueOf(t); return !!dd && dd.getTime() < today0.getTime() && (isAdmin ? (s.taskWho === 'all' || t.assignee === 'Вы') : t.assignee === 'Вы'); }).length;
+    const tsteps = this.tourSteps(); const tourN = tsteps.length;
+    const selN = Object.keys(s.selTasks).filter(k => s.selTasks[k]).length;
+    const miView = m => ({ t: m.t, mark: m.st === 'done' ? '✓' : '', dotBg: m.st === 'done' ? 'var(--gsoft)' : m.st === 'cur' ? 'var(--asoft)' : 'transparent', dotBd: m.st === 'done' ? 'var(--gsoft)' : m.st === 'cur' ? 'var(--accent)' : 'var(--border2)', sub: (m.st === 'done' ? 'готово · ' : m.st === 'cur' ? 'в работе · план ' : 'план · ') + m.due, subC: m.st === 'cur' ? 'var(--accent)' : 'var(--muted)', subW: m.st === 'cur' ? '600' : '400' });
+    const kvis = t => isAdmin ? (s.taskWho === 'all' || t.assignee === 'Вы') : (isPM ? t.proj === s.pmProject : (t.assignee || 'Вы') === 'Вы');
+    const kanbanCols = [['todo', 'К работе'], ['in_progress', 'В работе'], ['done', 'Готово']].map(([k, title]) => { const cards = s.tasks.filter(t => kvis(t) && t.status === k).map(t => ({ id: t.id, title: t.title, color: this.projOf(t).color, projName: this.projOf(t).name, canL: k !== 'todo', canR: k !== 'done' })); return { key: k, title, n: String(cards.length), cards }; });
+    const capW = (s.dayNorm || 8) * 5;
+    const wkLoad = ['Вы', 'Аня', 'Марк', 'Света'].map(n => { const vac = !!s.absences[n]; const estH = Math.round((s.tasks.filter(t => t.status !== 'done' && (t.assignee || 'Вы') === n).reduce((a, t) => a + (t.est || 0), 0) / 60 + ({ 'Аня': 18, 'Марк': 34 }[n] || 0)) * 10) / 10; const pct = vac ? 0 : Math.min(100, Math.round(estH / capW * 100)); return { n, txt: vac ? (s.absences[n].kind === 'Больничный' ? 'б/л до ' : 'отпуск до ') + this.fmtVac(s.absences[n]) : estH + 'ч из ' + capW + 'ч', pct, barC: estH > capW ? 'var(--red)' : pct > 80 ? 'var(--amber)' : 'var(--green)' }; });
     let invRows = [], invTotalV = 0;
     if (s.invoiceOpen) {
       const ip = s.projects.find(p => p.name === s.expProj);
       const byT2 = {};
       weekEntries.forEach(en => { if (en.billable === false || !en.taskId) return; const t = this.taskById(en.taskId); if (!t) return; if (ip && t.proj !== ip.id) return; byT2[en.taskId] = (byT2[en.taskId] || 0) + (en.end - en.start) / 1000; });
-      invRows = Object.entries(byT2).map(([id, sec]) => { const t = this.taskById(id); const rate = (s.projects.find(p => p.id === t.proj) || {}).rate || 0; const sum = sec / 3600 * rate; invTotalV += sum; return { title: t.title, hours: (sec / 3600).toFixed(1).replace('.', ','), rate: this.fmtMoney(rate), sum: this.fmtMoney(sum) }; });
+      invRows = Object.entries(byT2).map(([id, sec]) => { sec = this.roundUp(sec); const t = this.taskById(id); const rate = (s.projects.find(p => p.id === t.proj) || {}).rate || 0; const sum = sec / 3600 * rate; invTotalV += sum; return { title: t.title, hours: (sec / 3600).toFixed(1).replace('.', ','), rate: this.fmtMoney(rate), sum: this.fmtMoney(sum) }; });
     }
     const calDays = s.repView === 'cal' ? [6, 5, 4, 3, 2, 1, 0].map(off => {
       const d = new Date(Date.now() - off * 864e5); const sel = s.selDay === off;
@@ -1526,15 +2140,16 @@ class Component extends DCLogic {
       return { off, label: off === 0 ? 'сегодня' : dayNames[d.getDay()], labC: sel ? 'var(--accent)' : 'var(--muted)', labW: sel ? '700' : '400', blocks };
     }) : [];
     return {
-      theme: s.theme, accentStyle: this.props.accent ? '--accent:' + this.props.accent + ';--asoft:color-mix(in srgb,' + this.props.accent + ' 14%,transparent);' : '',
+      theme: s.theme === 'system' ? (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark') : s.theme, accentStyle: this.props.accent ? '--accent:' + this.props.accent + ';--asoft:color-mix(in srgb,' + this.props.accent + ' 14%,transparent);' : '',
       showTeamNav: (this.props.showTeam ?? true) && !isClient, canWork: !isClient,
+      teamCols: 'minmax(110px,1.7fr) minmax(84px,1fr) minmax(96px,1.4fr) 60px 60px' + (isAdmin ? ' 78px' : ''),
       screenTitle: titles[s.screen],
-      isTracker: s.screen === 'tracker', isTasks: s.screen === 'tasks', isProjects: s.screen === 'projects', isReports: s.screen === 'reports', isSheets: s.screen === 'sheets', isPomo: s.screen === 'pomo', isTeam: s.screen === 'team', isSettings: s.screen === 'settings',
-      nav: { tracker: navS('tracker'), tasks: navS('tasks'), projects: navS('projects'), reports: navS('reports'), sheets: navS('sheets'), pomo: navS('pomo'), team: navS('team'), settings: navS('settings') },
+      isTracker: s.screen === 'tracker', isTasks: s.screen === 'tasks', isProjects: s.screen === 'projects', isReports: s.screen === 'reports', isSheets: s.screen === 'sheets', isNotif: s.screen === 'notif', isPomo: s.screen === 'pomo', isTeam: s.screen === 'team', isSettings: s.screen === 'settings',
+      nav: { tracker: navS('tracker'), tasks: navS('tasks'), projects: navS('projects'), reports: navS('reports'), notif: navS('notif'), sheets: navS('sheets'), pomo: navS('pomo'), team: navS('team'), settings: navS('settings') },
       themeLabel: s.theme === 'dark' ? 'Светлая тема' : 'Тёмная тема',
       goScreen: e => this.setState({ screen: e.currentTarget.dataset.s, openMenu: null, sidebarOpen: false }),
       toggleTheme: () => this.setState({ theme: s.theme === 'dark' ? 'light' : 'dark' }),
-      rootClick: () => { this.lastAct = Date.now(); if (s.openMenu || s.notifOpen) this.setState({ openMenu: null, notifOpen: false }); },
+      rootClick: () => { this.lastAct = Date.now(); if (s.openMenu || s.notifOpen || s.wsMenuOpen) this.setState({ openMenu: null, notifOpen: false, wsMenuOpen: false }); },
       toggleMenu: e => { e.stopPropagation(); const m = e.currentTarget.dataset.m; this.setState({ openMenu: s.openMenu === m ? null : m }); },
       menu: { timerTask: s.openMenu === 'timerTask', manualTask: s.openMenu === 'manualTask', newProj: s.openMenu === 'newProj', pomoTask: s.openMenu === 'pomoTask', newAssignee: s.openMenu === 'newAssignee', newPrio: s.openMenu === 'newPrio', expProj: s.openMenu === 'expProj' },
       onField: e => this.setState({ [e.currentTarget.dataset.f]: e.currentTarget.value }),
@@ -1617,8 +2232,8 @@ class Component extends DCLogic {
       members,
       goalHours: goal, onGoal: e => this.setState({ goalHours: Number(e.currentTarget.value) }),
       idleThresholdMin: s.idleThresholdMin, onIdleThr: e => this.setState({ idleThresholdMin: Number(e.currentTarget.value) }),
-      thseg: { dark: seg(s.theme === 'dark'), light: seg(s.theme === 'light') },
-      setDark: () => this.setState({ theme: 'dark' }), setLight: () => this.setState({ theme: 'light' }),
+      thseg: { dark: seg(s.theme === 'dark'), light: seg(s.theme === 'light'), sys: seg(s.theme === 'system') },
+      setDark: () => this.setState({ theme: 'dark' }), setLight: () => this.setState({ theme: 'light' }), setSystem: () => this.setState({ theme: 'system' }),
       toast: s.toast, hasToast: !!s.toast,
       openPaletteBtn: () => this.openPalette(),
       paletteOpen: s.paletteOpen, palQ: s.palQ, stopProp: e => e.stopPropagation(),
@@ -1632,7 +2247,7 @@ class Component extends DCLogic {
         else if (this.state.palSel !== 0 && e.key.length === 1) this.setState({ palSel: 0 });
       },
       helpOpen: s.helpOpen,
-      hotkeys: [{ k: '⌘K', d: 'Палитра команд' }, { k: 'S', d: 'Стоп / продолжить последнюю' }, { k: 'N', d: 'Новая задача' }, { k: 'F', d: 'Фокус-режим' }, { k: 'T', d: 'Сменить тему' }, { k: '1–8', d: 'Экраны' }, { k: '?', d: 'Эта справка' }, { k: 'Esc', d: 'Закрыть окна' }],
+      hotkeys: [{ k: '⌘K', d: 'Палитра команд' }, { k: 'S', d: 'Стоп / продолжить последнюю' }, { k: 'N', d: 'Новая задача' }, { k: 'F', d: 'Фокус-режим' }, { k: 'T', d: 'Сменить тему' }, { k: '1–9', d: 'Экраны' }, { k: '?', d: 'Эта справка' }, { k: 'Esc', d: 'Закрыть окна' }],
       focusMode: s.focusMode && !!active,
       enterFocus: () => this.setState({ focusMode: true }),
       exitFocus: () => this.setState({ focusMode: false }),
@@ -1672,11 +2287,11 @@ class Component extends DCLogic {
       copyInviteLink: () => this.toastMsg('Ссылка-приглашение скопирована (демо)'),
       inviteRows: s.invites.map((iv, i) => ({ ...iv, i })),
       revokeInvite: e => this.setState({ invites: s.invites.filter((x, i) => i !== Number(e.currentTarget.dataset.i)) }),
-      canAdmin: isAdmin, isPM, canSeeProjects: isAdmin || isPM, canAssign: isAdmin || isPM,
+      canAdmin: isAdmin, isPM, isClient, canSeeProjects: isAdmin || isPM, canAssign: isAdmin || isPM,
       roleLabel: ({ owner: 'Владелец', admin: 'Админ', pm: 'Менеджер', member: 'Участник', client: 'Клиент' })[s.role],
       roleSeg: { o: seg(s.role === 'owner'), a: seg(s.role === 'admin'), p: seg(s.role === 'pm'), m: seg(s.role === 'member'), c: seg(s.role === 'client') },
       repLimited: limited,
-      setRole: e => { const r = e.currentTarget.dataset.r; let scr = s.screen; if (r === 'client') scr = 'reports'; else if (r === 'member' && scr === 'projects') scr = 'settings'; this.setState({ role: r, screen: scr }); },
+      setRole: e => { const r = e.currentTarget.dataset.r; let scr = s.screen; if (r === 'client') scr = 'reports'; else if (r === 'member' && scr === 'projects') scr = 'settings'; this.setState({ role: r, screen: scr, settingsTab: 'account' }); },
       who: { mine: seg(s.taskWho === 'mine'), all: seg(s.taskWho === 'all') },
       setWho: e => this.setState({ taskWho: e.currentTarget.dataset.w }),
       newAssigneeLabel: s.newAssignee, assigneeList: ['Вы', 'Аня', 'Марк', 'Света'],
@@ -1698,9 +2313,16 @@ class Component extends DCLogic {
       tsCanSubmit: s.tsMyStatus === 'draft' || s.tsMyStatus === 'returned',
       tsReturned: s.tsMyStatus === 'returned', tsComment: s.tsComment,
       tsSubmit: () => { this.setState({ tsMyStatus: 'pending', tsSummary: this.buildWeekSummary() }); this.toastMsg('Таймшит отправлен на проверку — сводка приложена'); },
-      tsRows: s.teamSheets.map((t, i) => { const m = tsMap[t.status]; return { ...t, i, label: m[0], bg: m[1], c: m[2], pending: t.status === 'pending' }; }),
+      tsRows: s.teamSheets.map((t, i) => { const m = tsMap[t.status]; return { ...t, i, label: m[0], bg: m[1], c: m[2], pending: t.status === 'pending', returnOpen: s.tsReturnIdx === i }; }),
+      tsReasons: ['Запись без задачи', 'Слишком много часов в дне', 'Нет комментариев к записям', 'Часы не по проекту'],
+      pickTsReason: e => this.setState({ tsReturnText: e.currentTarget.dataset.t }),
+      tsReturnIdx: s.tsReturnIdx, tsReturnText: s.tsReturnText,
+      tsReturnOpen: e => this.setState({ tsReturnIdx: Number(e.currentTarget.dataset.i), tsReturnText: '' }),
+      tsReturnCancel: () => this.setState({ tsReturnIdx: null, tsReturnText: '' }),
+      tsReturnSend: () => { const i = s.tsReturnIdx; const t = s.teamSheets[i]; if (!s.tsReturnText.trim()) { this.toastMsg('Укажите причину — она уйдёт сотруднику'); return; } this.setState({ teamSheets: s.teamSheets.map((x, j) => j === i ? { ...x, status: 'returned', comment: s.tsReturnText.trim() } : x), tsReturnIdx: null, tsReturnText: '' }); this.toastMsg('Таймшит возвращён с причиной — письмо отправлено'); this.logA('вернули таймшит ' + t.who + ': ' + s.tsReturnText.trim()); },
+      goSheets: () => this.setState({ screen: 'sheets' }),
       tsApprove: e => { const i = Number(e.currentTarget.dataset.i); const t = s.teamSheets[i]; this.setState({ teamSheets: s.teamSheets.map((x, j) => j === i ? { ...x, status: 'approved' } : x) }); this.toastMsg('Таймшит утверждён'); this.logA('утвердили таймшит — ' + t.who + ' (' + t.week + ')'); },
-      tsReturn: e => { const i = Number(e.currentTarget.dataset.i); const t = s.teamSheets[i]; this.setState({ teamSheets: s.teamSheets.map((x, j) => j === i ? { ...x, status: 'returned' } : x) }); this.toastMsg('Таймшит возвращён на доработку'); this.logA('вернули таймшит ' + t.who + ' на доработку'); },
+
       audit: s.audit,
       onProjRate: e => { const id = e.currentTarget.dataset.id, v = Math.max(0, Number(e.currentTarget.value) || 0); this.setState({ projects: s.projects.map(p => p.id === id ? { ...p, rate: v } : p) }); },
       toggleBillable: e => { const id = e.currentTarget.dataset.id; if (id === '__live') return; if (s.tsMyStatus === 'approved') { this.toastMsg('Неделя утверждена — записи заблокированы'); return; } this.setState({ entries: s.entries.map(x => x.id === id ? { ...x, billable: x.billable === false } : x) }); },
@@ -1716,12 +2338,27 @@ class Component extends DCLogic {
       dismissLong: () => this.setState({ longDismissed: true }),
       autoStop: s.autoStop, toggleAutoStop: () => this.setState({ autoStop: !s.autoStop }),
       eeNote: s.eeNote,
-      notifOpen: s.notifOpen, hasUnread: s.unread && s.notices.length > 0,
+      notifOpen: s.notifOpen, hasUnread: s.notices.some(x => !x.read),
       toggleNotif: e => { e.stopPropagation(); this.setState({ notifOpen: !s.notifOpen, unread: false }); },
       notices: s.notices, noNotices: s.notices.length === 0,
-      readAllNotif: () => this.setState({ notices: [], notifOpen: false, unread: false }),
+      readAllNotif: () => this.setState({ notices: s.notices.map(x => ({ ...x, read: true })), notifOpen: false, unread: false }),
+      openNotifPage: () => this.setState({ screen: 'notif', notifOpen: false }),
+      unreadN: String(s.notices.filter(x => !x.read).length),
+      curSym: this.curInfo().s,
+      curOpts: [['RUB', '₽ RUB'], ['USD', '$ USD'], ['EUR', '€ EUR'], ['KZT', '₸ KZT'], ['UZS', 'сум UZS']].map(([k, label]) => ({ k, label, bd: s.currency === k ? 'var(--accent)' : 'var(--border)', bg: s.currency === k ? 'var(--asoft)' : 'var(--surface2)', c: s.currency === k ? 'var(--accent)' : 'var(--text)' })),
+      setCurrency: e => { this.setState({ currency: e.currentTarget.dataset.c }); this.toastMsg('Валюта компании изменена'); },
+      nfTabs: [['all', 'Все'], ['unread', 'Непрочитанные'], ['ts', 'Таймшиты'], ['assign', 'Задачи']].map(([k, label]) => ({ k, label, bd: s.nfTab === k ? 'var(--accent)' : 'var(--border)', bg: s.nfTab === k ? 'var(--asoft)' : 'var(--surface)', c: s.nfTab === k ? 'var(--accent)' : 'var(--text)' })),
+      pickNfTab: e => this.setState({ nfTab: e.currentTarget.dataset.t }),
+      nfList: s.notices.map((x, i) => ({ x, i })).filter(({ x }) => s.nfTab === 'all' || (s.nfTab === 'unread' ? !x.read : x.kind === s.nfTab)).map(({ x, i }) => {
+        const ch = s.notifP[x.kind] || { email: true, push: false, app: true };
+        const names = [ch.email && 'email', ch.push && 'пуш', ch.app && 'в кабинете'].filter(Boolean).join(', ') || 'выключены';
+        return { i, txt: x.txt, time: x.time, dot: x.dot, w: x.read ? '400' : '600', rowBg: x.read ? 'transparent' : 'var(--surface)', kindLabel: s.notifKinds[x.kind] || 'Событие', chans: names, hasAct: !!x.act, actScreen: x.act || 'tracker', actLabel: x.actLabel || 'Открыть' };
+      }),
+      nfEmpty: s.notices.filter(x => s.nfTab === 'all' || (s.nfTab === 'unread' ? !x.read : x.kind === s.nfTab)).length === 0,
+      markAllRead: () => { this.setState({ notices: s.notices.map(x => ({ ...x, read: true })), unread: false }); this.toastMsg('Все уведомления прочитаны'); },
+      nfDel: e => { const i = Number(e.currentTarget.dataset.i); this.setState({ notices: s.notices.filter((x, j) => j !== i) }); },
       tmActive: String(members.filter(m => m.on).length), tmActiveNames: members.filter(m => m.on).map(m => m.n.split(' ')[0]).join(', ') || '—',
-      tmUnder: '1', tmUnderNames: 'Света · 12ч 20м из 30ч',
+      tmUnder: '0', tmUnderNames: (() => { const names = Object.keys(s.absences).filter(k => k.includes(' ')).map(k => k.split(' ')[0]); return names.length ? names.join(', ') + ' — отсутствует, не учитывается' : 'все в норме'; })(),
       tmOver: '1', tmOverNames: 'Аня · 21ч 30м за неделю',
       hasPendingTs: s.teamSheets.some(t => t.status === 'pending'),
       pendingTsN: s.teamSheets.filter(t => t.status === 'pending').length,
@@ -1737,17 +2374,104 @@ class Component extends DCLogic {
       hasTemplates: s.templates.length > 0, tplRows: s.templates.map((t, i) => ({ ...t, i })),
       applyTemplate: e => { const tp = s.templates[Number(e.currentTarget.dataset.i)]; if (!tp) return; this.setState({ tasks: [{ id: 't' + (this.tid++), title: tp.title, proj: tp.proj, status: 'todo', est: tp.est, pomos: 0, assignee: 'Вы', prio: 'med', due: null }, ...s.tasks] }); this.toastMsg('Задача из шаблона создана'); },
       saveTemplate: () => { if (!s.newTitle.trim()) { this.toastMsg('Введите название задачи'); return; } this.setState({ templates: [...s.templates, { title: s.newTitle.trim(), proj: s.newProj, est: Number(s.newEstimate) || 0 }] }); this.toastMsg('Шаблон сохранён'); },
-      onbOpen: s.onbOpen, onbN: s.onbStep + 1,
-      onbTitle: ['Проекты и задачи', 'Трекер времени', 'Отчёты и таймшиты'][s.onbStep],
-      onbText: ['Создайте проект с цветом и ставьте задачи с оценкой, приоритетом и дедлайном. Админ назначает задачи коллегам.', 'Запускайте таймер по задаче или простым описанием (Enter). День виден на таймлайне — записи можно тянуть мышью, редактировать кликом или добавлять вручную.', 'Неделя — графиком или календарём, разбивка по проектам и суммы. В конце недели отправьте таймшит на проверку — админ утвердит или вернёт с комментарием.'][s.onbStep],
-      onbHasBack: s.onbStep > 0, onbNextLabel: s.onbStep === 2 ? 'Готово' : 'Далее',
-      onbNext: () => { if (s.onbStep < 2) this.setState({ onbStep: s.onbStep + 1 }); else { this.setState({ onbOpen: false }); this.toastMsg('Тур завершён — приятной работы!'); } },
-      onbBack: () => this.setState({ onbStep: Math.max(0, s.onbStep - 1) }),
+      onbOpen: s.onbOpen, onbN: Math.min(s.onbStep, tourN) + 1, onbTotal: tourN + 1,
+      onbLast: s.onbStep >= tourN,
+      onbDots: Array.from({ length: tourN + 1 }, (x, i) => ({ c: i <= s.onbStep ? 'var(--accent)' : 'var(--surface2)' })),
+      onbTitle: s.onbStep >= tourN ? 'Готово — хорошей работы!' : tsteps[s.onbStep].t,
+      onbText: s.onbStep >= tourN ? 'Вы прошли основные разделы. Начните с малого: запустите таймер на первую задачу — остальное Хронос соберёт сам.' : tsteps[s.onbStep].x,
+      onbHasBack: s.onbStep > 0, onbNextLabel: s.onbStep >= tourN ? 'Завершить' : 'Далее',
+      onbNext: () => { if (s.onbStep < tourN) { const nx = s.onbStep + 1; this.setState({ onbStep: nx, screen: nx < tourN ? tsteps[nx].s : s.screen }); } else { this.setState({ onbOpen: false }); this.toastMsg('Тур завершён — хорошей работы!'); } },
+      onbBack: () => { const nx = Math.max(0, s.onbStep - 1); this.setState({ onbStep: nx, screen: tsteps[Math.min(nx, tourN - 1)].s }); },
       onbSkip: () => this.setState({ onbOpen: false }),
-      startTour: () => this.setState({ onbOpen: true, onbStep: 0 }),
+      startTour: () => this.setState({ onbOpen: true, onbStep: 0, screen: tsteps[0].s }),
       openHelp: () => this.setState({ helpOpen: true }),
       showChecklist: !s.checklistDismissed && !isClient,
-      checklist: [{ label: 'Создан проект', done: s.projects.length > 0 }, { label: 'Создана задача', done: s.tasks.length > 0 }, { label: 'Запущен таймер', done: s.entries.length > 0 || !!active }].map(c => ({ label: c.label, mark: c.done ? '✓' : '○', c: c.done ? 'var(--green)' : 'var(--muted)' })),
+      ...(() => { const items = [
+        { label: 'Создана компания', done: true, adm: true },
+        { label: 'Создан проект', done: s.projects.length > 0 },
+        { label: 'Создана задача', done: s.tasks.length > 0 },
+        { label: 'Запущен таймер', done: s.entries.length > 0 || !!active },
+        { label: 'Приглашены сотрудники', done: s.invites.length > 0, adm: true },
+        { label: 'Отправлен таймшит', done: s.tsMyStatus !== 'draft' },
+      ].filter(c => !c.adm || isAdmin);
+      return { checklist: items.map(c => ({ label: c.label, mark: c.done ? '✓' : '○', c: c.done ? 'var(--green)' : 'var(--muted)' })), ckPct: Math.round(items.filter(c => c.done).length / items.length * 100) }; })(),
+      demoFill: () => { if (s.projects.find(p => p.id === 'pd')) { this.toastMsg('Демо-данные уже добавлены'); return; } this.setState({ projects: [...s.projects, { id: 'pd', name: 'Демо-проект', color: '#34d399', rate: 2000, budget: 10 }], tasks: [{ id: 'td1', title: 'Пример: настроить окружение', proj: 'pd', status: 'in_progress', est: 120, pomos: 0, assignee: 'Вы', prio: 'med', due: 2 }, { id: 'td2', title: 'Пример: первая фича', proj: 'pd', status: 'todo', est: 240, pomos: 0, assignee: 'Вы', prio: 'high', due: 5 }, ...s.tasks] }); this.toastMsg('Демо-данные добавлены — удалите их, когда освоитесь'); },
+      sessions: s.sessions.map((x, i) => ({ ...x, i, cur: i === 0, notCur: i > 0, dot: i === 0 ? 'var(--green)' : 'var(--border2)' })),
+      endSession: e => { const i = Number(e.currentTarget.dataset.i); this.setState({ sessions: s.sessions.filter((x, j) => j !== i) }); this.toastMsg('Сессия завершена'); },
+      endAllSessions: () => { this.setState({ sessions: s.sessions.slice(0, 1) }); this.toastMsg('Все другие сессии завершены'); },
+      doImport: e => this.toastMsg('Импорт из ' + e.currentTarget.dataset.n + ': проекты, задачи и записи перенесутся (демо)'),
+      hasSel: selN > 0, selN: String(selN),
+      noEntriesToday: todayEntries.length === 0 && !active,
+      noProjects: s.projects.filter(p => !p.archived).length === 0,
+      noWeekData: weekSec === 0,
+      membersCount: members.length + (members.length === 1 ? ' участник' : members.length < 5 ? ' участника' : ' участников'),
+      emptyTasksTitle: s.taskFilter === 'done' ? 'Пока нечего закрывать' : 'Задач нет',
+      emptyTasksText: s.taskFilter === 'done' ? 'Завершённые задачи появятся здесь — вместе с фактом против оценки.' : 'Задача — это то, на что вы включаете таймер. Название, проект, оценка — и можно стартовать прямо из списка.',
+      toggleSel: e => { const id = e.currentTarget.dataset.id; this.setState({ selTasks: { ...s.selTasks, [id]: !s.selTasks[id] } }); },
+      clearSel: () => this.setState({ selTasks: {} }),
+      bulkStatus: e => { const st = e.currentTarget.dataset.st; this.setState({ tasks: s.tasks.map(t => s.selTasks[t.id] ? { ...t, status: st } : t), selTasks: {} }); this.toastMsg('Обновлено задач: ' + selN); this.logA('массово изменили статус ' + selN + ' задач'); },
+      bulkDel: () => { this._lastDel = null; this.setState({ tasks: s.tasks.filter(t => !s.selTasks[t.id]), selTasks: {} }); this.toastMsg('Удалено задач: ' + selN); this.logA('массово удалили ' + selN + ' задач'); },
+      miEdit: s.milestones.map((m, i) => ({ ...miView(m), i, due: m.due, stL: m.st === 'done' ? 'готово' : m.st === 'cur' ? 'в работе' : 'план' })),
+      miCycle: e => { const i = Number(e.currentTarget.dataset.i); const ord = ['plan', 'cur', 'done']; this.setState({ milestones: s.milestones.map((m, j) => j === i ? { ...m, st: ord[(ord.indexOf(m.st) + 1) % 3] } : m) }); },
+      miDel: e => { const i = Number(e.currentTarget.dataset.i); this.setState({ milestones: s.milestones.filter((m, j) => j !== i) }); },
+      miAddT: s.miAddT, miAddD: s.miAddD,
+      miAdd: () => { if (!s.miAddT.trim()) { this.toastMsg('Введите название вехи'); return; } this.setState({ milestones: [...s.milestones, { t: s.miAddT.trim(), due: s.miAddD.trim() || 'без срока', st: 'plan' }], miAddT: '', miAddD: '' }); this.logA('добавили веху «' + s.miAddT.trim() + '»'); },
+      miles: s.milestones.map(miView),
+      clientQs: s.clientQs, cqText: s.cqText,
+      cqSend: () => { if (!s.cqText.trim()) return; this.setState({ clientQs: [...s.clientQs, { who: 'Вы', txt: s.cqText.trim(), time: 'только что' }], cqText: '' }); this.toastMsg('Вопрос отправлен менеджеру проекта'); },
+      mainNav: s.screen !== 'settings',
+      inSettingsNav: s.screen === 'settings',
+      setTabs: [['account', 'Аккаунт'], ['company', 'Компания'], ['notify', 'Уведомления'], ['tracking', 'Трекинг и отчёты'], ['data', 'Данные и интеграции']].filter(([k]) => (!isClient || k === 'account' || k === 'notify') && (k !== 'company' || isAdmin)).map(([k, label]) => ({ k, label, bg: s.settingsTab === k ? 'var(--asoft)' : 'transparent', c: s.settingsTab === k ? 'var(--accent)' : 'var(--muted)' })),
+      pickSetTab: e => this.setState({ settingsTab: e.currentTarget.dataset.t, sidebarOpen: false }),
+      backToCabinet: () => this.setState({ screen: isClient ? 'reports' : 'tracker', sidebarOpen: false }),
+      setTab: { account: s.settingsTab === 'account', company: s.settingsTab === 'company' && isAdmin, notify: s.settingsTab === 'notify', tracking: s.settingsTab === 'tracking' && !isClient, data: s.settingsTab === 'data' && !isClient },
+      avatarImg: this.avaEl(26), avatarImgLg: this.avaEl(52), hasAva: !!s.avatar, noAva: !s.avatar,
+      onAvatar: e => { const f = e.currentTarget.files && e.currentTarget.files[0]; if (!f) return; const r = new FileReader(); r.onload = () => { this.setState({ avatar: r.result }); this.toastMsg('Фото профиля обновлено'); }; r.readAsDataURL(f); },
+      delAvatar: () => this.setState({ avatar: null }),
+      notifRows: [
+        { k: 'assign', label: 'Назначили задачу' },
+        { k: 'adminEdit', label: 'Админ изменил мою запись' },
+        { k: 'ts', label: 'Статус таймшита' },
+        { k: 'standup', label: 'Напоминание о стендапе' },
+        { k: 'digest', label: 'Дайджест недели' },
+      ].filter(x => !isClient || x.k === 'digest' || x.k === 'ts').map(x => ({ ...x, email: s.notifP[x.k].email, push: s.notifP[x.k].push, app: s.notifP[x.k].app })),
+      toggleChan: e => { const k = e.currentTarget.dataset.k, c = e.currentTarget.dataset.c; const cur = s.notifP[k]; if (c === 'push' && !cur.push && s.pushPerm !== 'granted') { this.toastMsg('Сначала разрешите пуши кнопкой выше'); return; } this.setState({ notifP: { ...s.notifP, [k]: { ...cur, [c]: !cur[c] } } }); },
+      pushState: s.pushPerm === 'granted' ? 'Разрешены' : s.pushPerm === 'denied' ? 'Заблокированы' : 'Не запрошены',
+      pushBg: s.pushPerm === 'granted' ? 'var(--gsoft)' : s.pushPerm === 'denied' ? 'var(--rsoft)' : 'var(--surface)',
+      pushC: s.pushPerm === 'granted' ? 'var(--green)' : s.pushPerm === 'denied' ? 'var(--red)' : 'var(--muted)',
+      pushAskable: s.pushPerm !== 'granted',
+      pushHint: s.pushPerm === 'granted' ? 'Браузер разрешил уведомления — колонку «Пуш» можно включать' : s.pushPerm === 'denied' ? 'Браузер заблокировал уведомления — включите их в настройках сайта' : 'Браузер спросит разрешение один раз; без него колонка «Пуш» не работает',
+      askPush: () => { if (!window.Notification) { this.toastMsg('Браузер не поддерживает уведомления'); return; } Notification.requestPermission().then(p => { this.setState({ pushPerm: p }); this.toastMsg(p === 'granted' ? 'Пуши разрешены' : 'Разрешение не выдано — пуши недоступны'); }); },
+      profileOpen: !!s.profileN,
+      openMember: e => this.setState({ profileN: e.currentTarget.dataset.n }),
+      closeProfile: () => this.setState({ profileN: null }),
+      pf: (() => {
+        const n = s.profileN; if (!n) return {};
+        const m = members.find(x => x.n === n) || {};
+        const short = n.split(' ')[0] === 'Юнус' ? 'Вы' : n.split(' ')[0];
+        const open = s.tasks.filter(t => (t.assignee || 'Вы') === short && t.status !== 'done');
+        const vac = s.absences[n];
+        return { n, ini: m.ini || '·', avaImg: m.me ? this.avaEl(46) : null, noAva: !(m.me && s.avatar), role: m.role || '', dept: s.memberDepts[n] || '—',
+          st: vac ? (vac.kind === 'Больничный' ? 'Больничный до ' : 'Отпуск до ') + this.fmtVac(vac) : (m.st || ''), stBg: vac ? 'var(--ysoft)' : m.on ? 'var(--gsoft)' : 'var(--surface2)', stC: vac ? 'var(--amber)' : m.on ? 'var(--green)' : 'var(--muted)',
+          today: m.today || '—', week: m.week || '—', openN: String(open.length), hasTasks: open.length > 0,
+          tasks: open.slice(0, 4).map(t => ({ t: t.title, c: this.projOf(t).color, h: this.fmtHM((t.est || 0) * 60) })),
+          payKind: s.payKinds[n] || 'hourly',
+          payLabel: (s.payKinds[n] || 'hourly') === 'hourly' ? 'Ставка, ' + this.curInfo().s + '/ч' : 'Оклад в месяц, ' + this.curInfo().s,
+          payVal: (s.payKinds[n] || 'hourly') === 'hourly' ? (s.memberRates[n] || 0) : (s.memberRates[n] || 0) * 160,
+          payHint: (s.payKinds[n] || 'hourly') === 'hourly' ? 'Идёт в счета клиентам вместо ставки проекта' : 'Для отчётов пересчитывается в часовую по норме ' + (s.dayNorm || 8) * 20 + 'ч/мес',
+          onVac: !!vac, notVac: !vac };
+      })(),
+      vacFormOpen: s.vacFormOpen, vacFrom: s.vacFrom, vacTo: s.vacTo,
+      vacSeg: { v: seg(s.vacKind === 'Отпуск'), s: seg(s.vacKind === 'Больничный') },
+      setVacKind: e => this.setState({ vacKind: e.currentTarget.dataset.k }),
+      vacHint: (() => { if (!s.vacFrom || !s.vacTo) return 'Выберите даты — сотрудник не попадёт в «недобор» за эти дни'; const d1 = new Date(s.vacFrom), d2 = new Date(s.vacTo); const n = Math.round((d2 - d1) / 864e5) + 1; return n > 0 ? 'Дней: ' + n + ' · рабочая норма на этот период не начисляется' : 'Дата «по» должна быть не раньше даты «с»'; })(),
+      paySeg: { h: seg((s.payKinds[s.profileN] || 'hourly') === 'hourly'), s: seg(s.payKinds[s.profileN] === 'salary') },
+      setPayKind: e => { const k = e.currentTarget.dataset.k; this.setState({ payKinds: { ...s.payKinds, [s.profileN]: k } }); },
+      onPayVal: e => { const v = Math.max(0, Number(e.currentTarget.value) || 0); const kind = s.payKinds[s.profileN] || 'hourly'; const perHour = kind === 'hourly' ? v : Math.round(v / ((s.dayNorm || 8) * 20)); this.setState({ memberRates: { ...s.memberRates, [s.profileN]: perHour } }); },
+      pfVacOpen: () => { const t = new Date(), iso = d => d.toISOString().slice(0, 10); this.setState({ vacFormOpen: true, vacFrom: iso(t), vacTo: iso(new Date(t.getTime() + 6 * 864e5)), vacKind: 'Отпуск' }); },
+      pfVacCancel: () => this.setState({ vacFormOpen: false }),
+      pfVacSave: () => { if (!s.vacFrom || !s.vacTo || new Date(s.vacTo) < new Date(s.vacFrom)) { this.toastMsg('Проверьте даты отсутствия'); return; } const n = s.profileN; const rec = { from: s.vacFrom, to: s.vacTo, kind: s.vacKind }; const a = { ...s.absences, [n]: rec, [n.split(' ')[0]]: rec }; this.setState({ absences: a, vacFormOpen: false }); this.toastMsg(s.vacKind + ' до ' + this.fmtVac(rec) + ' отмечен'); this.logA('отметили ' + s.vacKind.toLowerCase() + ' — ' + n + ' до ' + this.fmtVac(rec)); },
+      pfVacEnd: () => { const n = s.profileN; const a = { ...s.absences }; delete a[n]; delete a[n.split(' ')[0]]; this.setState({ absences: a }); this.toastMsg('Отсутствие отменено'); },
       dismissChecklist: () => this.setState({ checklistDismissed: true }),
       offline: s.offline,
       isNarrow: s.isNarrow, narrowBackdrop: s.isNarrow && s.sidebarOpen,
@@ -1795,6 +2519,52 @@ class Component extends DCLogic {
       suGreet: s.suGreet, suMiscText: s.suMiscText, suSign: s.suSign,
       suAuto: s.suAuto, toggleSuAuto: () => { this.setState({ suAuto: !s.suAuto }); this.toastMsg(!s.suAuto ? 'Авто-отправка в 10:00 включена (демо)' : 'Авто-отправка выключена'); },
       tsSummary: s.tsSummary, hasTsSummary: !!s.tsSummary && s.tsMyStatus !== 'draft',
+      isListView: s.taskView === 'list', isKanban: s.taskView === 'kanban',
+      tvSeg: { l: seg(s.taskView === 'list'), k: seg(s.taskView === 'kanban') },
+      setTaskView: e => this.setState({ taskView: e.currentTarget.dataset.v }),
+      kanbanCols,
+      moveTask: e => { const id = e.currentTarget.dataset.id, d = Number(e.currentTarget.dataset.d); const ord = ['todo', 'in_progress', 'done']; this.setState({ tasks: s.tasks.map(t => t.id === id ? { ...t, status: ord[Math.max(0, Math.min(2, ord.indexOf(t.status) + d))] } : t) }); },
+      splitEntry: e => { const id = e.currentTarget.dataset.id; const en = s.entries.find(x => x.id === id); if (!en) return; const mid = Math.round((en.start + en.end) / 2 / 60000) * 60000; if (mid - en.start < 300000 || en.end - mid < 300000) { this.toastMsg('Запись слишком короткая для разрезания'); return; } this.setState({ entries: s.entries.flatMap(x => x.id === id ? [{ ...x, end: mid }, { ...x, id: x.id + '_b', start: mid }] : [x]), editEntryId: null }); this.toastMsg('Запись разрезана на две — поправьте границы'); },
+      wkLoad,
+      onMemberRate: e => { const n = e.currentTarget.dataset.n, v = Math.max(0, Number(e.currentTarget.value) || 0); this.setState({ memberRates: { ...s.memberRates, [n]: v } }); },
+      roundSeg: { p: seg(!s.roundMin), f: seg(s.roundMin === 15), t: seg(s.roundMin === 30) },
+      setRound: e => this.setState({ roundMin: Number(e.currentTarget.dataset.r) }),
+      dayNorm: s.dayNorm, onDayNorm: e => this.setState({ dayNorm: Math.max(1, Math.min(12, Number(e.currentTarget.value) || 8)) }),
+      apiKey: s.apiKey, webhookUrl: s.webhookUrl,
+      copyApiKey: () => { if (navigator.clipboard) navigator.clipboard.writeText(s.apiKey); this.toastMsg('API-ключ скопирован'); },
+      regenApiKey: () => { this.setState({ apiKey: 'chr_live_' + Math.random().toString(36).slice(2, 18) }); this.toastMsg('Ключ перевыпущен — старый отозван'); },
+      exportData: () => this.toastMsg('Архив всех данных формируется — придёт на почту (демо)'),
+      deleteAcc: () => this.toastMsg('Запрос на удаление аккаунта создан — подтвердите по почте (демо)'),
+      wsLogoImg: this.logoEl(20, 5), wsLogoImgLg: this.logoEl(52, 12), wsHasLogo: !!s.wsLogo, wsNoLogo: !s.wsLogo,
+      onWsLogo: e => { const f = e.currentTarget.files && e.currentTarget.files[0]; if (!f) return; const r = new FileReader(); r.onload = () => { this.setState({ wsLogo: r.result }); this.toastMsg('Логотип компании обновлён'); }; r.readAsDataURL(f); },
+      delWsLogo: () => this.setState({ wsLogo: null }),
+      onWsName: e => { const v = e.currentTarget.value; this.setState({ workspaces: s.workspaces.map((w, i) => i === s.wsIdx ? { ...w, name: v } : w) }); },
+      wsColors: ['#6366f1', '#0ea5e9', '#10b981', '#f59e0b', '#ec4899'].map(c => ({ c, bd: s.workspaces[s.wsIdx].color === c ? 'var(--text)' : 'transparent' })),
+      setWsColor: e => { const c = e.currentTarget.dataset.c; this.setState({ workspaces: s.workspaces.map((w, i) => i === s.wsIdx ? { ...w, color: c } : w) }); },
+      wsName: s.workspaces[s.wsIdx].name, wsColor: s.workspaces[s.wsIdx].color,
+      wsIni: s.workspaces[s.wsIdx].name.split(' ').map(x => x[0]).join('').slice(0, 2).toUpperCase(),
+      wsMenuOpen: s.wsMenuOpen,
+      toggleWsMenu: e => { e.stopPropagation(); this.setState({ wsMenuOpen: !s.wsMenuOpen }); },
+      wsRows: s.workspaces.map((w, i) => ({ i, name: w.name, color: w.color, role: w.role, ini: w.name.split(' ').map(x => x[0]).join('').slice(0, 2).toUpperCase(), bg: i === s.wsIdx ? 'var(--surface2)' : 'transparent' })),
+      pickWs: e => { const i = Number(e.currentTarget.dataset.i); this.setState({ wsIdx: i, wsMenuOpen: false }); this.toastMsg('Компания: ' + s.workspaces[i].name + ' (демо — данные общие в прототипе)'); },
+      openNewWs: () => this.setState({ newWsOpen: true, nwStep: 0, nwName: '', nwDepts: '', nwInvites: '', wsMenuOpen: false }),
+      closeNewWs: () => this.setState({ newWsOpen: false }),
+      newWsOpen: s.newWsOpen, nwN: s.nwStep + 1,
+      nw1: s.nwStep === 0, nw2: s.nwStep === 1, nw3: s.nwStep === 2,
+      nwName: s.nwName, nwDepts: s.nwDepts, nwInvites: s.nwInvites,
+      nwHasBack: s.nwStep > 0, nwNextLabel: s.nwStep === 2 ? 'Создать компанию' : 'Далее',
+      nwBack: () => this.setState({ nwStep: Math.max(0, s.nwStep - 1) }),
+      nwNext: () => {
+        if (s.nwStep === 0) { if (!s.nwName.trim()) { this.toastMsg('Введите название компании'); return; } this.setState({ nwStep: 1 }); return; }
+        if (s.nwStep === 1) { this.setState({ nwStep: 2 }); return; }
+        const colors = ['#10b981', '#f59e0b', '#ec4899', '#8b5cf6'];
+        const ws = { name: s.nwName.trim(), color: colors[s.workspaces.length % colors.length], role: 'Владелец', depts: s.nwDepts.split(',').map(x => x.trim()).filter(Boolean) };
+        const invN = s.nwInvites.split(',').map(x => x.trim()).filter(x => x.includes('@')).length;
+        this.setState({ workspaces: [...s.workspaces, ws], wsIdx: s.workspaces.length, newWsOpen: false });
+        this.toastMsg('Компания «' + ws.name + '» создана' + (invN ? ', приглашений: ' + invN : '') + ' (демо)');
+      },
+      deptChips: ['Все отделы', ...(s.workspaces[s.wsIdx].depts || [])].map(n => ({ n, bd: n === s.deptFilter ? 'var(--accent)' : 'var(--border)', bg: n === s.deptFilter ? 'var(--asoft)' : 'var(--surface)', c: n === s.deptFilter ? 'var(--accent)' : 'var(--text)' })),
+      pickDept: e => this.setState({ deptFilter: e.currentTarget.dataset.n }),
     };
   }
 }

@@ -7,6 +7,7 @@ import { ThemeProvider } from '@/context/ThemeContext';
 import { ToastProvider } from '@/context/ToastContext';
 import { SettingsProvider } from '@/context/SettingsContext';
 import { WorkspaceProvider } from '@/context/WorkspaceContext';
+import { NotificationsProvider } from '@/context/NotificationsContext';
 import { TimerProvider } from '@/context/TimerContext';
 import { PomodoroProvider } from '@/context/PomodoroContext';
 import { Sidebar } from '@/components/Sidebar';
@@ -48,6 +49,7 @@ export default function DashboardLayout({
       <ToastProvider>
         <SettingsProvider>
           <WorkspaceProvider>
+          <NotificationsProvider>
           <TimerProvider>
             <PomodoroProvider>
               <div className="shell">
@@ -71,6 +73,7 @@ export default function DashboardLayout({
               </div>
             </PomodoroProvider>
           </TimerProvider>
+          </NotificationsProvider>
           </WorkspaceProvider>
         </SettingsProvider>
       </ToastProvider>

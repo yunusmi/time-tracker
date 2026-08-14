@@ -3,10 +3,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { api, ApiError } from '@/lib/api';
 import { formatHM, formatTime, isoDaysAgo, todayIso } from '@/lib/format';
-import { formatMoney } from '@/lib/money';
 import { entryProjectColor, NO_PROJECT_COLOR } from '@/lib/project';
 import { entryTitle } from '@/components/Header';
 import { openGenerator } from '@/components/ReportGenerator';
+import { ClientDashboard } from '@/components/ClientDashboard';
+import { useConfirm } from '@/components/ConfirmDialog';
 import type {
   DaySummary,
   InvoicePreview,
@@ -27,127 +28,12 @@ const STREAK_WINDOW_DAYS = 60;
 type RepView = 'chart' | 'cal';
 type ExpPeriod = 'day' | 'week' | 'month';
 
-/** Упрощённый отчёт по проекту для роли «Клиент» (read-only, без денег). */
-function ClientReport() {
-  const [report, setReport] = useState<PublicReportType | null>(null);
-  const [error, setError] = useState('');
-
-  useEffect(() => {
-    api
-      .myProjectReport()
-      .then(setReport)
-      .catch((err) =>
-        setError(err instanceof ApiError ? err.message : 'Не удалось загрузить отчёт'),
-      );
-  }, []);
-
-  if (error) return <p className="error">{error}</p>;
-  if (!report) return <p className="muted">Загрузка отчёта…</p>;
-
-  const maxDay = Math.max(...report.days.map((d) => d.seconds), 1);
-  const dayNames = ['вс', 'пн', 'вт', 'ср', 'чт', 'пт', 'сб'];
-
-  return (
-    <div style={{ maxWidth: 720 }}>
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 8,
-          marginBottom: 14,
-          fontSize: '12.5px',
-          color: 'var(--muted)',
-        }}
-      >
-        Отчёт по вашему проекту:
-        <span
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 6,
-            color: 'var(--text)',
-            fontWeight: 600,
-          }}
-        >
-          {report.project_color && (
-            <span className="pdot" style={{ background: report.project_color }} />
-          )}
-          {report.project_name}
-        </span>
-        <span className="mono" style={{ fontSize: 12 }}>
-          · {report.period.from} — {report.period.to}
-        </span>
-      </div>
-
-      <div className="card" style={{ borderRadius: 10, padding: '13px 16px', marginBottom: 14 }}>
-        <div className="stat-title">Итого за неделю</div>
-        <div className="mono" style={{ fontSize: 21, fontWeight: 600, margin: '3px 0' }}>
-          {formatHM(report.total_seconds)}
-        </div>
-      </div>
-
-      <div className="card card-pad" style={{ marginBottom: 14 }}>
-        <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 14 }}>По дням</div>
-        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10, height: 120 }}>
-          {report.days.map((d) => (
-            <div
-              key={d.date}
-              style={{
-                flex: 1,
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: 6,
-                height: '100%',
-                justifyContent: 'flex-end',
-              }}
-            >
-              <span className="mono" style={{ fontSize: '10.5px', color: 'var(--muted)' }}>
-                {d.seconds ? formatHM(d.seconds) : ''}
-              </span>
-              <div
-                style={{
-                  width: '100%',
-                  borderRadius: '6px 6px 3px 3px',
-                  background: 'var(--asoft)',
-                  height: Math.round((d.seconds / maxDay) * 80),
-                  minHeight: 3,
-                }}
-              />
-              <span style={{ fontSize: 11, color: 'var(--muted)' }}>
-                {dayNames[new Date(`${d.date}T00:00:00`).getDay()]}
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {report.tasks.length > 0 && (
-        <div className="card card-pad">
-          <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 12 }}>Задачи</div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {report.tasks.map((t, i) => (
-              <div key={i} style={{ display: 'flex', gap: 10, fontSize: '12.5px' }}>
-                <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {t.title}
-                </span>
-                <span className="mono" style={{ color: 'var(--muted)' }}>
-                  {formatHM(t.seconds)}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
 export default function ReportsPage() {
   const { settings } = useSettings();
   const { version } = useTimer();
   const { toast } = useToast();
-  const { isAdmin, isClient, members } = useWorkspace();
+  const { isAdmin, isClient, members, money: formatMoney } = useWorkspace();
+  const { confirm, dialog } = useConfirm();
   const { user } = useAuth();
 
   const [summary, setSummary] = useState<DaySummary[]>([]);
@@ -155,6 +41,7 @@ export default function ReportsPage() {
   const [selDay, setSelDay] = useState(0); // смещение дней назад
   const [selEntries, setSelEntries] = useState<TimeEntry[]>([]);
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(true);
 
   // Селектор участника (admin) — чей отчёт смотрим.
   const [repUserId, setRepUserId] = useState('');
@@ -186,8 +73,10 @@ export default function ReportsPage() {
       setSummary(s);
       setProjects(p);
       setError('');
+      setLoading(false);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Не удалось загрузить отчёты');
+      setLoading(false);
     }
   }, [targetUserId]);
 
@@ -399,6 +288,16 @@ export default function ReportsPage() {
     patch: Partial<{ active: boolean; hide_money: boolean; hide_names: boolean }>,
   ) {
     if (!share) return;
+    // Отзыв публичной ссылки — опасное действие, спрашиваем подтверждение (ТЗ).
+    if (patch.active === false) {
+      const ok = await confirm({
+        title: 'Отозвать публичную ссылку?',
+        description:
+          'Клиент, у которого есть ссылка, потеряет доступ к отчёту. Ссылку можно включить обратно.',
+        confirmLabel: 'Отозвать',
+      });
+      if (!ok) return;
+    }
     try {
       setShare(await api.updateReportShare(share.id, patch));
     } catch {
@@ -431,11 +330,22 @@ export default function ReportsPage() {
 
   // Клиент видит только отчёт своего проекта (read-only, без денег).
   if (isClient) {
-    return <ClientReport />;
+    return <ClientDashboard />;
   }
+
+  if (loading) {
+    return (
+      <div className="grid-reports" style={{ display: 'grid', gap: 14 }}>
+        <div className="sk" style={{ height: 280, borderRadius: 12 }} />
+        <div className="sk" style={{ height: 280, borderRadius: 12 }} />
+      </div>
+    );
+  }
+
 
   return (
     <div>
+      {dialog}
       {error && <p className="error">{error}</p>}
 
       {/* Селектор участника (admin) */}

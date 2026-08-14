@@ -130,6 +130,19 @@ class UpdateShareDto {
   hide_names?: boolean;
 }
 
+class CreateCommentDto {
+  @ApiProperty({ example: 'Почему в среду меньше часов?' })
+  @IsString()
+  @MinLength(1)
+  @MaxLength(2000)
+  body: string;
+
+  @ApiProperty({ required: false, nullable: true, format: 'uuid' })
+  @IsOptional()
+  @IsUUID()
+  project_id?: string | null;
+}
+
 @ApiTags('reports')
 @Controller()
 export class ReportsController {
@@ -217,6 +230,39 @@ export class ReportsController {
   })
   myProjectReport(@CurrentUser('id') userId: string) {
     return this.reportsService.myProjectReport(userId);
+  }
+
+  @Get('reports/client-dashboard')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Клиентский дашборд: бюджет этапа, вехи проекта, лента недели',
+  })
+  clientDashboard(@CurrentUser('id') userId: string) {
+    return this.reportsService.clientDashboard(userId);
+  }
+
+  @Get('report-comments')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Вопросы по отчёту: тред клиент ↔ менеджер' })
+  @ApiQuery({ name: 'project_id', required: false })
+  listComments(
+    @CurrentUser('id') userId: string,
+    @Query('project_id') projectId?: string,
+  ) {
+    return this.reportsService.listComments(userId, projectId);
+  }
+
+  @Post('report-comments')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Написать в тред по отчёту' })
+  addComment(
+    @CurrentUser('id') userId: string,
+    @Body() dto: CreateCommentDto,
+  ) {
+    return this.reportsService.addComment(userId, dto.body, dto.project_id);
   }
 
   @Get('public/reports/:token')

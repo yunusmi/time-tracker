@@ -78,6 +78,15 @@ export class Project extends Model {
   @Column({ field: 'updated_at' })
   updated_at: Date;
 
+  @ApiProperty({
+    required: false,
+    nullable: true,
+    format: 'uuid',
+    description: 'Компания (workspace) — изоляция данных мультитенантности',
+  })
+  @Column({ type: DataType.UUID, allowNull: true, field: 'workspace_id' })
+  workspace_id: string | null;
+
   @ApiProperty({ format: 'uuid' })
   @ForeignKey(() => User)
   @Column({ type: DataType.UUID, allowNull: false, field: 'user_id' })

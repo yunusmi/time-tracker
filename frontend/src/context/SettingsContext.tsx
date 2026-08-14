@@ -8,6 +8,7 @@ import {
   useState,
 } from 'react';
 import { api } from '@/lib/api';
+import type { NotificationPrefs } from '@/lib/types';
 
 /**
  * Пользовательские настройки (цель дня, порог простоя, напоминания).
@@ -25,6 +26,8 @@ export interface UserSettings {
   standup_signature: string;
   standup_auto_send: boolean;
   monthly_hours_limit: number;
+  /** Матрица каналов уведомлений {событие: {email,push,app}}. */
+  notification_prefs: NotificationPrefs;
 }
 
 const DEFAULTS: UserSettings = {
@@ -38,6 +41,7 @@ const DEFAULTS: UserSettings = {
   standup_signature: '',
   standup_auto_send: false,
   monthly_hours_limit: 80,
+  notification_prefs: {},
 };
 
 const SETTINGS_KEY = 'tt_settings';
@@ -84,6 +88,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
           standup_auto_send: server.standup_auto_send ?? false,
           monthly_hours_limit:
             server.monthly_hours_limit ?? DEFAULTS.monthly_hours_limit,
+          notification_prefs: server.notification_prefs ?? {},
         };
         setSettings(next);
         persistLocal(next);

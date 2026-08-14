@@ -13,6 +13,7 @@ import { projectName } from '@/lib/project';
 import type { TaskWithStats, TimeEntry } from '@/lib/types';
 import { openGenerator } from '@/components/ReportGenerator';
 import { useTheme } from '@/context/ThemeContext';
+import { useWorkspace } from '@/context/WorkspaceContext';
 import { useTimer } from '@/context/TimerContext';
 import { useToast } from '@/context/ToastContext';
 
@@ -21,10 +22,19 @@ const SCREENS: [string, string][] = [
   ['Задачи', '/dashboard/tasks'],
   ['Проекты', '/dashboard/projects'],
   ['Отчёты', '/dashboard/reports'],
+  ['Уведомления', '/dashboard/notifications'],
   ['Таймшиты', '/dashboard/timesheets'],
   ['Pomodoro', '/dashboard/pomodoro'],
   ['Команда', '/dashboard/team'],
-  ['Настройки', '/dashboard/settings'],
+];
+
+/** Разделы настроек — ⌘K ищет и по ним (ТЗ «⌘K ищет всё»). */
+const SETTINGS_SECTIONS: [string, string][] = [
+  ['Настройки · Аккаунт', '/dashboard/settings?section=account'],
+  ['Настройки · Уведомления', '/dashboard/settings?section=notifications'],
+  ['Настройки · Трекинг и отчёты', '/dashboard/settings?section=tracking'],
+  ['Настройки · Данные и интеграции', '/dashboard/settings?section=data'],
+  ['База знаний', '/dashboard/help'],
 ];
 
 const HOTKEYS: { k: string; d: string }[] = [
@@ -50,6 +60,8 @@ export function GlobalOverlays() {
   const router = useRouter();
   const pathname = usePathname();
   const { toggleTheme } = useTheme();
+  const { members, isAdmin } = useWorkspace();
+  const [projects, setProjects] = useState<{ id: string; name: string }[]>([]);
   const { active, start, stop, setFocusMode } = useTimer();
   const { toast } = useToast();
 
@@ -73,6 +85,11 @@ export function GlobalOverlays() {
     api
       .listEntries()
       .then((e) => setHistory(e.filter((x) => x.ended_at).slice(0, 200)))
+      .catch(() => undefined);
+    // Проекты — для поиска по палитре.
+    api
+      .listProjects()
+      .then((p) => setProjects(p.map((x) => ({ id: x.id, name: x.name }))))
       .catch(() => undefined);
     setTimeout(() => inputRef.current?.focus(), 60);
   }, []);
@@ -231,6 +248,47 @@ export function GlobalOverlays() {
         },
       });
     }
+    // Люди: открывают «Команду» (профиль сотрудника — по клику там).
+    for (const m of members
+      .filter((m) => q && m.name.toLowerCase().includes(q))
+      .slice(0, 3)) {
+      out.push({
+        icon: '☺',
+        label: `Профиль: ${m.name}`,
+        hint: isAdmin ? 'Команда' : '',
+        act: () => {
+          close();
+          router.push('/dashboard/team');
+        },
+      });
+    }
+    // Проекты.
+    for (const p of projects
+      .filter((p) => q && p.name.toLowerCase().includes(q))
+      .slice(0, 3)) {
+      out.push({
+        icon: '◫',
+        label: `Проект: ${p.name}`,
+        hint: '',
+        act: () => {
+          close();
+          router.push('/dashboard/projects');
+        },
+      });
+    }
+    SETTINGS_SECTIONS.forEach(([name, href]) => {
+      if (q && name.toLowerCase().includes(q)) {
+        out.push({
+          icon: '⚙',
+          label: name,
+          hint: '',
+          act: () => {
+            close();
+            router.push(href);
+          },
+        });
+      }
+    });
     SCREENS.forEach(([name, href], i) => {
       if (!q || name.toLowerCase().includes(q)) {
         out.push({
@@ -267,7 +325,19 @@ export function GlobalOverlays() {
       });
     }
     return out;
-  }, [paletteOpen, query, tasks, history, start, router, toast, toggleTheme]);
+  }, [
+    paletteOpen,
+    query,
+    tasks,
+    history,
+    members,
+    projects,
+    isAdmin,
+    start,
+    router,
+    toast,
+    toggleTheme,
+  ]);
 
   const sel = Math.min(selected, Math.max(0, items.length - 1));
 

@@ -10,6 +10,16 @@ export interface AuthUser {
   name: string;
   email_verified_at?: string | null;
   totp_enabled?: boolean;
+  avatar_url?: string | null;
+}
+
+export interface SessionView {
+  id: string;
+  device: string;
+  ip: string | null;
+  last_seen: string;
+  created_at: string;
+  current: boolean;
 }
 
 export interface AuthResponse {
@@ -102,22 +112,131 @@ export interface PomodoroSettings {
 
 export type WorkspaceRole = 'owner' | 'admin' | 'pm' | 'member' | 'client';
 
+export type Currency = 'RUB' | 'USD' | 'EUR' | 'KZT' | 'UZS';
+
+export type PayKind = 'hourly' | 'salary';
+
+export type AbsenceKind = 'vacation' | 'sick';
+
+export interface Workspace {
+  id: string;
+  name: string;
+  currency: Currency;
+  brand_color: string;
+  logo_url: string | null;
+  day_norm_hours: number;
+  rounding_minutes: number;
+  owner_id: string;
+}
+
+export interface WorkspaceListItem {
+  id: string;
+  name: string;
+  brand_color: string;
+  logo_url: string | null;
+  role: WorkspaceRole;
+  active: boolean;
+}
+
 export interface WorkspaceMe {
   workspace_id: string;
   workspace_name: string;
   role: WorkspaceRole;
   project_id: string | null;
+  currency: Currency;
+  brand_color: string;
+  logo_url: string | null;
+  day_norm_hours: number;
+  rounding_minutes: number;
 }
 
 export interface WorkspaceMemberView {
   user_id: string;
   name: string;
   email: string;
+  avatar_url: string | null;
   role: WorkspaceRole;
+  department_id: string | null;
+  department_name: string | null;
   active_task_title: string | null;
   dnd: boolean;
+  absence_kind: AbsenceKind | null;
+  absence_until: string | null;
+  pay_kind: PayKind | null;
+  pay_rate: number | null;
+  hourly_rate: number | null;
   today_seconds: number;
   week_seconds: number;
+}
+
+export interface Department {
+  id: string;
+  workspace_id: string;
+  name: string;
+}
+
+export interface Absence {
+  id: string;
+  user_id: string;
+  date_from: string;
+  date_to: string;
+  kind: AbsenceKind;
+}
+
+export interface MemberSummary {
+  user_id: string;
+  name: string;
+  email: string;
+  avatar_url: string | null;
+  role: WorkspaceRole;
+  department_id: string | null;
+  department_name: string | null;
+  pay_kind: PayKind;
+  pay_rate: number;
+  hourly_rate: number;
+  today_seconds: number;
+  week_seconds: number;
+  open_tasks: {
+    id: string;
+    title: string;
+    due_date: string | null;
+    priority: TaskPriority;
+  }[];
+  absence: { kind: AbsenceKind; date_from: string; date_to: string } | null;
+  absences: Absence[];
+}
+
+export type MilestoneStatus = 'plan' | 'in_progress' | 'done';
+
+export interface Milestone {
+  id: string;
+  project_id: string;
+  title: string;
+  due_date: string | null;
+  status: MilestoneStatus;
+}
+
+export interface ClientDashboard {
+  project_id: string;
+  project_name: string;
+  project_color: string;
+  budget: {
+    budget_hours: number;
+    used_hours: number;
+    week_hours: number;
+    forecast_date: string | null;
+  };
+  milestones: Milestone[];
+  feed: { id: string; action: string; created_at: string }[];
+}
+
+export interface ReportCommentView {
+  id: string;
+  project_id: string;
+  author_id: string;
+  author_name: string;
+  body: string;
+  created_at: string;
 }
 
 export interface WorkspaceInvite {
@@ -130,13 +249,37 @@ export interface WorkspaceInvite {
   created_at: string;
 }
 
+export type NotificationKind =
+  | 'task'
+  | 'timesheet'
+  | 'standup'
+  | 'digest'
+  | 'system';
+
 export interface AppNotification {
   id: string;
   text: string;
   dot: 'accent' | 'green' | 'red' | 'amber';
+  kind: NotificationKind;
+  action_screen: string | null;
+  channels: string[];
   read: boolean;
   created_at: string;
 }
+
+/** События матрицы «Настройки → Уведомления». */
+export type NotificationEvent =
+  | 'task_assigned'
+  | 'admin_edits'
+  | 'timesheet_status'
+  | 'standup_reminder'
+  | 'weekly_digest';
+
+export type NotificationChannel = 'email' | 'push' | 'app';
+
+export type NotificationPrefs = Partial<
+  Record<NotificationEvent, Partial<Record<NotificationChannel, boolean>>>
+>;
 
 export interface AuditRow {
   id: string;
@@ -174,10 +317,16 @@ export interface ReportShare {
 export interface PublicReport {
   project_name: string;
   project_color: string | null;
+  currency: Currency;
+  workspace_name: string;
+  brand_color: string;
+  logo_url: string | null;
   period: { from: string; to: string };
   days: { date: string; seconds: number }[];
-  tasks: { title: string; seconds: number }[];
+  tasks: { title: string; seconds: number; status: TaskStatus }[];
   members: { name: string; seconds: number }[];
+  tasks_in_progress: number;
+  tasks_done: number;
   total_seconds: number;
   money: number | null;
 }
@@ -215,6 +364,7 @@ export interface UserSettingsResponse {
   standup_signature: string;
   standup_auto_send: boolean;
   monthly_hours_limit: number;
+  notification_prefs: NotificationPrefs;
   updated_at: string;
   user_id: string;
 }

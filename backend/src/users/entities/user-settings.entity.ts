@@ -124,6 +124,22 @@ export class UserSettings extends Model {
   })
   standup_auto_send: boolean;
 
+  @ApiProperty({
+    description:
+      'Матрица уведомлений {event: {email,push,app}}; отсутствие ключа = дефолт',
+    example: { task_assigned: { email: true, push: false, app: true } },
+  })
+  @Default({})
+  @Column({
+    type: DataType.JSONB,
+    allowNull: false,
+    field: 'notification_prefs',
+  })
+  notification_prefs: Record<
+    string,
+    Partial<Record<'email' | 'push' | 'app', boolean>>
+  >;
+
   @ApiProperty({ description: 'Лимит часов в месяц', example: 80 })
   @Default(80)
   @Column({

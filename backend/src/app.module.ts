@@ -1,7 +1,9 @@
 import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 import { SequelizeModule } from '@nestjs/sequelize';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import configuration from './config/configuration';
 import { MailModule } from './mail/mail.module';
 import { AuthModule } from './auth/auth.module';
@@ -31,7 +33,13 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { AppNotification } from './notifications/notification.entity';
 import { ReportsModule } from './reports/reports.module';
 import { ReportShare } from './reports/report-share.entity';
+import { ReportComment } from './reports/report-comment.entity';
 import { TaskTemplate } from './tasks/entities/task-template.entity';
+import { Department } from './workspaces/entities/department.entity';
+import { Absence } from './workspaces/entities/absence.entity';
+import { Milestone } from './projects/entities/milestone.entity';
+import { PushSubscription } from './notifications/push-subscription.entity';
+import { Session } from './auth/entities/session.entity';
 
 @Module({
   imports: [
@@ -40,6 +48,8 @@ import { TaskTemplate } from './tasks/entities/task-template.entity';
       load: [configuration],
     }),
     ScheduleModule.forRoot(),
+    // Rate-limit: базовый лимит на API; на /auth/* — свои @Throttle.
+    ThrottlerModule.forRoot([{ ttl: 60_000, limit: 300 }]),
     SequelizeModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
@@ -64,7 +74,13 @@ import { TaskTemplate } from './tasks/entities/task-template.entity';
           AuditLog,
           AppNotification,
           ReportShare,
+          ReportComment,
           TaskTemplate,
+          Department,
+          Absence,
+          Milestone,
+          PushSubscription,
+          Session,
         ],
         // Dev convenience: auto-create/alter schema. Use migrations in production.
         synchronize: true,
@@ -88,5 +104,6 @@ import { TaskTemplate } from './tasks/entities/task-template.entity';
     ExportModule,
   ],
   controllers: [HealthController],
+  providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
 export class AppModule {}

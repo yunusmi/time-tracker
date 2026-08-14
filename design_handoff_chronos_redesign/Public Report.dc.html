@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+html,body{margin:0;padding:0;background:#f2f2f5;color:#191a1f}
+body{font-family:'Instrument Sans',system-ui,sans-serif}
+a{color:#6366f1;text-decoration:none}a:hover{color:#4f52d9}
+</style>
+</helmet>
+<div style="min-height:100vh;padding:36px 20px;box-sizing:border-box">
+  <div style="max-width:760px;margin:0 auto">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:22px">
+      <svg width="24" height="24" viewBox="0 0 24 24" style="flex-shrink:0"><rect width="24" height="24" rx="7" fill="#6366f1"></rect><circle cx="12" cy="12" r="6.3" stroke="#fff" stroke-width="1.8" fill="none"></circle><path d="M12 8.6V12l2.6 1.7" stroke="#fff" stroke-width="1.8" stroke-linecap="round" fill="none"></path></svg>
+      <span style="font-weight:700;font-size:15px">Хронос</span>
+      <div style="flex:1"></div>
+      <span style="font-size:11px;font-weight:700;background:#e8e9f8;color:#6366f1;border-radius:6px;padding:3px 10px">ПУБЛИЧНЫЙ ОТЧЁТ · ТОЛЬКО ПРОСМОТР</span>
+    </div>
+    <div style="background:#fff;border-radius:16px;box-shadow:0 6px 26px rgba(30,30,60,.08);padding:28px 32px;margin-bottom:16px">
+      <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:4px">
+        <span style="display:inline-flex;align-items:center;gap:8px;font-size:21px;font-weight:700"><span style="width:10px;height:10px;border-radius:3px;background:#60a5fa"></span>Разработка</span>
+        <span style="font-size:13px;color:#6b6e78">Cherrypick Agency</span>
+      </div>
+      <div style="font-size:13px;color:#6b6e78;margin-bottom:22px">Неделя 7–13 августа 2026 · отчёт обновляется автоматически</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:26px">
+        <div style="background:#f7f7fa;border-radius:11px;padding:14px 16px">
+          <div style="font-size:11px;color:#8b8f9a;font-weight:600;text-transform:uppercase;letter-spacing:.05em">Всего часов</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:23px;font-weight:600;margin-top:3px">28ч 45м</div>
+        </div>
+        <div style="background:#f7f7fa;border-radius:11px;padding:14px 16px">
+          <div style="font-size:11px;color:#8b8f9a;font-weight:600;text-transform:uppercase;letter-spacing:.05em">Задач в работе</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:23px;font-weight:600;margin-top:3px">5</div>
+        </div>
+        <div style="background:#f7f7fa;border-radius:11px;padding:14px 16px">
+          <div style="font-size:11px;color:#8b8f9a;font-weight:600;text-transform:uppercase;letter-spacing:.05em">Готово за неделю</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:23px;font-weight:600;margin-top:3px;color:#10b981">3</div>
+        </div>
+      </div>
+      <div style="font-weight:600;font-size:14px;margin-bottom:12px">Часы по дням</div>
+      <div style="display:flex;align-items:flex-end;gap:8px;height:120px;margin-bottom:6px">
+        <sc-for list="{{ days }}" as="d" hint-placeholder-count="7">
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;justify-content:flex-end">
+            <span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;color:#8b8f9a">{{ d.v }}</span>
+            <div style="width:100%;max-width:44px;border-radius:6px 6px 3px 3px;background:{{ d.c }};height:{{ d.h }}%"></div>
+          </div>
+        </sc-for>
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:26px">
+        <sc-for list="{{ days }}" as="d" hint-placeholder-count="7">
+          <div style="flex:1;text-align:center;font-size:11px;color:#8b8f9a">{{ d.label }}</div>
+        </sc-for>
+      </div>
+      <div style="font-weight:600;font-size:14px;margin-bottom:6px">Над чем работали</div>
+      <sc-for list="{{ tasks }}" as="t" hint-placeholder-count="5">
+        <div style="display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid #eceded">
+          <span style="font-size:11px;font-weight:700;border-radius:6px;padding:3px 10px;background:{{ t.stBg }};color:{{ t.stC }};flex-shrink:0;white-space:nowrap">{{ t.st }}</span>
+          <span style="flex:1;font-size:13.5px;font-weight:500;min-width:0">{{ t.title }}</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:12.5px;color:#6b6e78;flex-shrink:0">{{ t.h }}</span>
+        </div>
+      </sc-for>
+      <div style="font-size:11.5px;color:#8b8f9a;margin-top:14px">Суммы и имена сотрудников скрыты настройками этой ссылки.</div>
+    </div>
+    <div style="text-align:center;font-size:12px;color:#8b8f9a">Сформировано в <a href="Time Tracker Redesign v2.dc.html">Хроносе</a> · ссылка: chronos.app/r/8fk2-x91m · доступ может быть отозван владельцем</div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    const vals = [[5.4, '5ч 25м'], [6.2, '6ч 10м'], [4.1, '4ч 05м'], [0, '—'], [0, '—'], [5.8, '5ч 50м'], [7.2, '7ч 15м']];
+    const labels = ['пт', 'сб', 'вс', 'пн', 'вт', 'ср', 'чт'];
+    const max = 7.2;
+    return {
+      days: vals.map(([h, v], i) => ({ label: labels[i], v, h: Math.max(3, Math.round(h / max * 100)), c: h ? '#60a5fa' : '#eceded' })),
+      tasks: [
+        { st: 'Готово', stBg: '#e6f7f0', stC: '#0e9f6e', title: 'API интеграции платежей', h: '9ч 40м' },
+        { st: 'Готово', stBg: '#e6f7f0', stC: '#0e9f6e', title: 'Фикс бага с таймзонами', h: '3ч 15м' },
+        { st: 'Готово', stBg: '#e6f7f0', stC: '#0e9f6e', title: 'Ревью пул-реквестов', h: '2ч 30м' },
+        { st: 'В работе', stBg: '#fef3e2', stC: '#b45309', title: 'Миграция на новую схему БД', h: '7ч 50м' },
+        { st: 'В работе', stBg: '#fef3e2', stC: '#b45309', title: 'Нагрузочное тестирование API', h: '5ч 30м' },
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>

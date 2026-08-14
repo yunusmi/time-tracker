@@ -24,6 +24,7 @@ import { TasksService } from './tasks.service';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { Task } from './entities/task.entity';
+import { BulkTasksDto } from './dto/bulk-tasks.dto';
 import { TaskWithStatsDto } from './dto/task-with-stats.dto';
 
 @ApiTags('tasks')
@@ -55,6 +56,17 @@ export class TasksController {
     @Query('who') who?: 'all' | 'mine',
   ): Promise<TaskWithStatsDto[]> {
     return this.tasksService.findAll(userId, { who });
+  }
+
+  @Patch('bulk')
+  @ApiOperation({
+    summary: 'Групповые действия: статус или удаление выбранных задач',
+  })
+  bulk(
+    @CurrentUser('id') userId: string,
+    @Body() dto: BulkTasksDto,
+  ): Promise<{ updated: number }> {
+    return this.tasksService.bulk(userId, dto.ids ?? [], dto.action);
   }
 
   @Get(':id')

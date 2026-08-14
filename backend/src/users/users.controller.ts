@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Get,
@@ -20,10 +21,13 @@ import { UserSettingsService } from './user-settings.service';
 import { UpdateUserSettingsDto } from './dto/update-user-settings.dto';
 import {
   ChangePasswordDto,
+  DeleteAccountDto,
+  UpdateAvatarDto,
   UpdateProfileDto,
 } from './dto/update-profile.dto';
 import { UserSettings } from './entities/user-settings.entity';
 import { User } from './entities/user.entity';
+import { AuthenticatedUser } from '../auth/strategies/jwt.strategy';
 
 @ApiTags('users')
 @ApiBearerAuth()
@@ -77,5 +81,36 @@ export class UsersController {
     @Body() dto: UpdateUserSettingsDto,
   ): Promise<UserSettings> {
     return this.userSettingsService.update(userId, dto);
+  }
+
+  @Patch('me/avatar')
+  @ApiOperation({ summary: 'Загрузить/снять фото профиля (data-URL 128px)' })
+  @ApiResponse({ status: 200, type: User })
+  updateAvatar(
+    @CurrentUser('id') userId: string,
+    @Body() dto: UpdateAvatarDto,
+  ): Promise<User> {
+    return this.usersService.setAvatar(userId, dto.avatar_url ?? null);
+  }
+
+  @Get('me/export')
+  @ApiOperation({ summary: 'Экспорт всех моих данных (GDPR, JSON)' })
+  exportData(@CurrentUser('id') userId: string) {
+    return this.usersService.exportData(userId);
+  }
+
+  @Post('me/delete')
+  @HttpCode(204)
+  @ApiOperation({
+    summary: 'Удалить аккаунт (подтверждение: ввод собственного email)',
+  })
+  async deleteAccount(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: DeleteAccountDto,
+  ): Promise<void> {
+    if (dto.email.trim().toLowerCase() !== user.email.toLowerCase()) {
+      throw new BadRequestException('Email не совпадает с вашим аккаунтом');
+    }
+    await this.usersService.removeAccount(user.id);
   }
 }

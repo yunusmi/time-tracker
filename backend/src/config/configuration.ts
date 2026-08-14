@@ -22,6 +22,11 @@ export interface AppConfig {
     telegramBotToken: string;
     telegramChatId: string;
   };
+  vapid: {
+    publicKey: string;
+    privateKey: string;
+    subject: string;
+  };
 }
 
 export default (): AppConfig => ({
@@ -49,5 +54,11 @@ export default (): AppConfig => ({
     slackWebhookUrl: process.env.SLACK_WEBHOOK_URL ?? '',
     telegramBotToken: process.env.TELEGRAM_BOT_TOKEN ?? '',
     telegramChatId: process.env.TELEGRAM_CHAT_ID ?? '',
+  },
+  vapid: {
+    // Ключи Web Push (npx web-push generate-vapid-keys); без них пуши выключены.
+    publicKey: process.env.VAPID_PUBLIC_KEY ?? '',
+    privateKey: process.env.VAPID_PRIVATE_KEY ?? '',
+    subject: process.env.VAPID_SUBJECT ?? 'mailto:no-reply@chronos.local',
   },
 });

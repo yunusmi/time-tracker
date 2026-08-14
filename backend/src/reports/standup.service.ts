@@ -9,8 +9,12 @@ import { Task, TaskStatus } from '../tasks/entities/task.entity';
 import { Project } from '../projects/entities/project.entity';
 import { User } from '../users/entities/user.entity';
 import { UserSettings } from '../users/entities/user-settings.entity';
-import { WorkspacesService } from '../workspaces/workspaces.service';
+import {
+  entryScope,
+  WorkspacesService,
+} from '../workspaces/workspaces.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { MailService } from '../mail/mail.service';
 
 export type GeneratorMode = 'standup' | 'client' | 'team' | 'notes';
 export type StandupDirection = 'ys' | 'st';
@@ -85,6 +89,7 @@ export class StandupService {
     private readonly settingsModel: typeof UserSettings,
     private readonly workspacesService: WorkspacesService,
     private readonly notificationsService: NotificationsService,
+    private readonly mailService: MailService,
     configService: ConfigService,
   ) {
     const apiKey = configService.get<string>('ANTHROPIC_API_KEY');
@@ -149,11 +154,13 @@ export class StandupService {
   private async entriesOfDay(userId: string, off: number): Promise<TimeEntry[]> {
     const start = dayStart(off);
     const end = new Date(start.getTime() + DAY_MS - 1);
+    const ctx = await this.workspacesService.getContext(userId);
     return this.timeEntryModel.findAll({
       where: {
         user_id: userId,
         started_at: { [Op.between]: [start, end] },
         ended_at: { [Op.ne]: null },
+        ...(entryScope(ctx.workspace.id) as object),
       },
       include: [{ model: Task, include: [Project] }],
       order: [['started_at', 'ASC']],
@@ -164,8 +171,13 @@ export class StandupService {
   private async monthWorkedSeconds(userId: string): Promise<number> {
     const now = new Date();
     const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+    const ctx = await this.workspacesService.getContext(userId);
     const sum = await this.timeEntryModel.sum('duration_seconds', {
-      where: { user_id: userId, started_at: { [Op.gte]: monthStart } },
+      where: {
+        user_id: userId,
+        started_at: { [Op.gte]: monthStart },
+        ...(entryScope(ctx.workspace.id) as object),
+      },
     });
     return Number(sum) || 0;
   }
@@ -328,6 +340,7 @@ export class StandupService {
             user_id: { [Op.in]: ctx.memberIds },
             started_at: { [Op.between]: [start, end] },
             ended_at: { [Op.ne]: null },
+            ...(entryScope(ctx.workspace.id) as object),
           },
           include: [{ model: Task, include: [Project] }],
         })
@@ -377,6 +390,7 @@ export class StandupService {
         user_id: { [Op.in]: ctx.memberIds },
         started_at: { [Op.between]: [start, end] },
         ended_at: { [Op.ne]: null },
+        ...(entryScope(ctx.workspace.id) as object),
       },
       include: [{ model: Task }],
     });
@@ -437,6 +451,7 @@ export class StandupService {
   /** Сводка недели для таймшита: «вт 11.08 — 4ч 30м: задачи». */
   async buildWeekSummary(userId: string, weekStart: string): Promise<string> {
     const start = new Date(`${weekStart}T00:00:00.000Z`);
+    const ctx = await this.workspacesService.getContext(userId);
     const out: string[] = [];
     for (let i = 0; i < 7; i++) {
       const ds = new Date(start.getTime() + i * DAY_MS);
@@ -446,6 +461,7 @@ export class StandupService {
           user_id: userId,
           started_at: { [Op.between]: [ds, de] },
           ended_at: { [Op.ne]: null },
+          ...(entryScope(ctx.workspace.id) as object),
         },
         include: [{ model: Task }],
         order: [['started_at', 'ASC']],
@@ -484,10 +500,103 @@ export class StandupService {
           r.user_id,
           'Не забудьте стендап-отчёт — кнопка ⚡ в Трекере соберёт его за вас',
           'amber',
+          { kind: 'standup', action: '', event: 'standup_reminder' },
         );
       }
     } catch (err) {
       this.logger.warn(`standup reminder failed: ${err}`);
+    }
+  }
+
+  /** Понедельник 09:00: «Дайджест недели» — письмо по прошлой неделе. */
+  @Cron('0 9 * * 1')
+  async weeklyDigest(): Promise<void> {
+    try {
+      const now = new Date();
+      const day = now.getUTCDay();
+      const diff = (day === 0 ? 6 : day - 1) + 7; // понедельник прошлой недели
+      const start = new Date(
+        Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - diff),
+      );
+      const end = new Date(start.getTime() + 7 * DAY_MS - 1);
+      const entries = (await this.timeEntryModel.findAll({
+        where: {
+          started_at: { [Op.between]: [start, end] },
+          ended_at: { [Op.ne]: null },
+        },
+        include: [{ model: Task, include: [Project] }],
+      })) as TimeEntry[];
+      if (!entries.length) return;
+
+      const byUser = new Map<string, TimeEntry[]>();
+      for (const e of entries) {
+        const list = byUser.get(e.user_id) ?? [];
+        list.push(e);
+        byUser.set(e.user_id, list);
+      }
+      const weekLabel = `${fmtDM(start)}–${fmtDM(new Date(start.getTime() + 6 * DAY_MS))}`;
+
+      for (const [userId, list] of byUser) {
+        try {
+          const user = await this.userModel.findByPk(userId);
+          if (!user) continue;
+          if (
+            !(await this.notificationsService.channelEnabled(
+              userId,
+              'weekly_digest',
+              'email',
+            ))
+          ) {
+            continue;
+          }
+          const settings = await this.settingsModel.findOne({
+            where: { user_id: userId },
+          });
+          const goalSec = (settings?.daily_goal_hours ?? 6) * 3600;
+          const total = list.reduce((a, e) => a + e.duration_seconds, 0);
+
+          // Стрик: подряд дней (с конца недели) с выполненной целью.
+          const perDay = new Array(7).fill(0);
+          for (const e of list) {
+            const idx = Math.floor(
+              (new Date(e.started_at).getTime() - start.getTime()) / DAY_MS,
+            );
+            if (idx >= 0 && idx < 7) perDay[idx] += e.duration_seconds;
+          }
+          let streak = 0;
+          for (let i = 6; i >= 0; i--) {
+            if (perDay[i] >= goalSec) streak++;
+            else if (perDay[i] > 0 || i < 5) break;
+          }
+
+          const tasksDone = await this.taskModel.count({
+            where: {
+              [Op.or]: [{ assignee_id: userId }, { user_id: userId }],
+              status: TaskStatus.DONE,
+              completed_at: { [Op.between]: [start, end] },
+            },
+          });
+
+          const byProject = new Map<string, number>();
+          for (const e of list) {
+            const name = e.task?.project?.name ?? 'Без проекта';
+            byProject.set(name, (byProject.get(name) ?? 0) + e.duration_seconds);
+          }
+          const top = [...byProject.entries()].sort((a, b) => b[1] - a[1])[0];
+
+          await this.mailService.sendWeeklyDigest(user.email, user.name, {
+            week_label: weekLabel,
+            hours_label: fmtHM(total),
+            tasks_done: tasksDone,
+            streak_days: streak,
+            top_project: top ? top[0] : null,
+          });
+        } catch (err) {
+          this.logger.warn(`weekly digest for ${userId} failed: ${err}`);
+        }
+      }
+    } catch (err) {
+      this.logger.warn(`weekly digest failed: ${err}`);
     }
   }
 
@@ -518,6 +627,7 @@ export class StandupService {
               ? `Стендап-отчёт отправлен в ${delivered.join(' и ')} (авто, 10:00)`
               : 'Стендап-отчёт сгенерирован (авто, 10:00) — вебхуки Slack/TG не настроены',
             'green',
+            { kind: 'standup', action: '', event: 'standup_reminder' },
           );
         } catch (err) {
           this.logger.warn(`auto standup for ${s.user_id} failed: ${err}`);

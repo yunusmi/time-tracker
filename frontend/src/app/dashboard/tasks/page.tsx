@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { api, ApiError } from '@/lib/api';
+import { SkeletonRows } from '@/components/Skeleton';
 import { formatHM } from '@/lib/format';
 import { projectColor, projectName } from '@/lib/project';
 import { dueInfo, PRIO_META } from '@/lib/task';
@@ -18,8 +19,10 @@ import { useTimer } from '@/context/TimerContext';
 import { useToast } from '@/context/ToastContext';
 import { useWorkspace } from '@/context/WorkspaceContext';
 import { openGenerator } from '@/components/ReportGenerator';
+import { useConfirm } from '@/components/ConfirmDialog';
 
 type Filter = 'all' | 'active' | 'done';
+type View = 'list' | 'kanban';
 type Who = 'all' | 'mine';
 
 const STATUS_META: Record<TaskStatus, { label: string; bg: string; color: string }> = {
@@ -55,14 +58,18 @@ export default function TasksPage() {
   const { user } = useAuth();
   const { version, start } = useTimer();
   const { toast } = useToast();
+  const { confirm, dialog } = useConfirm();
   const { isAdmin, members } = useWorkspace();
 
   const [tasks, setTasks] = useState<TaskWithStats[]>([]);
   const [projects, setProjects] = useState<ProjectWithStats[]>([]);
   const [templates, setTemplates] = useState<TaskTemplate[]>([]);
   const [filter, setFilter] = useState<Filter>('all');
+  // Список / Канбан (ТЗ, п. 54): в канбане статус меняется стрелками ‹ ›.
+  const [view, setView] = useState<View>('list');
   const [who, setWho] = useState<Who>('all');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(true);
 
   // Форма «+ Новая задача»
   const [newOpen, setNewOpen] = useState(false);
@@ -109,14 +116,52 @@ export default function TasksPage() {
       setProjects(p);
       setTemplates(tpl);
       setError('');
+      setLoading(false);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Не удалось загрузить задачи');
+      setLoading(false);
     }
   }, [isAdmin, who]);
 
   useEffect(() => {
     void load();
   }, [load, version]);
+
+  // Групповые действия: чекбоксы + панель «Выбрано: N».
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+
+  function toggleSelected(id: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  async function bulk(action: 'todo' | 'in_progress' | 'done' | 'delete') {
+    const ids = [...selected];
+    if (!ids.length) return;
+    if (action === 'delete') {
+      const ok = await confirm({
+        title: 'Удалить выбранные задачи?',
+        description: `Будет удалено задач: ${ids.length}. Записи времени останутся, но потеряют привязку к задаче.`,
+      });
+      if (!ok) return;
+    }
+    try {
+      const { updated } = await api.bulkTasks(ids, action);
+      setSelected(new Set());
+      toast(
+        action === 'delete'
+          ? `Удалено задач: ${updated}`
+          : `Изменено задач: ${updated}`,
+      );
+      await load();
+    } catch (err) {
+      toast(err instanceof ApiError ? err.message : 'Не удалось выполнить действие');
+    }
+  }
 
   const visible = tasks.filter((t) =>
     filter === 'all' ? true : filter === 'done' ? t.status === 'done' : t.status !== 'done',
@@ -176,6 +221,14 @@ export default function TasksPage() {
 
   async function delTask(id: string) {
     const removed = tasks.find((t) => t.id === id);
+    // Задача с записями времени удаляется только после подтверждения (ТЗ).
+    if (removed && removed.total_tracked_seconds > 0) {
+      const ok = await confirm({
+        title: 'Удалить задачу с записями?',
+        description: `«${removed.title}» — затрекано ${Math.round(removed.total_tracked_seconds / 60)} мин. Записи времени останутся в отчётах, но потеряют привязку к задаче.`,
+      });
+      if (!ok) return;
+    }
     try {
       await api.deleteTask(id);
       await load();
@@ -260,8 +313,17 @@ export default function TasksPage() {
   const selProject = projects.find((p) => p.id === newProjectId);
   const selAssignee = members.find((m) => m.user_id === newAssigneeId);
 
+  if (loading) {
+    return (
+      <div className="card card-pad">
+        <SkeletonRows rows={5} height={48} />
+      </div>
+    );
+  }
+
   return (
     <div>
+      {dialog}
       {error && <p className="error">{error}</p>}
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
@@ -292,6 +354,18 @@ export default function TasksPage() {
             ))}
           </div>
         )}
+        <div className="seg">
+          {(
+            [
+              ['list', 'Список'],
+              ['kanban', 'Канбан'],
+            ] as [View, string][]
+          ).map(([v, label]) => (
+            <button key={v} className={view === v ? 'on' : ''} onClick={() => setView(v)}>
+              {label}
+            </button>
+          ))}
+        </div>
         <div style={{ flex: 1 }} />
         {isAdmin && (
           <button
@@ -590,6 +664,130 @@ export default function TasksPage() {
         </div>
       )}
 
+      {selected.size > 0 && (
+        <div className="bulk-bar">
+          <span style={{ fontWeight: 600 }}>Выбрано: {selected.size}</span>
+          <div style={{ flex: 1 }} />
+          <button className="btn btn-ghost" onClick={() => void bulk('in_progress')}>
+            В работу
+          </button>
+          <button className="btn btn-ghost" onClick={() => void bulk('done')}>
+            Готово
+          </button>
+          <button className="btn btn-red" onClick={() => void bulk('delete')}>
+            Удалить
+          </button>
+          <button className="btn btn-ghost" onClick={() => setSelected(new Set())}>
+            Снять
+          </button>
+        </div>
+      )}
+
+      {view === 'kanban' ? (
+        <div className="kanban">
+          {(
+            [
+              ['todo', 'К работе'],
+              ['in_progress', 'В работе'],
+              ['done', 'Готово'],
+            ] as [TaskStatus, string][]
+          ).map(([col, label]) => {
+            const cards = tasks.filter((t) => t.status === col);
+            return (
+              <div key={col} className="card card-pad kanban-col">
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    marginBottom: 10,
+                  }}
+                >
+                  <span style={{ fontWeight: 600, fontSize: 13 }}>{label}</span>
+                  <span className="chip-badge">{cards.length}</span>
+                </div>
+                {cards.map((t) => {
+                  const due = dueInfo(t);
+                  return (
+                    <div key={t.id} className="kanban-card">
+                      <div style={{ display: 'flex', gap: 6, alignItems: 'flex-start' }}>
+                        <span
+                          style={{
+                            width: 6,
+                            height: 6,
+                            borderRadius: '50%',
+                            marginTop: 6,
+                            flexShrink: 0,
+                            background:
+                              t.priority === 'high'
+                                ? 'var(--red)'
+                                : t.priority === 'low'
+                                  ? 'var(--muted)'
+                                  : 'var(--amber)',
+                          }}
+                        />
+                        <span style={{ flex: 1, fontSize: '13px', fontWeight: 500 }}>
+                          {t.title}
+                        </span>
+                      </div>
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 8,
+                          marginTop: 8,
+                          fontSize: 11,
+                          color: 'var(--muted)',
+                        }}
+                      >
+                        {t.project && (
+                          <span
+                            className="pdot"
+                            style={{ background: t.project.color }}
+                            title={t.project.name}
+                          />
+                        )}
+                        <span className="mono">{formatHM(t.total_tracked_seconds)}</span>
+                        {due && (
+                          <span style={{ color: due.overdue ? 'var(--red)' : 'var(--muted)' }}>
+                            {due.label}
+                          </span>
+                        )}
+                        <div style={{ flex: 1 }} />
+                        <button
+                          className="icon-x"
+                          title="Левее по статусу"
+                          disabled={col === 'todo'}
+                          onClick={() =>
+                            void setStatus(t.id, col === 'done' ? 'in_progress' : 'todo')
+                          }
+                        >
+                          ‹
+                        </button>
+                        <button
+                          className="icon-x"
+                          title="Правее по статусу"
+                          disabled={col === 'done'}
+                          onClick={() =>
+                            void setStatus(t.id, col === 'todo' ? 'in_progress' : 'done')
+                          }
+                        >
+                          ›
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+                {cards.length === 0 && (
+                  <div className="muted" style={{ fontSize: '12.5px' }}>
+                    Пусто
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      ) : (
       <div className="card">
         {visible.map((t) => {
           const meta = STATUS_META[t.status];
@@ -605,6 +803,13 @@ export default function TasksPage() {
               : t.assignee.name.split(' ')[0];
           return (
             <div className="list-row" key={t.id} style={{ padding: '11px 16px' }}>
+              <input
+                type="checkbox"
+                title="Выбрать для группового действия"
+                checked={selected.has(t.id)}
+                onChange={() => toggleSelected(t.id)}
+                style={{ accentColor: 'var(--accent)', flexShrink: 0, cursor: 'pointer' }}
+              />
               <div
                 className="menu-wrap"
                 style={{ flexShrink: 0 }}
@@ -790,6 +995,7 @@ export default function TasksPage() {
           </div>
         )}
       </div>
+      )}
     </div>
   );
 }

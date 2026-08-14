@@ -5,6 +5,7 @@ import {
   IsString,
   MaxLength,
   MinLength,
+  ValidateIf,
 } from 'class-validator';
 
 export class UpdateProfileDto {
@@ -23,6 +24,28 @@ export class UpdateProfileDto {
   @IsOptional()
   @IsEmail()
   email?: string;
+}
+
+export class UpdateAvatarDto {
+  @ApiProperty({
+    required: false,
+    nullable: true,
+    description: 'data-URL квадратного изображения 128px или null (снять фото)',
+  })
+  @IsOptional()
+  @ValidateIf((_, v) => v !== null)
+  @IsString()
+  @MaxLength(700_000)
+  avatar_url?: string | null;
+}
+
+export class DeleteAccountDto {
+  @ApiProperty({
+    description: 'Подтверждение: точный email аккаунта',
+    example: 'yunus@example.com',
+  })
+  @IsEmail()
+  email: string;
 }
 
 export class ChangePasswordDto {

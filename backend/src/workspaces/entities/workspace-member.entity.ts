@@ -23,6 +23,12 @@ export enum WorkspaceRole {
   CLIENT = 'client',
 }
 
+/** Тип оплаты сотрудника (Команда → профиль, admin+). */
+export enum PayKind {
+  HOURLY = 'hourly',
+  SALARY = 'salary',
+}
+
 /** Роли с правами администрирования (проекты, инвайты, чужие данные). */
 export const ADMIN_ROLES: WorkspaceRole[] = [
   WorkspaceRole.OWNER,
@@ -74,6 +80,37 @@ export class WorkspaceMember extends Model {
   })
   @Column({ type: DataType.UUID, allowNull: true, field: 'project_id' })
   project_id: string | null;
+
+  @ApiProperty({
+    required: false,
+    nullable: true,
+    format: 'uuid',
+    description: 'Отдел сотрудника',
+  })
+  @Column({ type: DataType.UUID, allowNull: true, field: 'department_id' })
+  department_id: string | null;
+
+  @ApiProperty({
+    enum: PayKind,
+    example: PayKind.HOURLY,
+    description: 'Почасовая оплата или оклад',
+  })
+  @Default(PayKind.HOURLY)
+  @Column({
+    type: DataType.ENUM(...Object.values(PayKind)),
+    allowNull: false,
+    field: 'pay_kind',
+  })
+  pay_kind: PayKind;
+
+  @ApiProperty({
+    description:
+      'Ставка в валюте компании: для hourly — за час, для salary — за месяц (0 — не задана)',
+    example: 2500,
+  })
+  @Default(0)
+  @Column({ type: DataType.FLOAT, allowNull: false, field: 'pay_rate' })
+  pay_rate: number;
 
   @ApiProperty()
   @CreatedAt

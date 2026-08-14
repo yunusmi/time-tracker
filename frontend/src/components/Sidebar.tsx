@@ -1,11 +1,14 @@
 'use client';
 
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/context/ThemeContext';
 import { usePomodoro, PHASE_LABEL } from '@/context/PomodoroContext';
 import { ROLE_LABEL, useWorkspace } from '@/context/WorkspaceContext';
+import { useNotifications } from '@/context/NotificationsContext';
+import { Avatar, Logo, WorkspaceBadge } from '@/components/Logo';
 import { formatClock } from '@/lib/format';
 
 const NAV = [
@@ -50,6 +53,16 @@ const NAV = [
     ),
   },
   {
+    href: '/dashboard/notifications',
+    label: 'Уведомления',
+    icon: (
+      <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+        <path d="M4 6.6a4 4 0 018 0c0 3 1 3.9 1 3.9H3s1-.9 1-3.9z" />
+        <path d="M6.6 12.6a1.6 1.6 0 002.8 0" />
+      </svg>
+    ),
+  },
+  {
     href: '/dashboard/timesheets',
     label: 'Таймшиты',
     icon: (
@@ -81,42 +94,62 @@ const NAV = [
       </svg>
     ),
   },
-  {
-    href: '/dashboard/settings',
-    label: 'Настройки',
-    icon: (
-      <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
-        <circle cx="8" cy="8" r="2.3" />
-        <circle cx="8" cy="8" r="5.9" />
-      </svg>
-    ),
-  },
 ];
 
-function initials(name: string): string {
-  return name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((w) => w[0].toUpperCase())
-    .join('');
-}
+const SETTINGS_ITEM = {
+  href: '/dashboard/settings',
+  label: 'Настройки',
+  icon: (
+    <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <circle cx="8" cy="8" r="2.3" />
+      <circle cx="8" cy="8" r="5.9" />
+    </svg>
+  ),
+};
+
+const KB_ITEM = {
+  href: '/dashboard/help',
+  label: 'База знаний',
+  icon: (
+    <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <path d="M3 3.4h4a2 2 0 012 2v7.2a1.6 1.6 0 00-1.6-1.6H3z" />
+      <path d="M13 3.4H9a2 2 0 00-2 2v7.2a1.6 1.6 0 011.6-1.6H13z" />
+    </svg>
+  ),
+};
 
 export function Sidebar({ mobileOpen = false }: { mobileOpen?: boolean }) {
   const pathname = usePathname();
+  const router = useRouter();
   const { user, logout } = useAuth();
-  const { theme, toggleTheme } = useTheme();
+  const { theme, cycleTheme, themeLabel } = useTheme();
   const pomo = usePomodoro();
-  const { role, canSeeProjects, isClient } = useWorkspace();
+  const { role, canSeeProjects, isClient, me, workspaces, switchWorkspace } =
+    useWorkspace();
+  const { unread } = useNotifications();
+  const [wsOpen, setWsOpen] = useState(false);
+  const wsRef = useRef<HTMLDivElement>(null);
 
   const showMiniPomo = pomo.running && pathname !== '/dashboard/pomodoro';
+  // Настройки — отдельная страница с разделами: при входе меню скрывается.
+  const inSettings = pathname.startsWith('/dashboard/settings');
 
-  // Гейты навигации по ролям: клиент видит только Отчёты и Настройки,
-  // «Проекты» — admin+ и менеджер.
+  useEffect(() => {
+    if (!wsOpen) return;
+    const onClick = (e: MouseEvent) => {
+      if (!wsRef.current?.contains(e.target as Node)) setWsOpen(false);
+    };
+    window.addEventListener('mousedown', onClick);
+    return () => window.removeEventListener('mousedown', onClick);
+  }, [wsOpen]);
+
+  // Гейты навигации по ролям: клиент видит только Отчёты, Настройки и базу
+  // знаний; «Проекты» — admin+ и менеджер.
   const visibleNav = NAV.filter((item) => {
     if (isClient) {
       return (
-        item.href === '/dashboard/reports' || item.href === '/dashboard/settings'
+        item.href === '/dashboard/reports' ||
+        item.href === '/dashboard/notifications'
       );
     }
     if (item.href === '/dashboard/projects') return canSeeProjects;
@@ -126,34 +159,50 @@ export function Sidebar({ mobileOpen = false }: { mobileOpen?: boolean }) {
   return (
     <aside className={`sidebar ${mobileOpen ? 'mobile-open' : ''}`}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '2px 10px 14px' }}>
-        <div
-          style={{
-            width: 22,
-            height: 22,
-            borderRadius: 6,
-            background: 'var(--accent)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <div style={{ width: 8, height: 8, borderRadius: '50%', border: '2px solid #fff' }} />
-        </div>
+        <Logo size={22} color={me?.brand_color ?? '#6366f1'} />
         <span style={{ fontWeight: 700, fontSize: '14.5px', letterSpacing: '0.01em' }}>
           Хронос
         </span>
       </div>
 
-      {visibleNav.map((item) => (
-        <Link
-          key={item.href}
-          href={item.href}
-          className={`nav-btn ${pathname === item.href ? 'on' : ''}`}
+      {inSettings ? (
+        <button
+          className="nav-btn"
+          onClick={() => router.push('/dashboard')}
+          style={{ fontSize: 13 }}
         >
-          {item.icon}
-          {item.label}
-        </Link>
-      ))}
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
+            <path d="M9.5 4L5.5 8l4 4" />
+          </svg>
+          Вернуться в кабинет
+        </button>
+      ) : (
+        visibleNav.map((item) => (
+          <Link
+            key={item.href}
+            href={item.href}
+            className={`nav-btn ${pathname === item.href ? 'on' : ''}`}
+          >
+            {item.icon}
+            <span style={{ flex: 1 }}>{item.label}</span>
+            {item.href === '/dashboard/notifications' && unread > 0 && (
+              <span
+                className="mono"
+                style={{
+                  background: 'var(--accent)',
+                  color: '#fff',
+                  borderRadius: 99,
+                  padding: '1px 6px',
+                  fontSize: 10.5,
+                  fontWeight: 700,
+                }}
+              >
+                {unread}
+              </span>
+            )}
+          </Link>
+        ))
+      )}
 
       <div style={{ flex: 1 }} />
 
@@ -185,12 +234,101 @@ export function Sidebar({ mobileOpen = false }: { mobileOpen?: boolean }) {
         </Link>
       )}
 
-      <button className="nav-btn" onClick={toggleTheme} style={{ fontSize: 13 }}>
+      {/* Переключатель компаний: роль в каждой, «Создать компанию». */}
+      {me && (
+        <div className="ws-switch" ref={wsRef}>
+          {wsOpen && (
+            <div className="ws-menu">
+              {workspaces.map((ws) => (
+                <button
+                  key={ws.id}
+                  className="menu-item"
+                  onClick={() => {
+                    setWsOpen(false);
+                    if (!ws.active) void switchWorkspace(ws.id);
+                  }}
+                  style={{ display: 'flex', alignItems: 'center', gap: 9, width: '100%' }}
+                >
+                  <WorkspaceBadge
+                    name={ws.name}
+                    logoUrl={ws.logo_url}
+                    color={ws.brand_color}
+                    size={20}
+                  />
+                  <span style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
+                    <span
+                      style={{
+                        display: 'block',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {ws.name}
+                    </span>
+                    <span style={{ fontSize: 11, color: 'var(--muted)' }}>
+                      {ROLE_LABEL[ws.role]}
+                    </span>
+                  </span>
+                  {ws.active && <span style={{ color: 'var(--accent)' }}>✓</span>}
+                </button>
+              ))}
+              <Link
+                href="/dashboard/workspaces/new"
+                className="menu-item"
+                onClick={() => setWsOpen(false)}
+                style={{ display: 'block' }}
+              >
+                + Создать компанию
+              </Link>
+            </div>
+          )}
+          <button onClick={() => setWsOpen((o) => !o)}>
+            <WorkspaceBadge
+              name={me.workspace_name}
+              logoUrl={me.logo_url}
+              color={me.brand_color}
+              size={22}
+            />
+            <span
+              style={{
+                flex: 1,
+                minWidth: 0,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                fontWeight: 600,
+              }}
+            >
+              {me.workspace_name}
+            </span>
+            <span style={{ color: 'var(--muted)', fontSize: 10 }}>▾</span>
+          </button>
+        </div>
+      )}
+
+      <Link
+        href={KB_ITEM.href}
+        className={`nav-btn ${pathname === KB_ITEM.href ? 'on' : ''}`}
+      >
+        {KB_ITEM.icon}
+        {KB_ITEM.label}
+      </Link>
+
+      <Link
+        href={SETTINGS_ITEM.href}
+        className={`nav-btn ${inSettings ? 'on' : ''}`}
+      >
+        {SETTINGS_ITEM.icon}
+        {SETTINGS_ITEM.label}
+      </Link>
+
+      <button className="nav-btn" onClick={cycleTheme} style={{ fontSize: 13 }}>
         <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
           <circle cx="8" cy="8" r="3.4" />
           <path d="M8 1.5v1.8M8 12.7v1.8M1.5 8h1.8M12.7 8h1.8" />
         </svg>
-        {theme === 'dark' ? 'Светлая тема' : 'Тёмная тема'}
+        {themeLabel}
       </button>
 
       <div
@@ -203,23 +341,7 @@ export function Sidebar({ mobileOpen = false }: { mobileOpen?: boolean }) {
           marginTop: 8,
         }}
       >
-        <div
-          style={{
-            width: 26,
-            height: 26,
-            borderRadius: '50%',
-            background: 'var(--asoft)',
-            color: 'var(--accent)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: 11,
-            fontWeight: 700,
-            flexShrink: 0,
-          }}
-        >
-          {user ? initials(user.name) : '·'}
-        </div>
+        <Avatar name={user?.name ?? ''} src={user?.avatar_url} size={26} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <div
             style={{
@@ -247,6 +369,8 @@ export function Sidebar({ mobileOpen = false }: { mobileOpen?: boolean }) {
           </button>
         </div>
       </div>
+      {/* theme используется для доступности контраста иконки */}
+      <span hidden>{theme}</span>
     </aside>
   );
 }
