@@ -16,6 +16,7 @@ import {
 import type { PomodoroStats, TaskWithStats, TimeEntry } from '@/lib/types';
 import { useTimer } from '@/context/TimerContext';
 import { useToast } from '@/context/ToastContext';
+import { useWorkspace } from '@/context/WorkspaceContext';
 import { useAuth } from '@/context/AuthContext';
 import { useSettings } from '@/context/SettingsContext';
 import { useReminders } from '@/hooks/useReminders';
@@ -39,6 +40,7 @@ interface RecentItem {
 }
 
 export default function TrackerPage() {
+  const { isAdmin } = useWorkspace();
   const {
     active,
     elapsedSeconds,
@@ -65,6 +67,62 @@ export default function TrackerPage() {
   const [returned, setReturned] = useState<{ comment: string | null } | null>(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
+
+  const [seeding, setSeeding] = useState(false);
+
+  /**
+   * «Заполнить примером» — демо-проект, задачи и записи вчерашнего дня,
+   * чтобы новая компания сразу увидела живые экраны (ТЗ, активация).
+   */
+  async function fillWithSample() {
+    setSeeding(true);
+    try {
+      const project = await api.createProject({
+        name: 'Демо-проект',
+        color: '#60a5fa',
+      });
+      const specs: [string, number, 'high' | 'med' | 'low'][] = [
+        ['Демо · собрать требования', 120, 'high'],
+        ['Демо · свёрстать экран', 180, 'med'],
+        ['Демо · код-ревью', 60, 'low'],
+      ];
+      const created = [];
+      for (const [title, estimated_minutes, priority] of specs) {
+        created.push(
+          await api.createTask({
+            title,
+            project_id: project.id,
+            estimated_minutes,
+            priority,
+          }),
+        );
+      }
+      // Пара записей за вчера, чтобы отчёты и таймлайн были не пустыми.
+      const day = new Date();
+      day.setDate(day.getDate() - 1);
+      const at = (h: number, m: number) => {
+        const d = new Date(day);
+        d.setHours(h, m, 0, 0);
+        return d.toISOString();
+      };
+      await api.createManualEntry({
+        task_id: created[0].id,
+        started_at: at(10, 0),
+        ended_at: at(11, 30),
+      });
+      await api.createManualEntry({
+        task_id: created[1].id,
+        started_at: at(13, 0),
+        ended_at: at(15, 0),
+      });
+      bumpVersion();
+      toast('Демо-данные созданы — удалите их, когда осмотритесь');
+    } catch (err) {
+      toast(err instanceof ApiError ? err.message : 'Не удалось создать пример');
+    } finally {
+      setSeeding(false);
+    }
+  }
 
   // Чек-лист «Первые шаги» + баннер забытого таймера (>4ч).
   const [checklistDismissed, setChecklistDismissed] = useState(true);
@@ -616,6 +674,17 @@ export default function TrackerPage() {
             >
               Тур по интерфейсу
             </button>
+            {isAdmin && (
+              <button
+                className="btn-outline"
+                style={{ padding: '4px 12px', fontSize: 12 }}
+                disabled={seeding}
+                onClick={() => void fillWithSample()}
+                title="Создать демо-проект и задачи, чтобы осмотреться"
+              >
+                {seeding ? 'Создаём…' : 'Заполнить примером'}
+              </button>
+            )}
             <button
               className="icon-x"
               title="Скрыть"
@@ -1103,10 +1172,18 @@ export default function TrackerPage() {
 
         {!active && rows.finished.length === 0 && (
           <div className="empty">
-            <div className="empty-title">Пока пусто</div>
+            <div className="empty-title">Сегодня ещё ничего не записано</div>
             <div className="empty-sub">
-              Запустите таймер или добавьте время вручную — записи появятся здесь.
+              Запустите таймер сверху или добавьте запись за прошедшее время
+              вручную.
             </div>
+            <button
+              className="btn btn-outline"
+              style={{ marginTop: 12 }}
+              onClick={() => setManualOpen(true)}
+            >
+              + Добавить вручную
+            </button>
           </div>
         )}
 

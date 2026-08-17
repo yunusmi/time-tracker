@@ -8,6 +8,7 @@ import { useWorkspace } from '@/context/WorkspaceContext';
 import { useConfirm } from '@/components/ConfirmDialog';
 import { WorkspaceBadge } from '@/components/Logo';
 import { cropToSquareDataUrl } from '@/lib/image';
+import { parseTimeEntriesCsv } from '@/lib/import-csv';
 import { CURRENCIES, CURRENCY_SYMBOL } from '@/lib/money';
 import type { Currency, Department } from '@/lib/types';
 
@@ -40,6 +41,9 @@ export function DataSection() {
   const [integr, setIntegr] = useState<Record<string, boolean>>({});
   const [apiKey, setApiKey] = useState('');
   const [webhook, setWebhook] = useState('');
+  const importRef = useRef<HTMLInputElement>(null);
+  const [importing, setImporting] = useState(false);
+  const [importReport, setImportReport] = useState<string | null>(null);
 
   useEffect(() => setName(me?.workspace_name ?? ''), [me?.workspace_name]);
   useEffect(() => setDeps(departments), [departments]);
@@ -122,6 +126,75 @@ export function DataSection() {
     setApiKey(key);
     window.localStorage.setItem('tt_api_key', key);
     toast('API-ключ перевыпущен');
+  }
+
+  /**
+   * Импорт CSV-экспорта Toggl / Clockify / Harvest: недостающие проекты и
+   * задачи создаются, записи времени добавляются как ручные.
+   */
+  async function onImportFile(file?: File) {
+    if (!file) return;
+    setImporting(true);
+    setImportReport(null);
+    try {
+      const { rows, skipped } = parseTimeEntriesCsv(await file.text());
+      if (!rows.length) {
+        setImportReport('Не нашли ни одной строки с датой и длительностью.');
+        return;
+      }
+
+      const projects = await api.listProjects(true);
+      const projectByName = new Map(
+        projects.map((p) => [p.name.toLowerCase(), p.id]),
+      );
+      const tasks = await api.listTasks();
+      const taskByTitle = new Map(tasks.map((t) => [t.title.toLowerCase(), t.id]));
+
+      let imported = 0;
+      let failed = 0;
+      for (const row of rows) {
+        try {
+          let projectId: string | undefined;
+          if (row.project) {
+            const key = row.project.toLowerCase();
+            if (!projectByName.has(key)) {
+              const created = await api.createProject({ name: row.project });
+              projectByName.set(key, created.id);
+            }
+            projectId = projectByName.get(key);
+          }
+          const taskKey = row.task.toLowerCase();
+          if (!taskByTitle.has(taskKey)) {
+            const created = await api.createTask({
+              title: row.task,
+              project_id: projectId ?? null,
+            });
+            taskByTitle.set(taskKey, created.id);
+          }
+          await api.createManualEntry({
+            task_id: taskByTitle.get(taskKey),
+            started_at: row.started_at,
+            ended_at: row.ended_at,
+          });
+          imported++;
+        } catch {
+          failed++;
+        }
+      }
+      setImportReport(
+        `Импортировано записей: ${imported}` +
+          (skipped ? ` · пропущено строк: ${skipped}` : '') +
+          (failed ? ` · с ошибкой: ${failed}` : ''),
+      );
+      toast(`Импорт завершён: ${imported} записей`);
+    } catch (err) {
+      setImportReport(
+        err instanceof ApiError ? err.message : 'Не удалось прочитать файл',
+      );
+    } finally {
+      setImporting(false);
+      if (importRef.current) importRef.current.value = '';
+    }
   }
 
   async function exportData() {
@@ -394,6 +467,40 @@ export function DataSection() {
               }}
             />
           </div>
+        </div>
+      )}
+
+      {isAdmin && (
+        <div className="card card-pad">
+          <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 4 }}>
+            Импорт данных
+          </div>
+          <div style={{ fontSize: '12.5px', color: 'var(--muted)', marginBottom: 12 }}>
+            Переезжаете из другого трекера? Выгрузите отчёт в CSV из Toggl
+            Track, Clockify или Harvest — проекты, задачи и записи времени
+            перенесутся автоматически.
+          </div>
+          <input
+            ref={importRef}
+            type="file"
+            accept=".csv,text/csv"
+            hidden
+            onChange={(e) => void onImportFile(e.target.files?.[0])}
+          />
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            <button
+              className="btn btn-outline"
+              disabled={importing}
+              onClick={() => importRef.current?.click()}
+            >
+              {importing ? 'Импортируем…' : 'Выбрать файл CSV…'}
+            </button>
+          </div>
+          {importReport && (
+            <div style={{ fontSize: '12.5px', color: 'var(--muted)', marginTop: 10 }}>
+              {importReport}
+            </div>
+          )}
         </div>
       )}
 

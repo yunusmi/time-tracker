@@ -988,10 +988,40 @@ export default function TasksPage() {
 
         {visible.length === 0 && (
           <div className="empty">
-            <div className="empty-title">Задач нет</div>
-            <div className="empty-sub">
-              Создайте первую — и запускайте таймер прямо из списка.
+            <div className="empty-title">
+              {filter === 'done' ? 'Готовых задач пока нет' : 'Задач нет'}
             </div>
+            <div className="empty-sub">
+              {filter === 'done'
+                ? 'Закрытые задачи появятся здесь — и попадут в release notes за неделю.'
+                : 'Создайте первую — и запускайте таймер прямо из списка.'}
+            </div>
+            {filter !== 'done' && (
+              <div
+                style={{
+                  display: 'flex',
+                  gap: 8,
+                  justifyContent: 'center',
+                  marginTop: 12,
+                  flexWrap: 'wrap',
+                }}
+              >
+                <button
+                  className="btn btn-accent"
+                  onClick={() => setNewOpen(true)}
+                >
+                  + Новая задача
+                </button>
+                {templates.length > 0 && (
+                  <button
+                    className="btn btn-outline"
+                    onClick={() => void applyTemplate(templates[0])}
+                  >
+                    Из шаблона
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         )}
       </div>

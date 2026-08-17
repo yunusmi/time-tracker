@@ -86,6 +86,7 @@ export class TasksService {
             project_name: project?.name ?? null,
             priority: (task.priority ?? 'med') as 'high' | 'med' | 'low',
             due_date: task.due_date ?? null,
+            estimated_minutes: task.estimated_minutes ?? null,
           },
         );
       }

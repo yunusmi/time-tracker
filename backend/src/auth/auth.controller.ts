@@ -9,10 +9,11 @@ import {
   Post,
   Query,
   Req,
+  Res,
   UseGuards,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
-import type { Request } from 'express';
+import type { Request, Response } from 'express';
 import {
   ApiBearerAuth,
   ApiOperation,
@@ -21,6 +22,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { AuthService, RequestMeta } from './auth.service';
+import { OauthProvider, OauthService } from './oauth.service';
 import { SessionsService } from './sessions.service';
 import { UsersService } from '../users/users.service';
 import { MailService } from '../mail/mail.service';
@@ -51,6 +53,7 @@ function metaOf(req: Request): RequestMeta {
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
+    private readonly oauthService: OauthService,
     private readonly sessionsService: SessionsService,
     private readonly usersService: UsersService,
     private readonly mailService: MailService,
@@ -135,6 +138,71 @@ export class AuthController {
       dto.new_password,
       metaOf(req),
     );
+  }
+
+  // --- SSO: Google / Яндекс (Authorization Code Flow) ---
+
+  @Get('oauth/providers')
+  @ApiOperation({
+    summary: 'Какие SSO-провайдеры настроены (кнопки на странице входа)',
+  })
+  oauthProviders() {
+    return this.oauthService.enabledProviders();
+  }
+
+  @Get('oauth/:provider')
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  @ApiOperation({ summary: 'Начать вход через провайдера (302 → провайдер)' })
+  oauthStart(
+    @Param('provider') provider: OauthProvider,
+    @Res() res: Response,
+  ): void {
+    res.redirect(this.oauthService.authorizeUrl(provider));
+  }
+
+  @Get('oauth/:provider/callback')
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  @ApiOperation({
+    summary:
+      'Callback провайдера: обмен кода на профиль, вход и редирект в кабинет',
+  })
+  async oauthCallback(
+    @Param('provider') provider: OauthProvider,
+    @Query('code') code: string,
+    @Query('state') state: string,
+    @Query('error') providerError: string,
+    @Req() req: Request,
+    @Res() res: Response,
+  ): Promise<void> {
+    const fail = (message: string) =>
+      res.redirect(
+        `${this.mailService.frontendUrl}/login?sso_error=${encodeURIComponent(message)}`,
+      );
+    if (providerError) {
+      fail('Вход отменён на стороне провайдера');
+      return;
+    }
+    try {
+      const user = await this.oauthService.handleCallback(
+        provider,
+        code ?? '',
+        state ?? '',
+      );
+      const auth = await this.authService.loginWithOauthUser(
+        user,
+        metaOf(req),
+      );
+      // Токен передаётся во fragment (#) — он не попадает в серверные логи.
+      res.redirect(
+        `${this.mailService.frontendUrl}/login#sso=${auth.access_token}`,
+      );
+    } catch (err) {
+      fail(
+        err instanceof Error && err.message
+          ? err.message
+          : 'Не удалось войти через провайдера',
+      );
+    }
   }
 
   @Get('me')

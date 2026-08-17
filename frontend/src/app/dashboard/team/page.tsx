@@ -5,6 +5,7 @@ import { api, ApiError } from '@/lib/api';
 import { formatHM } from '@/lib/format';
 import type {
   AuditRow,
+  TaskWithStats,
   WorkspaceInvite,
   WorkspaceMemberView,
   WorkspaceRole,
@@ -42,13 +43,22 @@ function absenceLabel(date: string | null): string {
 export default function TeamPage() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const { isAdmin, role: myRole, departments, money, rateLabel, refreshMembers } =
-    useWorkspace();
+  const {
+    isAdmin,
+    role: myRole,
+    departments,
+    money,
+    rateLabel,
+    me: ws,
+    refreshMembers,
+  } = useWorkspace();
   const { settings } = useSettings();
   const isOwner = myRole === 'owner';
   const [roleMenuId, setRoleMenuId] = useState<string | null>(null);
 
   const [members, setMembers] = useState<WorkspaceMemberView[]>([]);
+  // Открытые задачи нужны для «Загрузки на неделю» (оценки vs норма).
+  const [tasks, setTasks] = useState<TaskWithStats[]>([]);
   const [loading, setLoading] = useState(true);
   const [depFilter, setDepFilter] = useState<string>('all');
   const [profileId, setProfileId] = useState<string | null>(null);
@@ -68,19 +78,36 @@ export default function TeamPage() {
     [members, depFilter],
   );
 
-  // Загрузка недели: часы против нормы по каждому (отпуска исключены).
+  /**
+   * Загрузка на неделю: суммарная оценка открытых задач против нормы
+   * (day_norm × 5). У отсутствующих вместо процентов — «отпуск до …».
+   */
   const workload = useMemo(() => {
-    const normSec = settings.daily_goal_hours * 5 * 3600;
+    const normHours = (ws?.day_norm_hours ?? 8) * 5;
     return visibleMembers
-      .filter((m) => !m.absence_kind)
-      .map((m) => ({
-        user_id: m.user_id,
-        name: m.name,
-        percent: normSec ? Math.round((m.week_seconds / normSec) * 100) : 0,
-        week_seconds: m.week_seconds,
-      }))
+      .map((m) => {
+        const estHours =
+          tasks
+            .filter(
+              (t) =>
+                t.status !== 'done' &&
+                (t.assignee_id ?? t.user_id) === m.user_id,
+            )
+            .reduce((a, t) => a + (t.estimated_minutes ?? 0), 0) / 60;
+        const hours = Math.round(estHours * 10) / 10;
+        return {
+          user_id: m.user_id,
+          name: m.name,
+          hours,
+          percent: normHours ? Math.min(100, Math.round((hours / normHours) * 100)) : 0,
+          over: hours > normHours,
+          absence: m.absence_kind
+            ? `${m.absence_kind === 'sick' ? 'б/л' : 'отпуск'} до ${absenceLabel(m.absence_until)}`
+            : null,
+        };
+      })
       .sort((a, b) => b.percent - a.percent);
-  }, [visibleMembers, settings.daily_goal_hours]);
+  }, [visibleMembers, tasks, ws?.day_norm_hours]);
 
   const me = members.find((m) => m.user_id === user?.id);
   const canInvite = isAdmin;
@@ -118,11 +145,13 @@ export default function TeamPage() {
 
   const load = useCallback(async () => {
     try {
-      const [m, iv] = await Promise.all([
+      const [m, iv, t] = await Promise.all([
         api.getWorkspaceMembers(),
         api.listWorkspaceInvites().catch(() => [] as WorkspaceInvite[]),
+        api.listTasks().catch(() => [] as TaskWithStats[]),
       ]);
       setMembers(m);
+      setTasks(t);
       setLoading(false);
       setInvites(iv.filter((i) => i.email)); // ссылка-приглашение (email='') не показывается в списке
       setError('');
@@ -546,8 +575,8 @@ export default function TeamPage() {
             Загрузка на неделю
           </div>
           <div style={{ fontSize: '12.5px', color: 'var(--muted)', marginBottom: 12 }}>
-            Затрекано против нормы {settings.daily_goal_hours * 5}ч; сотрудники в
-            отпуске и на больничном не учитываются.
+            Открытые задачи против нормы {(ws?.day_norm_hours ?? 8) * 5}ч; за дни
+            отпуска и больничного норма не начисляется.
           </div>
           {workload.map((w) => (
             <div
@@ -558,21 +587,28 @@ export default function TeamPage() {
               <div className="progress" style={{ flex: 1 }}>
                 <div
                   style={{
-                    width: `${Math.min(100, w.percent)}%`,
-                    background:
-                      w.percent > 110
-                        ? 'var(--red)'
-                        : w.percent < 60
-                          ? 'var(--amber)'
-                          : 'var(--green)',
+                    width: `${w.absence ? 0 : w.percent}%`,
+                    background: w.over
+                      ? 'var(--red)'
+                      : w.percent > 80
+                        ? 'var(--amber)'
+                        : 'var(--green)',
                   }}
                 />
               </div>
               <span
                 className="mono"
-                style={{ width: 96, textAlign: 'right', fontSize: '12px', color: 'var(--muted)' }}
+                style={{
+                  width: 130,
+                  textAlign: 'right',
+                  fontSize: '12px',
+                  color: w.absence ? 'var(--amber)' : 'var(--muted)',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}
               >
-                {formatHM(w.week_seconds)} · {w.percent}%
+                {w.absence ?? `${w.hours}ч из ${(ws?.day_norm_hours ?? 8) * 5}ч`}
               </span>
             </div>
           ))}

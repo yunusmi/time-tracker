@@ -6,6 +6,7 @@ import { SequelizeModule } from '@nestjs/sequelize';
 import { UsersModule } from '../users/users.module';
 import { Session } from './entities/session.entity';
 import { AuthService } from './auth.service';
+import { OauthService } from './oauth.service';
 import { SessionsService } from './sessions.service';
 import { AuthController } from './auth.controller';
 import { JwtStrategy } from './strategies/jwt.strategy';
@@ -26,7 +27,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
       }),
     }),
   ],
-  providers: [AuthService, SessionsService, JwtStrategy],
+  providers: [AuthService, OauthService, SessionsService, JwtStrategy],
   controllers: [AuthController],
   exports: [SessionsService],
 })

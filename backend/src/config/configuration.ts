@@ -27,6 +27,12 @@ export interface AppConfig {
     privateKey: string;
     subject: string;
   };
+  oauth: {
+    /** База для redirect_uri провайдеров: <base>/auth/oauth/<provider>/callback. */
+    callbackBase: string;
+    google: { clientId: string; clientSecret: string };
+    yandex: { clientId: string; clientSecret: string };
+  };
 }
 
 export default (): AppConfig => ({
@@ -60,5 +66,19 @@ export default (): AppConfig => ({
     publicKey: process.env.VAPID_PUBLIC_KEY ?? '',
     privateKey: process.env.VAPID_PRIVATE_KEY ?? '',
     subject: process.env.VAPID_SUBJECT ?? 'mailto:no-reply@chronos.local',
+  },
+  oauth: {
+    // SSO включается парой clientId/clientSecret на провайдера; без кредов
+    // соответствующая кнопка на входе скрыта, эндпоинты отвечают 503.
+    callbackBase:
+      process.env.OAUTH_CALLBACK_BASE ?? 'http://localhost:3001/api',
+    google: {
+      clientId: process.env.GOOGLE_CLIENT_ID ?? '',
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? '',
+    },
+    yandex: {
+      clientId: process.env.YANDEX_CLIENT_ID ?? '',
+      clientSecret: process.env.YANDEX_CLIENT_SECRET ?? '',
+    },
   },
 });
